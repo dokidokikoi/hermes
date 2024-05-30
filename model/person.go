@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 type Gender int8
 
@@ -36,16 +40,16 @@ func (g Gender) String() string {
 }
 
 type Person struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Name      string    `json:"name"`
-	Alias     []string  `gorm:"type:text[]" json:"alias"`
-	Cover     string    `json:"cover"`
-	Images    []string  `gorm:"type:text[]" json:"images"`
-	Tags      []Tag     `gorm:"many2many:person_tag;" json:"tags"`
-	Summary   string    `json:"summary"`
-	Gender    Gender    `json:"gender"`
-	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	Name      string         `json:"name"`
+	Alias     pq.StringArray `gorm:"type:text[]" json:"alias"`
+	Cover     string         `json:"cover"`
+	Images    pq.StringArray `gorm:"type:text[]" json:"images"`
+	Tags      []Tag          `gorm:"many2many:person_tag;" json:"tags"`
+	Summary   string         `json:"summary"`
+	Gender    Gender         `json:"gender"`
+	CreatedAt time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime:milli"`
 }
 
 type PersonTag struct {

@@ -8,3 +8,7 @@ type Series struct {
 	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
+
+func (Series) TableName() string {
+	return "series"
+}

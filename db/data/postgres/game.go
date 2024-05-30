@@ -41,3 +41,23 @@ func NewGameTags(db *Store) *GameTags {
 func init() {
 	migrateTables = append(migrateTables, &model.Game{}, &model.GameCharacter{}, &model.GameSeries{}, &model.GameTag{})
 }
+
+type GameStaffs struct {
+	base.PgModel[model.GameStaff]
+}
+
+func NewGameStaffs(db *Store) *GameStaffs {
+	return &GameStaffs{PgModel: base.PgModel[model.GameStaff]{DB: db.DB}}
+}
+
+type GameInstances struct {
+	base.PgModel[model.GameInstance]
+}
+
+func NewGameInstances(db *Store) *GameInstances {
+	return &GameInstances{PgModel: base.PgModel[model.GameInstance]{DB: db.DB}}
+}
+
+func init() {
+	migrateTables = append(migrateTables, &model.Game{}, &model.GameCharacter{}, &model.GameSeries{}, &model.GameTag{}, &model.GameStaff{}, &model.GameInstance{})
+}

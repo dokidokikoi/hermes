@@ -1,17 +1,21 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 type Vedio struct {
 	Title       string
 	No          string
 	Cover       string
-	Images      []string  `gorm:"type:text[]"`
-	Tags        []Tag     `gorm:"many2many:vedio_tag;"`
-	Series      []Series  `gorm:"many2many:vedio_series;"`
-	Publisher   Publisher `gorm:"foreignKey:PublisherID"`
-	PublisherID uint      `gorm:"default:null"`
-	Actors      []Person  `gorm:"many2many:vedio_actor;"`
+	Images      pq.StringArray `gorm:"type:text[]"`
+	Tags        []Tag          `gorm:"many2many:vedio_tag;"`
+	Series      []Series       `gorm:"many2many:vedio_series;"`
+	Publisher   Publisher      `gorm:"foreignKey:PublisherID"`
+	PublisherID uint           `gorm:"default:null"`
+	Actors      []Person       `gorm:"many2many:vedio_actor;"`
 	Story       string
 	Path        string
 	Size        string

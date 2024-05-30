@@ -13,4 +13,7 @@ type IStore interface {
 	GameSeries() IGameSeries
 	GameTag() IGameTag
 	Transaction() ITransaction
+	Person() IPerson
+	GameStaff() IGameStaff
+	GameInstance() IGameInstance
 }

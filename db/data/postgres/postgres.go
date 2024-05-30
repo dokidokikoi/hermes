@@ -76,7 +76,7 @@ func migrateDatabase(db *gorm.DB) error {
 }
 
 func cleanDatabase(db *gorm.DB) error {
-	for _, t := range cleanTables {
+	for _, t := range migrateTables {
 		if err := db.Migrator().DropTable(t); err != nil {
 			return errors.Wrap(err, "drop model failed")
 		}

@@ -4,14 +4,17 @@ go 1.22.1
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
-	github.com/dokidokikoi/go-common v0.0.0-20230924114736-97b791174453
+	github.com/dokidokikoi/go-common v0.0.0-20240528071826-b8364fd98f4c
 	github.com/gin-gonic/gin v1.8.2
+	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	golang.org/x/text v0.14.0
 	gorm.io/gorm v1.25.7
 )
 
 require (
+	github.com/gin-contrib/cors v1.4.0 // indirect
+	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 )
@@ -48,9 +51,9 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	go.uber.org/zap v1.24.0 // indirect
+	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/net v0.24.0
 	golang.org/x/sys v0.19.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

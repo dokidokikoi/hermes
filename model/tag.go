@@ -8,3 +8,7 @@ type Tag struct {
 	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
+
+func (Tag) TableName() string {
+	return "tags"
+}

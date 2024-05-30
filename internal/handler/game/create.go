@@ -1,6 +1,7 @@
 package game
 
 import (
+	"hermes/internal/handler"
 	"hermes/model"
 
 	"github.com/dokidokikoi/go-common/core"
@@ -9,13 +10,57 @@ import (
 )
 
 func (h Handler) Create(ctx *gin.Context) {
-	var input model.Game
+	var input handler.GameVo
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
 		return
 	}
-	input.ID = 0
-	err := h.srv.Game().CreateL(ctx, &input)
+	g := &model.Game{
+		Name:      input.Name,
+		Cover:     input.Cover,
+		Alias:     input.Alias,
+		Images:    input.Images,
+		Category:  input.Category,
+		Series:    input.Series,
+		Developer: input.Developer,
+		Publisher: input.Publisher,
+		Price:     input.Price,
+		IssueDate: input.IssueDate,
+		Story:     input.Story,
+		Platform:  input.Platform,
+		Tags:      input.Tags,
+		Links:     input.Links,
+		OtherInfo: input.OtherInfo,
+	}
+	var cs []*model.GameCharacter
+	for _, c := range input.Characters {
+		cs = append(cs, &model.GameCharacter{
+			Character: &model.Character{
+				ID:     c.ID,
+				Name:   c.Name,
+				Alias:  c.Alias,
+				Gender: model.GenderMap[c.Gender],
+			},
+			Relation: model.CRelationMap[c.Rlation],
+		})
+	}
+	var ss []*model.GameStaff
+	for _, s := range input.Staff {
+		relations := []model.PersonRelation{}
+		for _, r := range s.Relation {
+			relations = append(relations, model.PRelationMap[r])
+		}
+		ss = append(ss, &model.GameStaff{
+			Person: &model.Person{
+				ID:     s.ID,
+				Name:   s.Name,
+				Alias:  s.Alias,
+				Gender: model.GenderMap[s.Gender],
+			},
+			Relations: relations,
+		})
+	}
+	err := h.srv.Game().CreateL(ctx, g, cs, ss)
 	if err != nil {
 		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
 		return

@@ -8,8 +8,9 @@ import (
 type GameListReq struct {
 	Keyword        string      `json:"keyword"`
 	Tags           []uint      `json:"tags"`
-	Series         []uint      `json:"series"`
+	Series         uint        `json:"series"`
 	Category       uint        `json:"category"`
+	Staff          uint        `json:"staff"`
 	Character      uint        `json:"character"`
 	Developer      uint        `json:"developer"`
 	Publisher      uint        `json:"publisher"`
@@ -17,6 +18,8 @@ type GameListReq struct {
 	IssueDateRange []time.Time `json:"issue_date_range"`
 	CreatedAtRange []time.Time `json:"created_at_range"`
 	FullText       bool        `json:"full_text"`
+	Page           int         `json:"page"`
+	PageSize       int         `json:"page_size"`
 }
 
 type GameVo struct {
@@ -25,10 +28,10 @@ type GameVo struct {
 	Alias      []string         `json:"alias"`
 	Cover      string           `json:"cover"`
 	Images     []string         `json:"images"`
-	Version    string           `json:"version"`
+	Versions   []string         `json:"versions"`
 	Category   *model.Category  `json:"category"`
 	Series     []model.Series   `json:"series"`
-	Developer  *model.Developer `gjson:"developer"`
+	Developer  *model.Developer `json:"developer"`
 	Publisher  *model.Publisher `json:"publisher"`
 	Price      string           `json:"price"`
 	IssueDate  time.Time        `json:"issue_date"`
@@ -36,10 +39,7 @@ type GameVo struct {
 	Platform   string           `json:"platform"`
 	Tags       []model.Tag      `json:"tags"`
 	Characters []CharacterVo    `json:"characters"`
-	Language   string           `json:"language"`
 	Links      []model.Link     `json:"links"`
-	Path       string           `json:"path"`
-	Size       int64            `json:"size"`
 	OtherInfo  string           `json:"other_info"`
 	Staff      []StaffVo        `json:"staff"`
 	CreatedAt  time.Time        `json:"created_at"`

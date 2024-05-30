@@ -51,6 +51,15 @@ func (d *data) GameSeries() db.IGameSeries {
 func (d *data) GameTag() db.IGameTag {
 	return newGameTag(d)
 }
+func (d *data) Person() db.IPerson {
+	return newPerson(d)
+}
+func (d *data) GameStaff() db.IGameStaff {
+	return newGameStaff(d)
+}
+func (d *data) GameInstance() db.IGameInstance {
+	return newGameInstance(d)
+}
 func (d *data) Transaction() db.ITransaction {
 	return newTransaction(d)
 }

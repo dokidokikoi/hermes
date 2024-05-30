@@ -124,10 +124,6 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		zaplog.L().Error("获取发布日期失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Language, err = tdf.GetItemLanguage(root)
-	if err != nil {
-		zaplog.L().Error("获取语言失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
-	}
 	item.Characters, err = tdf.GetItemCharacters(root)
 	if err != nil {
 		zaplog.L().Error("获取角色失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
@@ -143,10 +139,6 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	item.Tags, err = tdf.GetItemTags(root)
 	if err != nil {
 		zaplog.L().Error("获取tag失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
-	}
-	item.Version, err = tdf.GetItemVersion(root)
-	if err != nil {
-		zaplog.L().Error("获取版本失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.OtherInfo, err = tdf.GetItemOtherInfo(root)
 	if err != nil {
@@ -198,10 +190,6 @@ func (tdf *TwoDFan) GetItemCover(node *goquery.Document) (string, []string, erro
 		return "", nil, nil
 	}
 	return images[0], images[1:], nil
-}
-
-func (tdf *TwoDFan) GetItemVersion(node *goquery.Document) (string, error) {
-	return "", nil
 }
 
 func (tdf *TwoDFan) GetItemCategory(node *goquery.Document) (*model.Category, error) {
@@ -310,10 +298,6 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 }
 
 func (tdf *TwoDFan) GetItemSize(node *goquery.Document) (string, error) {
-	return "", nil
-}
-
-func (tdf *TwoDFan) GetItemLanguage(node *goquery.Document) (string, error) {
 	return "", nil
 }
 

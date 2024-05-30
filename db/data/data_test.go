@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"hermes/config"
 	"hermes/model"
 	"testing"
@@ -15,31 +16,37 @@ func TestConn(t *testing.T) {
 func TestTranscation(t *testing.T) {
 	config.SetConfig("../../conf/application.yaml")
 	game := model.Game{
-		ID:   4,
 		Name: "test",
 		Tags: []model.Tag{
 			{
-				ID:   1,
 				Name: "喜剧",
 			},
 			{
-				ID:   2,
 				Name: "哲学",
 			},
 		},
 		Series: []model.Series{
 			{
-				ID:   1,
 				Name: "喜剧",
 			},
 		},
 		Category: &model.Category{
-			ID:   3,
 			Name: "ADV",
+		},
+		Alias: []string{"sdafs", "sfgrwg"},
+		Links: []model.Link{
+			{
+				Name: "res",
+				Url:  "http://test.test",
+			},
+			{
+				Name: "res",
+				Url:  "http://test.test",
+			},
 		},
 	}
 	tx := GetDataFactory().Transaction().Begin()
-	err := tx.Game().Update(context.Background(), &game, nil)
+	err := tx.Game().Create(context.Background(), &game, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -52,4 +59,13 @@ func TestTranscation(t *testing.T) {
 
 	tx.Transaction().Commit()
 	txx.Transaction().Commit()
+}
+
+func TestGet(t *testing.T) {
+	config.SetConfig("../../conf/application.yaml")
+	g, err := GetDataFactory().Game().Get(context.Background(), &model.Game{}, nil)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("game: %+v", g)
 }

@@ -8,3 +8,7 @@ type Publisher struct {
 	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
+
+func (Publisher) TableName() string {
+	return "publishers"
+}

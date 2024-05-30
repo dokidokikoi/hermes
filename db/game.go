@@ -21,3 +21,11 @@ type IGameSeries interface {
 type IGameTag interface {
 	base.BasicCURD[model.GameTag]
 }
+
+type IGameStaff interface {
+	base.BasicCURD[model.GameStaff]
+}
+
+type IGameInstance interface {
+	base.BasicCURD[model.GameInstance]
+}

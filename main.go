@@ -1,15 +1,22 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"hermes/config"
 	"hermes/inittask"
+	"hermes/internal"
 	"log"
+	"net/http"
+	"time"
 
+	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/shutdown"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 var (
@@ -28,14 +35,28 @@ func main() {
 	}
 	e.Use(middleware.Logger())
 
-	err := e.Run(fmt.Sprintf("%s:%d", config.GetConfig().AppConfig.Host, config.GetConfig().AppConfig.Port))
-	if err != nil {
-		panic(err)
+	internal.Install(e)
+
+	srv := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", config.GetConfig().AppConfig.Host, config.GetConfig().AppConfig.Port),
+		Handler: e,
 	}
 
-	shutdown.Close(
-		func() {
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			zaplog.L().Panic("server panic", zap.Error(err))
+		}
+	}()
 
+	shutdown.Close(
+		// 关闭服务器
+		func() {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			defer cancel()
+
+			if err := srv.Shutdown(ctx); err != nil {
+				zaplog.L().Error("server shutdown error", zap.Error(err))
+			}
 		},
 	)
 }
