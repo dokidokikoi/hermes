@@ -14,8 +14,8 @@ type Character struct {
 	Summary   string         `json:"summary"`
 	Cover     string         `json:"cover"`
 	Images    pq.StringArray `gorm:"type:text[]" json:"images"`
-	CV        Person         `gorm:"foreignKey:ActorID" json:"cv"`
-	ActorID   uint           `gorm:"default:null" json:"-"`
+	CV        Person         `gorm:"foreignKey:PersonID" json:"cv"`
+	PersonID  uint           `gorm:"default:null" json:"-"`
 	Tags      []Tag          `gorm:"many2many:character_tag;" json:"tags"`
 	CreatedAt time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime:milli"`

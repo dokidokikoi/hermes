@@ -29,6 +29,14 @@ func (t *Store) TransactionCommit() {
 	t.DB.Commit()
 }
 
+func (t *Store) Close() error {
+	sqlDB, err := t.DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
+}
+
 func NewPostgresStore(c config.PGConfig) *Store {
 	dbIns, err := db.NewPostgresql(c.Username, c.Database, db.WithHost(c.Host), db.WithPort(c.Port), db.WithPassword(c.Password))
 	if err != nil {

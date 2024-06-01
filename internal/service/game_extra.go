@@ -11,21 +11,21 @@ import (
 	meta "github.com/dokidokikoi/go-common/meta/option"
 )
 
-var BasicSearchNode = []GameWhereNodeFunc{
-	WhereNodeKeyword,
-	WhereNodeTag,
-	WhereNodeCharacter,
-	WhereNodeStaff,
-	WhereNodeSeries,
-	WhereNodeCategory,
-	WhereNodeDeveloper,
-	WhereNodePublisher,
-	WhereNodeSizeRange,
-	WhereNodeIssueDateRange,
-	WhereNodeCreatedAtRange,
+var GameBasicSearchNode = []GameWhereNodeFunc{
+	GameWhereNodeKeyword,
+	GameWhereNodeTag,
+	GameWhereNodeCharacter,
+	GameWhereNodeStaff,
+	GameWhereNodeSeries,
+	GameWhereNodeCategory,
+	GameWhereNodeDeveloper,
+	GameWhereNodePublisher,
+	GameWhereNodeSizeRange,
+	GameWhereNodeIssueDateRange,
+	GameWhereNodeCreatedAtRange,
 }
 
-func WhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	defer func() {
 		n = node.Next
 		o = opt
@@ -64,7 +64,7 @@ func WhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *meta
 	}
 	return
 }
-func WhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if len(param.Tags) < 1 {
 		return node, opt
 	}
@@ -91,7 +91,7 @@ func WhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta.Whe
 	})
 	return
 }
-func WhereNodeCharacter(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func GameWhereNodeCharacter(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if param.Character == 0 {
 		return node, opt
 	}
@@ -106,7 +106,7 @@ func WhereNodeCharacter(ctx context.Context, param handler.GameListReq, node *me
 	})
 	return node, opt
 }
-func WhereNodeStaff(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func GameWhereNodeStaff(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if param.Staff == 0 {
 		return node, opt
 	}
@@ -121,7 +121,7 @@ func WhereNodeStaff(ctx context.Context, param handler.GameListReq, node *meta.W
 	})
 	return node, opt
 }
-func WhereNodeSeries(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func GameWhereNodeSeries(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if param.Series == 0 {
 		return node, opt
 	}
@@ -136,7 +136,7 @@ func WhereNodeSeries(ctx context.Context, param handler.GameListReq, node *meta.
 	})
 	return node, opt
 }
-func WhereNodeCategory(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func GameWhereNodeCategory(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if param.Category == 0 {
 		return node, opt
 	}
@@ -156,7 +156,7 @@ func WhereNodeCategory(ctx context.Context, param handler.GameListReq, node *met
 	}
 	return
 }
-func WhereNodeDeveloper(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func GameWhereNodeDeveloper(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if param.Developer == 0 {
 		return node, opt
 	}
@@ -176,7 +176,7 @@ func WhereNodeDeveloper(ctx context.Context, param handler.GameListReq, node *me
 	}
 	return
 }
-func WhereNodePublisher(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func GameWhereNodePublisher(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if param.Publisher == 0 {
 		return node, opt
 	}
@@ -196,7 +196,7 @@ func WhereNodePublisher(ctx context.Context, param handler.GameListReq, node *me
 	}
 	return
 }
-func WhereNodeSizeRange(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func GameWhereNodeSizeRange(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if len(param.SizeRange) > 0 {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{
@@ -225,7 +225,7 @@ func WhereNodeSizeRange(ctx context.Context, param handler.GameListReq, node *me
 
 	return node, opt
 }
-func WhereNodeIssueDateRange(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func GameWhereNodeIssueDateRange(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if len(param.IssueDateRange) > 0 {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{
@@ -254,7 +254,7 @@ func WhereNodeIssueDateRange(ctx context.Context, param handler.GameListReq, nod
 
 	return node, opt
 }
-func WhereNodeCreatedAtRange(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func GameWhereNodeCreatedAtRange(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if len(param.CreatedAtRange) > 0 {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{

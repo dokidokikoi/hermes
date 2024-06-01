@@ -73,3 +73,10 @@ func GetDataFactory() *data {
 
 	return &data{pg: dataIns.pg}
 }
+
+func Close() error {
+	if err := dataIns.pg.Close(); err != nil {
+		return err
+	}
+	return nil
+}

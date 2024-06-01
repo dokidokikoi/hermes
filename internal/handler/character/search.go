@@ -1,4 +1,4 @@
-package game
+package character
 
 import (
 	"hermes/internal/handler"
@@ -11,7 +11,7 @@ import (
 )
 
 func (h Handler) Search(ctx *gin.Context) {
-	var input handler.GameListReq
+	var input handler.CharacterListReq
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
 		return
@@ -19,11 +19,10 @@ func (h Handler) Search(ctx *gin.Context) {
 	var q query.PageQuery
 	ctx.ShouldBindQuery(&q)
 
-	total, vos, err := h.srv.Game().Search(ctx, input, q.GetListOption(), service.GameBasicSearchNode...)
+	total, list, err := h.srv.Character().Search(ctx, input, q.GetListOption(), service.CharacterBasicSearchNode...)
 	if err != nil {
 		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
 		return
 	}
-
-	core.WriteListResponse(ctx, nil, total, vos)
+	core.WriteListResponse(ctx, nil, total, list)
 }

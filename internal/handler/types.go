@@ -45,6 +45,34 @@ type GameVo struct {
 	CreatedAt  time.Time        `json:"created_at"`
 }
 
+type GameInsVo struct {
+	ID         uint             `json:"id"`
+	Name       string           `json:"name"`
+	Alias      []string         `json:"alias"`
+	Cover      string           `json:"cover"`
+	Images     []string         `json:"images"`
+	Version    string           `json:"version"`
+	Category   *model.Category  `json:"category"`
+	Series     []model.Series   `json:"series"`
+	Developer  *model.Developer `json:"developer"`
+	Publisher  *model.Publisher `json:"publisher"`
+	Price      string           `json:"price"`
+	IssueDate  time.Time        `json:"issue_date"`
+	Story      string           `json:"story"`
+	Platform   string           `json:"platform"`
+	Tags       []model.Tag      `json:"tags"`
+	Characters []CharacterVo    `json:"characters"`
+	Links      []model.Link     `json:"links"`
+	OtherInfo  string           `json:"other_info"`
+	Staff      []StaffVo        `json:"staff"`
+	CreatedAt  time.Time        `json:"created_at"`
+
+	Size     int64  `json:"size"`
+	Path     string `json:"path"`
+	Language string `json:"language"`
+	Comment  string `json:"comment"`
+}
+
 type StaffVo struct {
 	ID        uint        `json:"id"`
 	Name      string      `json:"name"`
@@ -70,4 +98,22 @@ type CharacterVo struct {
 	CV        StaffVo     `json:"cv"`
 	Tags      []model.Tag `json:"tags"`
 	CreatedAt time.Time   `json:"created_at"`
+}
+
+type CharacterListReq struct {
+	Keyword        string       `json:"keyword"`
+	Tags           []uint       `json:"tags"`
+	CreatedAtRange []time.Time  `json:"created_at_range"`
+	Gender         model.Gender `json:"gender"`
+	CV             uint         `json:"cv"`
+	FullText       bool         `json:"full_text"`
+}
+
+type PersonListReq struct {
+	Keyword        string       `json:"keyword"`
+	Tags           []uint       `json:"tags"`
+	CreatedAtRange []time.Time  `json:"created_at_range"`
+	Gender         model.Gender `json:"gender"`
+	CV             uint         `json:"cv"`
+	FullText       bool         `json:"full_text"`
 }

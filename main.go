@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"hermes/config"
+	"hermes/db/data"
 	"hermes/inittask"
 	"hermes/internal"
 	"log"
@@ -20,7 +21,7 @@ import (
 )
 
 var (
-	configFile = flag.String("f", "/data/conf/application.yaml", "the config file")
+	configFile = flag.String("f", "/app/conf/application.yaml", "the config file")
 )
 
 func main() {
@@ -56,6 +57,12 @@ func main() {
 
 			if err := srv.Shutdown(ctx); err != nil {
 				zaplog.L().Error("server shutdown error", zap.Error(err))
+			}
+		},
+		// 关闭数据库连接
+		func() {
+			if err := data.Close(); err != nil {
+				zaplog.L().Error("db close error", zap.Error(err))
 			}
 		},
 	)
