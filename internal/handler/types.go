@@ -24,6 +24,8 @@ type GameListReq struct {
 
 type GameVo struct {
 	ID         uint             `json:"id"`
+	JanCode    string           `json:"jan_code"`
+	Code       string           `json:"code"`
 	Name       string           `json:"name"`
 	Alias      []string         `json:"alias"`
 	Cover      string           `json:"cover"`

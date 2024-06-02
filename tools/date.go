@@ -24,6 +24,10 @@ func Str2Time(str string) (t time.Time) {
 			}
 		}
 	}
+	if index < 3 {
+		arr[index] = buf.String()
+		buf.Reset()
+	}
 	if len(arr) < 3 || len(arr[0]) != 4 || len(arr[1]) > 2 || len(arr[1]) < 1 || len(arr[2]) > 2 || len(arr[2]) < 1 {
 		return
 	}

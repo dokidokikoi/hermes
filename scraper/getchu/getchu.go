@@ -3,16 +3,27 @@ package getchu
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"hermes/config"
+	"hermes/internal/handler"
+	"hermes/model"
+	"hermes/scraper"
 	"hermes/tools"
 	"io"
 	"net/http"
+	"strings"
 
+	"github.com/PuerkitoBio/goquery"
+	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"go.uber.org/zap"
 )
 
 var (
 	GetChuDomain = "https://www.getchu.com/"
+	GetChuSearch = "https://www.getchu.com/php/search.phtml?genre=pc_soft&search_keyword=%s&check_key_dtl=1&submit=&pageID=%d"
+	GetChuImage  = "https://www.getchu.com/soft_sampleimage.phtml?id=%s"
 )
 
 type GetChu struct {
@@ -23,6 +34,37 @@ type GetChu struct {
 }
 
 var GetChuScraper *GetChu
+
+func (gc *GetChu) Sreach(keyword string, page int) ([]*scraper.SearchItem, error) {
+	url := fmt.Sprintf(GetChuSearch, tools.Utf82Jp([]byte(keyword)), page)
+
+	data, err := gc.DoReq(http.MethodGet, url, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*scraper.SearchItem
+	root.Find("div.search_container ul.display li").Each(func(i int, s *goquery.Selection) {
+		s = s.Find("div.content_block")
+		name, err := tools.Jp2Utf8([]byte(s.Find("#detail_block td").Eq(0).Find("a").Eq(0).Text()))
+		if err != nil {
+			zaplog.L().Error("jp encode err", zap.Error(err))
+		}
+		items = append(items, &scraper.SearchItem{
+			Name:        name,
+			URl:         gc.AbsUrl(s.Find("#package_block a").AttrOr("href", "")),
+			Cover:       s.Find("#package_block a img").AttrOr("data-original", ""),
+			ScraperName: gc.Name,
+		})
+	})
+
+	return items, nil
+}
 
 func (gc *GetChu) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
@@ -36,7 +78,9 @@ func (gc *GetChu) DoReq(method, uri string, header map[string]string, body inter
 	var r io.Reader
 	if method == http.MethodGet {
 		query := comm_tools.GenQueryParams(body)
-		uri += "?" + query
+		if query != "" {
+			uri += "?" + query
+		}
 	} else {
 		data, err := json.Marshal(body)
 		if err != nil {
@@ -49,191 +93,263 @@ func (gc *GetChu) DoReq(method, uri string, header map[string]string, body inter
 	return data, err
 }
 
-// func (gc *GetChu) DoChromeReq(url string, headless bool, fs ...func(ctx context.Context)) ([]byte, error) {
-// 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-// 		chromedp.Flag("headless", headless),
-// 		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"),
-// 	)
-// 	ctx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-// 	defer cancel()
-// 	chromeCtx, cancel := chromedp.NewContext(ctx, chromedp.WithLogf(log.Printf))
-// 	defer cancel()
-// 	// 保持浏览器窗口开启
-// 	_ = chromedp.Run(chromeCtx, make([]chromedp.Action, 0, 1)...)
+func (gc *GetChu) AbsUrl(uri string) string {
+	return comm_tools.AbsUrl(gc.Domain, uri)
+}
 
-// 	timeOutCtx, cancel := context.WithTimeout(chromeCtx, 60*time.Second)
-// 	defer cancel()
+func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
+	data, err := gc.DoReq(http.MethodGet, uri, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "getchu", Url: uri}}}}
+	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
 
-// 	var htmlContent string
-// 	err := chromedp.Run(timeOutCtx,
-// 		network.Enable(),
-// 		//需要爬取的网页的url
-// 		chromedp.Navigate(url),
-// 		network.SetExtraHTTPHeaders(map[string]interface{}{"Accept-Language": "zh-cn,zh;q=0.5", "X-Forwarded-For": "https://ggbases.dlgal.com/"}),
-// 		chromedp.OuterHTML(`html`, &htmlContent, chromedp.ByQuery),
-// 	)
-// 	for _, f := range fs {
-// 		f(timeOutCtx)
-// 	}
-// 	return []byte(htmlContent), err
-// }
+	arr := strings.Split(uri, "?")
+	if len(arr) < 2 {
+		return nil, errors.New("uri error")
+	}
+	id := ""
+	arr = strings.Split(arr[1], "&")
+	for _, a := range arr {
+		if a[:3] == "id=" {
+			id = a[3:]
+			break
+		}
+	}
+	if id == "" {
+		return nil, errors.New("uri error")
+	}
 
-// func (gc *GetChu) GetItem(uri string) (*Item, error) {
-// 	data, err := gc.DoReq(uri)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	item := &Item{Origin: uri}
-// 	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	item.Cover, item.Images, err = gc.GetItemCover(root, id)
+	if err != nil {
+		zaplog.L().Error("获取封面失败", zap.String("scraper", gc.Name), zap.String("uri", uri), zap.Error(err))
+	}
+	item.Name, err = gc.GetItemName(root)
+	if err != nil {
+		zaplog.L().Error("获取名称失败", zap.String("scraper", gc.Name), zap.String("uri", uri), zap.Error(err))
+	}
 
-// 	// 获取名称
-// 	item.Name, err = gc.GetItemName(root)
-// 	if err != nil {
-// 		fmt.Println("获取名称失败 url:", uri, "err:", err)
-// 	}
-// 	// 获取预览图
-// 	item.Preview, err = gc.GetItemPreview(root)
-// 	if err != nil {
-// 		fmt.Println("获取预览图失败 url:", uri, "err:", err)
-// 	}
-// 	// 获取类别
-// 	item.Genre, err = gc.GetItemGenre(root)
-// 	if err != nil {
-// 		fmt.Println("获取类别失败 url:", uri, "err:", err)
-// 	}
-// 	// 获取品牌
-// 	item.Brand, err = gc.GetItemBrand(root)
-// 	if err != nil {
-// 		fmt.Println("获取品牌失败 url:", uri, "err:", err)
-// 	}
-// 	// 获取发售日
-// 	item.ReleaseDate, err = gc.GetItemReleaseDate(root)
-// 	if err != nil {
-// 		fmt.Println("获取发售日失败 url:", uri, "err:", err)
-// 	}
-// 	// 获取官网链接
-// 	item.Link, err = gc.GetItemLink(root)
-// 	if err != nil {
-// 		fmt.Println("获取官网链接失败 url:", uri, "err:", err)
-// 	}
-// 	// 获取故事简介链接
-// 	item.Story, err = gc.GetItemStory(root)
-// 	if err != nil {
-// 		fmt.Println("获取故事简介失败 url:", uri, "err:", err)
-// 	}
-// 	// 获取角色信息
-// 	item.Character, err = gc.GetItemCharacter(root)
-// 	if err != nil {
-// 		fmt.Println("获取角色信息失败 url:", uri, "err:", err)
-// 	}
+	root.Find("#soft_table tr:nth-child(2) table tr").Each(func(i int, s *goquery.Selection) {
+		title, err := tools.Jp2Utf8([]byte(s.Find("td").First().Text()))
+		if err != nil {
+			zaplog.L().Error("jp 解码错误", zap.Error(err))
+			return
+		}
+		content := ""
+		if s.Find("td a").Is("a") {
+			content = s.Find("td").Eq(1).Find("a:nth-child(1)").Text()
+		} else {
+			content = s.Find("td").Eq(1).Text()
+		}
+		content, err = tools.Jp2Utf8([]byte(content))
+		if err != nil {
+			zaplog.L().Error("jp 解码错误", zap.Error(err))
+			return
+		}
 
-// 	return item, nil
-// }
+		nameSet := map[string]int{}
 
-// func (gc *GetChu) GetItemName(node *goquery.Document) (string, error) {
-// 	return strings.TrimSpace(tools.Jp2Utf8([]byte(node.Find("#soft-title").Text()))), nil
-// }
+		title = strings.TrimSpace(title)
+		if strings.Contains(title, "ブランド") {
+			item.Publisher = &model.Publisher{
+				Name: content,
+			}
+		} else if strings.Contains(title, "定価") {
+			item.Price = content
+		} else if strings.Contains(title, "発売日") {
+			item.IssueDate = tools.Str2Time(content)
+		} else if strings.Contains(title, "JANコード") {
+			item.JanCode = content
+		} else if strings.Contains(title, "品番") {
+			item.Code = content
+		} else if strings.Contains(title, "原画") {
+			s.Find("td").Eq(1).Find("a").Each(func(i int, s *goquery.Selection) {
+				name, err := tools.Jp2Utf8([]byte(s.Text()))
+				if err != nil {
+					zaplog.L().Error("jp 解码错误", zap.Error(err))
+					return
+				}
+				name = strings.TrimSpace(name)
 
-// func (gc *GetChu) GetItemPreview(node *goquery.Document) ([]string, error) {
-// 	var images []string
+				if idx, ok := nameSet[name]; ok {
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter.String())
+				} else {
+					item.Staff = append(item.Staff, handler.StaffVo{
+						Name:     name,
+						Relation: []string{model.PRelationPainter.String()},
+					})
+					nameSet[name] = len(item.Staff) - 1
+				}
+			})
+		} else if strings.Contains(title, "シナリオ") {
+			s.Find("td").Eq(1).Find("a").Each(func(i int, s *goquery.Selection) {
+				name, err := tools.Jp2Utf8([]byte(s.Text()))
+				if err != nil {
+					zaplog.L().Error("jp 解码错误", zap.Error(err))
+					return
+				}
+				name = strings.TrimSpace(name)
 
-// 	node.Find("#soft_table a.highslide").Each(func(i int, selection *goquery.Selection) {
-// 		if image, ok := selection.Attr("href"); ok {
-// 			// 解析基本链接和相对链接
-// 			images = append(images, tools.AbsImage(gc.Domain, image))
-// 		}
-// 	})
+				if idx, ok := nameSet[name]; ok {
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter.String())
+				} else {
+					item.Staff = append(item.Staff, handler.StaffVo{
+						Name:     name,
+						Relation: []string{model.PRelationWriter.String()},
+					})
+					nameSet[name] = len(item.Staff) - 1
+				}
+			})
+		}
+	})
 
-// 	node.Find("div.tabletitle").Each(func(i int, selection *goquery.Selection) {
-// 		title := tools.Jp2Utf8([]byte(selection.Text()))
-// 		if strings.Contains(title, "サンプル画像") {
-// 			selection.Next().Find("a").Each(func(i int, a *goquery.Selection) {
-// 				if image, ok := a.Attr("href"); ok {
-// 					// 解析基本链接和相对链接
-// 					images = append(images, tools.AbsImage(gc.Domain, image))
-// 				}
-// 			})
-// 		}
-// 	})
-// 	return images, nil
-// }
+	item.Characters, err = gc.GetItemCharacter(root)
+	if err != nil {
+		zaplog.L().Error("获取角色失败", zap.String("scraper", gc.Name), zap.String("uri", uri), zap.Error(err))
+	}
+	item.Story, err = gc.GetItemStory(root)
+	if err != nil {
+		zaplog.L().Error("获取故事失败", zap.String("scraper", gc.Name), zap.String("uri", uri), zap.Error(err))
+	}
 
-// func (gc *GetChu) GetItemGenre(node *goquery.Document) ([]string, error) {
-// 	str := tools.Jp2Utf8([]byte(node.Find("#soft_table tr:nth-child(2) table tr:nth-child(5) td:nth-child(2)").
-// 		Eq(0).Text()))
-// 	return []string{str}, nil
-// }
+	return item, nil
+}
 
-// func (gc *GetChu) GetItemBrand(node *goquery.Document) (string, error) {
-// 	brand := node.Find("#soft_table tr:nth-child(2) table tr:nth-child(1) td:nth-child(2) a:nth-child(1)").
-// 		Eq(0).Text()
-// 	str := tools.Jp2Utf8([]byte(brand))
-// 	return str, nil
-// }
+func (gc *GetChu) GetItemName(node *goquery.Document) (string, error) {
+	return tools.Jp2Utf8([]byte(strings.TrimSpace(node.Find("#soft-title").Text())))
+}
 
-// func (gc *GetChu) GetItemReleaseDate(node *goquery.Document) (string, error) {
-// 	return node.Find("#soft_table tr:nth-child(2) table tr:nth-child(3) td:nth-child(2) a").
-// 		Text(), nil
-// }
+func (gc *GetChu) GetItemCover(node *goquery.Document, id string) (cover string, images []string, err error) {
+	cover = gc.AbsUrl(node.Find("#soft_table tr").First().Find("a").First().Find("img").AttrOr("src", ""))
 
-// func (gc *GetChu) GetItemLink(node *goquery.Document) (string, error) {
-// 	link, ok := node.Find("#soft_table tr:nth-child(2) table tr:nth-child(1) td:nth-child(2) a:nth-child(1)").
-// 		Attr("href")
-// 	if !ok {
-// 		return "", nil
-// 	}
-// 	return link, nil
-// }
+	urls := []string{cover}
+	defer func() {
+		res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+			return gc.DoReq(http.MethodGet, url, nil, nil)
+		}, urls)
 
-// func (gc *GetChu) GetItemStory(node *goquery.Document) (string, error) {
-// 	var story string
-// 	node.Find("div.tabletitle").Each(func(i int, selection *goquery.Selection) {
-// 		title := tools.Jp2Utf8([]byte(selection.Text()))
-// 		if strings.Contains(title, "ストーリー") {
-// 			story = tools.Jp2Utf8([]byte(selection.Next().Text()))
-// 			return
-// 		}
-// 	})
-// 	return strings.TrimSpace(story), nil
-// }
+		for _, url := range urls {
+			path, ok := res[url]
+			if ok {
+				images = append(images, path)
+			}
+		}
 
-// func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]Character, error) {
-// 	var character []Character
-// 	node.Find("div.tabletitle").Each(func(i int, selection *goquery.Selection) {
-// 		title := tools.Jp2Utf8([]byte(selection.Text()))
-// 		if strings.Contains(title, "キャラクター") {
-// 			trs := selection.Next().Find(`tr`)
-// 			trs.Each(func(i int, selection *goquery.Selection) {
-// 				if selection.Find("hr").Length() > 0 {
-// 					return
-// 				}
-// 				avatar, _ := selection.Find("td:nth-child(1) img").Attr("src")
-// 				name := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name").Text()))
-// 				introduction := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) dd").Text()))
-// 				image, _ := selection.Find("td:nth-child(3) img").Attr("src")
-// 				character = append(character, Character{
-// 					Name:         name,
-// 					Introduction: introduction,
-// 					Avatar:       tools.AbsImage(gc.Domain, avatar),
-// 					Images:       []string{tools.AbsImage(gc.Domain, image)},
-// 				})
-// 			})
-// 			return
-// 		}
-// 	})
+		if len(images) > 0 {
+			cover = images[0]
+			images = images[1:]
+		}
+	}()
 
-// 	return character, nil
-// }
+	data, err := gc.DoReq(http.MethodGet, fmt.Sprintf(GetChuImage, id), nil, nil)
+	if err != nil {
+		return
+	}
+
+	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
+	if err != nil {
+		return
+	}
+
+	root.Find(".sample_table_cell").Each(func(i int, s *goquery.Selection) {
+		image := s.Find("a").AttrOr("href", "")
+		if image != "" {
+			urls = append(urls, gc.AbsUrl(image))
+		}
+	})
+
+	return
+}
+
+func (gc *GetChu) GetItemStory(node *goquery.Document) (string, error) {
+	var story string
+	node.Find("div.tabletitle").Each(func(i int, selection *goquery.Selection) {
+		title, err := tools.Jp2Utf8([]byte(selection.Text()))
+		if err != nil {
+			return
+		}
+		if strings.Contains(title, "ストーリー") {
+			story, err = tools.Jp2Utf8([]byte(selection.Next().Text()))
+			if err != nil {
+				return
+			}
+			return
+		}
+	})
+	return strings.TrimSpace(story), nil
+}
+
+func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, error) {
+	var characters []handler.CharacterVo
+	node.Find("div.tabletitle").Each(func(i int, selection *goquery.Selection) {
+		title, err := tools.Jp2Utf8([]byte(selection.Text()))
+		if err != nil {
+			return
+		}
+		urls := []string{}
+		if strings.Contains(title, "キャラクター") {
+			trs := selection.Next().Find(`tr`)
+			trs.Each(func(i int, selection *goquery.Selection) {
+				if selection.Find("hr").Length() > 0 {
+					return
+				}
+				avatar, _ := selection.Find("td:nth-child(1) img").Attr("src")
+				name, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name").Text()))
+				if err != nil {
+					zaplog.L().Error("")
+					return
+				}
+				introduction, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) dd").Text()))
+				if err != nil {
+					zaplog.L().Error("")
+					return
+				}
+				image, _ := selection.Find("td:nth-child(3) a").Attr("href")
+				characters = append(characters, handler.CharacterVo{
+					Name:    name,
+					Summary: introduction,
+					Cover:   gc.AbsUrl(avatar),
+					Images:  []string{gc.AbsUrl(image)},
+				})
+
+				urls = append(urls, gc.AbsUrl(image), gc.AbsUrl(avatar))
+			})
+
+			res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+				return gc.DoReq(http.MethodGet, url, nil, nil)
+			}, urls)
+			for i := range characters {
+				if path, ok := res[characters[i].Cover]; ok {
+					characters[i].Cover = path
+				}
+				var images []string
+				for _, image := range characters[i].Images {
+					if path, ok := res[image]; ok {
+						images = append(images, path)
+					}
+				}
+				characters[i].Images = images
+			}
+			return
+		}
+	})
+
+	return characters, nil
+}
 
 func init() {
 	headers := make(map[string]string)
+	headers["Sec-Ch-Ua"] = `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`
+	headers["Sec-Ch-Ua-Mobile"] = "?0"
+	headers["Sec-Ch-Ua-Platform"] = `"macOS"`
 	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = GetChuDomain
+	headers["Referer"] = "https://www.getchu.com/php/search.phtml?search_keyword=%C8%E0%BD%F7&list_count=30&sort=sales&sort2=down&search_title=&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=1&pageID=1"
 	headers["Accept-Language"] = config.ZhLanguage
-	headers["Cookie"] = "DLSESSIONID=e5135ab97299cbce3ef2dcf9bd188b69; _ga_RTF6MG3H5B=GS1.1.1687764148.2.1.1687764698.60.0.0; _gid=GA1.2.935234852.1688802045; getchu_adalt_flag=getchu.com; ITEM_HISTORY=1219845; _ga=GA1.1.58497094.1687400074; _ga_BSNR8334HV=GS1.1.1688802046.5.1.1688803436.57.0.0; _ga_JBMY6G3QFS=GS1.1.1688802046.1.1.1688803436.57.0.0"
+	headers["Cookie"] = "_im_vid=01HYF9KCRA1MT8HSM4EWETGX8S; _gid=GA1.2.1781699859.1717215574; getchu_adalt_flag=getchu.com; ITEM_HISTORY=1282568%7C1273918; _ga_BSNR8334HV=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga_JBMY6G3QFS=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga=GA1.2.1343565952.1716352800; _gat=1"
 	GetChuScraper = &GetChu{
 		Name:      "getchu",
 		Domain:    GetChuDomain,

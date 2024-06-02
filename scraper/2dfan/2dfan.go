@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -243,34 +242,15 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 	})
 
 	story := strings.Builder{}
-	var lock sync.Mutex
-	wait := sync.WaitGroup{}
 	var images []string
-	f := func(root *goquery.Document, referer string) {
+	f := func(root *goquery.Document) {
 		root.Find("#topic-content img").Each(func(i int, s *goquery.Selection) {
 			imgUrl := s.AttrOr("src", "")
 			if imgUrl == "" {
 				return
 			}
-			wait.Add(1)
-			go func() {
-				defer wait.Done()
 
-				data, err := tdf.DoReq(http.MethodGet, imgUrl, map[string]string{"Referer": referer}, nil)
-				if err != nil {
-					zaplog.L().Error("fetch iamge error", zap.String("url", imgUrl), zap.Error(err))
-				} else {
-					path, err := tools.SaveTmpFile(filepath.Ext(imgUrl), bytes.NewBuffer(data))
-					if err != nil {
-						zaplog.L().Error("fetch iamge error", zap.String("url", imgUrl), zap.Error(err))
-					} else {
-						lock.Lock()
-						images = append(images, path)
-						lock.Unlock()
-					}
-				}
-			}()
-
+			images = append(images, imgUrl)
 		})
 
 		html, _ := root.Find("#topic-content").Html()
@@ -278,7 +258,7 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 		story.WriteByte('\n')
 	}
 
-	f(root, tdf.AbsUrl(url))
+	f(root)
 	for i := 2; i <= maxPage; i++ {
 		data, err := tdf.DoReq(http.MethodGet, tdf.AbsUrl(url+fmt.Sprintf("/page/%d", i)), nil, nil)
 		if err != nil {
@@ -290,9 +270,16 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 			return "", nil, err
 		}
 
-		f(root, tdf.AbsUrl(url+fmt.Sprintf("/page/%d", i)))
+		f(root)
 	}
-	wait.Wait()
+
+	res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+		return tdf.DoReq(http.MethodGet, url, nil, nil)
+	}, images)
+	images = images[:0]
+	for _, v := range res {
+		images = append(images, v)
+	}
 
 	return story.String(), images, nil
 }

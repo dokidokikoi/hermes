@@ -71,7 +71,9 @@ func (b *Bangumi) DoReq(method, uri string, header map[string]string, body inter
 	var r io.Reader
 	if method == http.MethodGet {
 		query := comm_tools.GenQueryParams(body)
-		uri += "?" + query
+		if query != "" {
+			uri += "?" + query
+		}
 	} else {
 		data, err := json.Marshal(body)
 		if err != nil {

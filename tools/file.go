@@ -1,14 +1,20 @@
 package tools
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"hermes/config"
 	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
+
+	zaplog "github.com/dokidokikoi/go-common/log/zap"
+	"go.uber.org/zap"
 )
 
 func SaveTmpFile(ext string, data io.Reader) (string, error) {
@@ -29,4 +35,44 @@ func SaveTmpFile(ext string, data io.Reader) (string, error) {
 		return "", err
 	}
 	return newPath, nil
+}
+
+func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[string]string {
+	res := map[string]string{}
+
+	wait := sync.WaitGroup{}
+	signalChan := make(chan struct{}, 10)
+	for _, url := range urls {
+		url := url
+		wait.Add(1)
+		signalChan <- struct{}{}
+		go func() {
+			defer func() {
+				wait.Done()
+				<-signalChan
+			}()
+
+			cnt := 0
+			var data []byte
+			var err error = errors.New("fetch file")
+			for err != nil && cnt < 10 {
+				cnt++
+				data, err = fn(url)
+				if err != nil {
+					zaplog.L().Error("fetch file error", zap.Int("retry", cnt), zap.String("url", url), zap.Error(err))
+				}
+			}
+			if err != nil {
+				zaplog.L().Error("fetch file failed", zap.String("url", url))
+			}
+
+			res[url], err = SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
+			if err != nil {
+				zaplog.L().Error("fetch file failed", zap.String("url", url), zap.Error(err))
+			}
+		}()
+	}
+	wait.Wait()
+
+	return res
 }

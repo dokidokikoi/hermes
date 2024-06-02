@@ -67,6 +67,8 @@ func (GameInstance) TableName() string {
 
 type Game struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
+	JanCode     string         `json:"jan_code"`
+	Code        string         `json:"code"`
 	Name        string         `json:"name"`
 	Alias       pq.StringArray `gorm:"type:text[]" json:"alias"`
 	Cover       string         `json:"cover"`
