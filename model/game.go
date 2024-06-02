@@ -9,9 +9,23 @@ import (
 	"github.com/lib/pq"
 )
 
+type LinkType int8
+
+const (
+	LinkTypeUnknow LinkType = iota
+	LinkTypeMv
+	LinkTypeInfo
+	LinkTypeWorkThrough
+)
+
+var LinkTypeMap = map[string]LinkType{
+	"video": LinkTypeMv,
+}
+
 type Link struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
+	Name string   `json:"name"`
+	Url  string   `json:"url"`
+	Type LinkType `json:"type"`
 }
 
 type Links []Link

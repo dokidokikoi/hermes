@@ -66,8 +66,9 @@ func (gg *GGBases) Sreach(keyword string, page int) ([]*scraper.SearchItem, erro
 			}()
 
 			item := &scraper.SearchItem{
-				URl:  "https:" + s.Find("td.t-l").Eq(1).Find("a").AttrOr("href", ""),
-				Name: s.Find("td.t-l").Eq(1).Text(),
+				URl:         "https:" + s.Find("td.t-l").Eq(1).Find("a").AttrOr("href", ""),
+				Name:        s.Find("td.t-l").Eq(1).Text(),
+				ScraperName: gg.Name,
 			}
 			itemData, err := gg.DoReq(http.MethodGet, item.URl, nil, nil)
 			if err != nil {
