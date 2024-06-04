@@ -1,9 +1,10 @@
-package bangumi
+package bangumi_test
 
 import (
 	"encoding/json"
 	"fmt"
 	"hermes/config"
+	"hermes/scraper/bangumi"
 	"testing"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -15,7 +16,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := BangumiScraper.Sreach("ボクの彼女はガテン系", 1)
+	items, err := bangumi.BangumiScraper.Search("ボクの彼女はガテン系", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -25,7 +26,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := BangumiScraper.GetItem("https://api.bgm.tv/v0/subjects/259061")
+	item, err := bangumi.BangumiScraper.GetItem("https://api.bgm.tv/v0/subjects/259061")
 	if err != nil {
 		panic(err)
 	}

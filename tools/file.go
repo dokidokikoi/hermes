@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"go.uber.org/zap"
 )
@@ -41,16 +42,11 @@ func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[st
 	res := map[string]string{}
 
 	wait := sync.WaitGroup{}
-	signalChan := make(chan struct{}, 10)
 	for _, url := range urls {
 		url := url
 		wait.Add(1)
-		signalChan <- struct{}{}
-		go func() {
-			defer func() {
-				wait.Done()
-				<-signalChan
-			}()
+		gopool.Go(func() {
+			defer wait.Done()
 
 			cnt := 0
 			var data []byte
@@ -70,7 +66,7 @@ func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[st
 			if err != nil {
 				zaplog.L().Error("fetch file failed", zap.String("url", url), zap.Error(err))
 			}
-		}()
+		})
 	}
 	wait.Wait()
 

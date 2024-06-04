@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"strings"
 	"time"
+
+	comm_tools "github.com/dokidokikoi/go-common/tools"
 )
 
 func Str2Time(str string) (t time.Time) {
-	str = strings.TrimSpace(str)
+	str = comm_tools.TrimBlankChar(str)
 	bs := []byte(str)
 	arr := make([]string, 3)
 	index := 0

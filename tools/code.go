@@ -2,7 +2,6 @@ package tools
 
 import (
 	"encoding/base64"
-	"fmt"
 	"net/url"
 
 	"golang.org/x/text/encoding/japanese"
@@ -13,19 +12,18 @@ func Jp2Utf8(originBytes []byte) (string, error) {
 	eucJPDecoder := japanese.EUCJP.NewDecoder()
 	utf8Bytes, _, err := transform.Bytes(eucJPDecoder, originBytes)
 	if err != nil {
-		return "", err
+		return string(originBytes), err
 	}
 	return string(utf8Bytes), err
 }
 
-func Utf82Jp(originBytes []byte) string {
+func Utf82Jp(originBytes []byte) (string, error) {
 	eucJPEncoder := japanese.EUCJP.NewEncoder()
 	utf8Bytes, _, err := transform.Bytes(eucJPEncoder, originBytes)
 	if err != nil {
-		fmt.Println("转换失败:", err)
-		return string(originBytes)
+		return string(originBytes), err
 	}
-	return string(utf8Bytes)
+	return string(utf8Bytes), nil
 }
 
 func Base64Enc(originBytes []byte) string {

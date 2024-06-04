@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -27,7 +28,8 @@ var (
 )
 
 type TwoDFan struct {
-	Name      string
+	sync.Mutex
+	name      string
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
@@ -35,11 +37,33 @@ type TwoDFan struct {
 
 var TwoDFanScraper *TwoDFan
 
-func (tdf *TwoDFan) GetName() string {
-	return tdf.Name
+func init() {
+	headers := make(map[string]string)
+	headers["User-Agent"] = config.DefaultUserAgent
+	headers["Referer"] = twoDFanDomain
+	headers["Accept-Language"] = config.ZhLanguage
+	headers["Cookie"] = "_ga=GA1.1.566177421.1716285606; pop-blocked=true; _project_hgc_session=amhvTGpZYTdmc3VidU4yQUc2cm01aFdTQzhlTk9NdjI2MXFRVWFsUUw3dmRLTXZ4blYwZ2Q4ZUFOOGtkMld2aTg2YWFtSEpzOFJjTkZSejMvaXg5UytTVzYramdaNzNzbFRXYXJ6a1VLNW5RRzU1L29TK3lyWWJaY0wyVWFKUnN2UDQ0K0hPV2ZDTWx0UFVLdE1tajZ6QndtOGRnWkRndFZIM3BkR0FmaUxVWG5PeGtaeEczRXVWTngvd2hQY25MLS1EbzhJc1ZsbFp3VS92dy8wWGIwWG1nPT0%3D--68accc4aae207d572af489e2c4cfa260efdd5f57; _ga_RF77TZ6QMN=GS1.1.1716638766.7.1.1716641708.0.0.0"
+	TwoDFanScraper = &TwoDFan{
+		name:      "2dfan",
+		Domain:    twoDFanDomain,
+		SearchUri: twoDFanSearchUri,
+		Headers:   headers,
+	}
 }
 
-func (tdf *TwoDFan) Sreach(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (tdf *TwoDFan) GetName() string {
+	return tdf.name
+}
+
+func (tdf *TwoDFan) SetHeader(header map[string]string) {
+	tdf.Lock()
+	for k, v := range header {
+		tdf.Headers[k] = v
+	}
+	tdf.Unlock()
+}
+
+func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 	url := ""
 	if page > 1 {
 		url = fmt.Sprintf(tdf.SearchUri, fmt.Sprintf("/page/%d", page), keyword)
@@ -59,13 +83,24 @@ func (tdf *TwoDFan) Sreach(keyword string, page int) ([]*scraper.SearchItem, err
 
 	var items []*scraper.SearchItem
 	root.Find("ul.intro-list li.media").Each(func(i int, s *goquery.Selection) {
+		url := s.Find("img.subject-package").AttrOr("src", "")
+		data, err := tdf.DoReq(http.MethodGet, url, nil, nil)
+		if err != nil {
+			zaplog.L().Error("获取封面图片失败", zap.String("url", url), zap.Error(err))
+		} else {
+			path, err := tools.SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
+			if err != nil {
+				zaplog.L().Error("保存封面图片失败", zap.String("url", url), zap.Error(err))
+			}
+			url = path
+		}
 		items = append(items, &scraper.SearchItem{
 			Name:        s.Find("#content h4.media-heading a").Text(),
 			Key:         "",
-			URl:         s.Find("h4.media-heading a").AttrOr("href", ""),
+			URl:         tdf.AbsUrl(s.Find("h4.media-heading a").AttrOr("href", "")),
 			Summary:     "",
-			Cover:       s.Find("img.subject-package").AttrOr("src", ""),
-			ScraperName: tdf.Name,
+			Cover:       url,
+			ScraperName: tdf.name,
 		})
 	})
 
@@ -74,9 +109,11 @@ func (tdf *TwoDFan) Sreach(keyword string, page int) ([]*scraper.SearchItem, err
 
 func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
+	tdf.Lock()
 	for k, v := range tdf.Headers {
 		h[k] = v
 	}
+	tdf.Unlock()
 	for k, v := range header {
 		h[k] = v
 	}
@@ -108,52 +145,52 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	// 获取名称
 	item.Name, item.Alias, err = tdf.GetItemName(root)
 	if err != nil {
-		zaplog.L().Error("获取名称失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取名称失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	// 获取
 	item.Category, err = tdf.GetItemCategory(root)
 	if err != nil {
-		zaplog.L().Error("获取分类失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取分类失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Cover, item.Images, err = tdf.GetItemCover(root)
 	if err != nil {
-		zaplog.L().Error("获取封面失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取封面失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.IssueDate, err = tdf.GetItemIssueDate(root)
 	if err != nil {
-		zaplog.L().Error("获取发布日期失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取发布日期失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Characters, err = tdf.GetItemCharacters(root)
 	if err != nil {
-		zaplog.L().Error("获取角色失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取角色失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Developer, err = tdf.GetItemDeveloper(root)
 	if err != nil {
-		zaplog.L().Error("获取开发厂商失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取开发厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Publisher, err = tdf.GetItemPublisher(root)
 	if err != nil {
-		zaplog.L().Error("获取发布厂商失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取发布厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Tags, err = tdf.GetItemTags(root)
 	if err != nil {
-		zaplog.L().Error("获取tag失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取tag失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.OtherInfo, err = tdf.GetItemOtherInfo(root)
 	if err != nil {
-		zaplog.L().Error("获取其它信息失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取其它信息失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links, err = tdf.GetItemLinks(root)
 	if err != nil {
-		zaplog.L().Error("获取链接失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取链接失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Story, item.AllImages, err = tdf.GetItemStory(root)
 	if err != nil {
-		zaplog.L().Error("获取故事失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取故事失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Staff, err = tdf.GetItemStaff(root)
 	if err != nil {
-		zaplog.L().Error("获取staff失败", zap.String("scraper", tdf.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取staff失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 
 	return item, nil
@@ -392,18 +429,4 @@ func (tdf *TwoDFan) GetItemStaff(node *goquery.Document) ([]handler.StaffVo, err
 
 func (tdf *TwoDFan) GetItemOtherInfo(node *goquery.Document) (string, error) {
 	return "", nil
-}
-
-func init() {
-	headers := make(map[string]string)
-	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = twoDFanDomain
-	headers["Accept-Language"] = config.ZhLanguage
-	headers["Cookie"] = "_ga=GA1.1.566177421.1716285606; pop-blocked=true; _project_hgc_session=amhvTGpZYTdmc3VidU4yQUc2cm01aFdTQzhlTk9NdjI2MXFRVWFsUUw3dmRLTXZ4blYwZ2Q4ZUFOOGtkMld2aTg2YWFtSEpzOFJjTkZSejMvaXg5UytTVzYramdaNzNzbFRXYXJ6a1VLNW5RRzU1L29TK3lyWWJaY0wyVWFKUnN2UDQ0K0hPV2ZDTWx0UFVLdE1tajZ6QndtOGRnWkRndFZIM3BkR0FmaUxVWG5PeGtaeEczRXVWTngvd2hQY25MLS1EbzhJc1ZsbFp3VS92dy8wWGIwWG1nPT0%3D--68accc4aae207d572af489e2c4cfa260efdd5f57; _ga_RF77TZ6QMN=GS1.1.1716638766.7.1.1716641708.0.0.0"
-	TwoDFanScraper = &TwoDFan{
-		Name:      "2dfan",
-		Domain:    twoDFanDomain,
-		SearchUri: twoDFanSearchUri,
-		Headers:   headers,
-	}
 }

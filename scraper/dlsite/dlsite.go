@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -30,7 +31,8 @@ var (
 )
 
 type DlSite struct {
-	Name      string
+	sync.Mutex
+	name      string
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
@@ -38,7 +40,36 @@ type DlSite struct {
 
 var DlSiteScraper *DlSite
 
-func (ds *DlSite) Sreach(keyword string, page int) ([]*scraper.SearchItem, error) {
+func init() {
+	headers := make(map[string]string)
+	headers["Sec-Ch-Ua"] = `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`
+	headers["Sec-Ch-Ua-Mobile"] = "?0"
+	headers["Sec-Ch-Ua-Platform"] = `"macOS"`
+	headers["User-Agent"] = config.DefaultUserAgent
+	headers["Referer"] = "https://www.getchu.com/php/search.phtml?search_keyword=%C8%E0%BD%F7&list_count=30&sort=sales&sort2=down&search_title=&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=1&pageID=1"
+	headers["Accept-Language"] = config.ZhLanguage
+	headers["Cookie"] = "__DLsite_SID=782pmg62psm037ve711d3mcvou; _vwo_uuid_v2=D58EED3043B8C8712836CA3A0CEE347EA|60e7665c582ba675b0d38e5d2fff3d4a; _gcl_au=1.1.1614214747.1716352480; uniqid=0.1jznx3ayl8r; _inflow_ad_params=%7B%22ad_name%22%3A%22organic%22%7D; _fbp=fb.1.1716352481206.123734068; _gaid=876588495.1716352481; _yjsu_yjad=1716352481.85b8a4d8-d0ef-40c3-9add-72cdbb9aefb2; __lt__cid=d543a8ce-a077-4fc3-9c2e-8f3174d95c59; localesuggested=true; locale=zh-cn; _tt_enable_cookie=1; _ttp=rjrtRsh6ouv0PmOqGCRhvWVWaIs; _im_vid=01HYF98ZMNGPY3Z39Q5YJMZW7W; universe_aid=bcf505d16a92b2a620515be740e116240a1a00eccd6e9b0e; adr_id=S7YehhRFnRk3O6gLUtpysCXLJ0EzAGzX1yWf6W6kB4FhT3yt; adultchecked=1; _inflow_params=%7B%22referrer_uri%22%3A%22www.google.com.hk%22%7D; _gid=GA1.2.771398923.1717239817; _ga_QEETZHFB1S=GS1.1.1717290605.1.1.1717290605.0.0.0; _ga_YG879NVEC7=GS1.1.1717290602.1.1.1717290636.0.0.0; _ga_sid=1717304107; __lt__sid=a4160a04-dddad713; DL_PRODUCT_LOG=%2CVJ011538%2CVJ01001190%2CVJ01001393%2CVJ01002056; OptanonConsent=isGpcEnabled=0&datestamp=Sun+Jun+02+2024+14%3A08%3A57+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=6.23.0&isIABGlobal=false&hosts=&landingPath=NotLandingPage&groups=C0001%3A1%2CC0002%3A0%2CC0003%3A0%2CC0004%3A0&AwaitingReconsent=false; _ga_ZW5GTXK6EV=GS1.1.1717304107.5.1.1717308538.0.0.0; _ga=GA1.1.876588495.1716352481; _inflow_dlsite_params=%7B%22dlsite_referrer_url%22%3A%22https%3A%2F%2Fwww.dlsite.com%2Fpro%2Fwork%2F%3D%2Fproduct_id%2FVJ01001190.html%22%7D"
+	DlSiteScraper = &DlSite{
+		name:      "dlsite",
+		Domain:    DlSiteDomain,
+		SearchUri: "",
+		Headers:   headers,
+	}
+}
+
+func (ds *DlSite) GetName() string {
+	return ds.name
+}
+
+func (ds *DlSite) SetHeader(header map[string]string) {
+	ds.Lock()
+	for k, v := range header {
+		ds.Headers[k] = v
+	}
+	ds.Unlock()
+}
+
+func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 	DlSiteSearchUrl[1] = keyword
 	DlSiteSearchUrl[3] = strconv.Itoa(page)
 	url := strings.Join(DlSiteSearchUrl, "")
@@ -64,7 +95,7 @@ func (ds *DlSite) Sreach(keyword string, page int) ([]*scraper.SearchItem, error
 			URl:   s.Find("dl dt a").First().AttrOr("href", ""),
 			Cover: url,
 
-			ScraperName: ds.Name,
+			ScraperName: ds.name,
 		})
 	})
 
@@ -73,9 +104,11 @@ func (ds *DlSite) Sreach(keyword string, page int) ([]*scraper.SearchItem, error
 
 func (ds *DlSite) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
+	ds.Lock()
 	for k, v := range ds.Headers {
 		h[k] = v
 	}
+	ds.Unlock()
 	for k, v := range header {
 		h[k] = v
 	}
@@ -123,23 +156,23 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	item.Code = id
 	item.Cover, item.Images, err = ds.GetItemCover(root)
 	if err != nil {
-		zaplog.L().Error("获取封面失败", zap.String("scraper", ds.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取封面失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Publisher, err = ds.GetItemPublisher(root)
 	if err != nil {
-		zaplog.L().Error("获取商标失败", zap.String("scraper", ds.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取商标失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Characters, err = ds.GetItemCharacter(root)
 	if err != nil {
-		zaplog.L().Error("获取角色失败", zap.String("scraper", ds.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取角色失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Story, err = ds.GetItemStory(root)
 	if err != nil {
-		zaplog.L().Error("获取故事失败", zap.String("scraper", ds.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取故事失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	links, err := ds.GetItemlink(root, id)
 	if err != nil {
-		zaplog.L().Error("获取链接失败", zap.String("scraper", ds.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取链接失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links = append(item.Links, links...)
 
@@ -150,7 +183,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			item.IssueDate = tools.Str2Time(s.Find("td").First().Text())
 		} else if strings.Contains(label, "剧情") {
 			s.Find("td").First().Each(func(i int, s *goquery.Selection) {
-				name := strings.TrimSpace(s.Text())
+				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
 					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter.String())
 				} else {
@@ -162,7 +195,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			})
 		} else if strings.Contains(label, "插画") {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
-				name := strings.TrimSpace(s.Text())
+				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
 					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter.String())
 				} else {
@@ -174,7 +207,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			})
 		} else if strings.Contains(label, "声优") {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
-				name := strings.TrimSpace(s.Text())
+				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
 					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationCV.String())
 				} else {
@@ -186,7 +219,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			})
 		} else if strings.Contains(label, "音乐") {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
-				name := strings.TrimSpace(s.Text())
+				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
 					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationMusic.String())
 				} else {
@@ -199,7 +232,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 		} else {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				item.Tags = append(item.Tags, model.Tag{
-					Name: strings.TrimSpace(s.Text()),
+					Name: comm_tools.TrimBlankChar(s.Text()),
 				})
 			})
 		}
@@ -310,7 +343,7 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				name.WriteByte(text[idx])
 			}
 		}
-		cName := strings.TrimSpace(name.String())
+		cName := comm_tools.TrimBlankChar(name.String())
 
 		idx = strings.Index(text, "（CV")
 		name.Reset()
@@ -328,27 +361,10 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 			Cover:   url,
 			Summary: text,
 			CV: handler.StaffVo{
-				Name: strings.TrimSpace(name.String()),
+				Name: comm_tools.TrimBlankChar(name.String()),
 			},
 		})
 	})
 
 	return characters, nil
-}
-
-func init() {
-	headers := make(map[string]string)
-	headers["Sec-Ch-Ua"] = `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`
-	headers["Sec-Ch-Ua-Mobile"] = "?0"
-	headers["Sec-Ch-Ua-Platform"] = `"macOS"`
-	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = "https://www.getchu.com/php/search.phtml?search_keyword=%C8%E0%BD%F7&list_count=30&sort=sales&sort2=down&search_title=&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=1&pageID=1"
-	headers["Accept-Language"] = config.ZhLanguage
-	headers["Cookie"] = "__DLsite_SID=782pmg62psm037ve711d3mcvou; _vwo_uuid_v2=D58EED3043B8C8712836CA3A0CEE347EA|60e7665c582ba675b0d38e5d2fff3d4a; _gcl_au=1.1.1614214747.1716352480; uniqid=0.1jznx3ayl8r; _inflow_ad_params=%7B%22ad_name%22%3A%22organic%22%7D; _fbp=fb.1.1716352481206.123734068; _gaid=876588495.1716352481; _yjsu_yjad=1716352481.85b8a4d8-d0ef-40c3-9add-72cdbb9aefb2; __lt__cid=d543a8ce-a077-4fc3-9c2e-8f3174d95c59; localesuggested=true; locale=zh-cn; _tt_enable_cookie=1; _ttp=rjrtRsh6ouv0PmOqGCRhvWVWaIs; _im_vid=01HYF98ZMNGPY3Z39Q5YJMZW7W; universe_aid=bcf505d16a92b2a620515be740e116240a1a00eccd6e9b0e; adr_id=S7YehhRFnRk3O6gLUtpysCXLJ0EzAGzX1yWf6W6kB4FhT3yt; adultchecked=1; _inflow_params=%7B%22referrer_uri%22%3A%22www.google.com.hk%22%7D; _gid=GA1.2.771398923.1717239817; _ga_QEETZHFB1S=GS1.1.1717290605.1.1.1717290605.0.0.0; _ga_YG879NVEC7=GS1.1.1717290602.1.1.1717290636.0.0.0; _ga_sid=1717304107; __lt__sid=a4160a04-dddad713; DL_PRODUCT_LOG=%2CVJ011538%2CVJ01001190%2CVJ01001393%2CVJ01002056; OptanonConsent=isGpcEnabled=0&datestamp=Sun+Jun+02+2024+14%3A08%3A57+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=6.23.0&isIABGlobal=false&hosts=&landingPath=NotLandingPage&groups=C0001%3A1%2CC0002%3A0%2CC0003%3A0%2CC0004%3A0&AwaitingReconsent=false; _ga_ZW5GTXK6EV=GS1.1.1717304107.5.1.1717308538.0.0.0; _ga=GA1.1.876588495.1716352481; _inflow_dlsite_params=%7B%22dlsite_referrer_url%22%3A%22https%3A%2F%2Fwww.dlsite.com%2Fpro%2Fwork%2F%3D%2Fproduct_id%2FVJ01001190.html%22%7D"
-	DlSiteScraper = &DlSite{
-		Name:      "getchu",
-		Domain:    DlSiteDomain,
-		SearchUri: "",
-		Headers:   headers,
-	}
 }

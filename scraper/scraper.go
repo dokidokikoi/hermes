@@ -21,7 +21,8 @@ type SearchItem struct {
 }
 
 type IGameScraper interface {
-	GetItem(url string) *GameItem
+	GetItem(url string) (*GameItem, error)
 	Search(keyword string, page int) ([]*SearchItem, error)
 	GetName() string
+	SetHeader(header map[string]string)
 }

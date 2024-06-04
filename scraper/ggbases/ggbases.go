@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
 	"github.com/dop251/goja"
@@ -32,7 +33,8 @@ var GGBasesBtUri = "https://ggbases.dlgal.com/down.so?id=%s"
 var GGBasesDetailUri = "https://ggbases.dlgal.com/viewDetail.so"
 
 type GGBases struct {
-	Name      string
+	sync.Mutex
+	name      string
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
@@ -40,7 +42,32 @@ type GGBases struct {
 
 var GGBasesScraper *GGBases
 
-func (gg *GGBases) Sreach(keyword string, page int) ([]*scraper.SearchItem, error) {
+func init() {
+	headers := make(map[string]string)
+	headers["User-Agent"] = config.DefaultUserAgent
+	headers["Referer"] = GGBasesDomain
+	headers["Accept-Language"] = config.ZhLanguage
+	GGBasesScraper = &GGBases{
+		name:      "ggbases",
+		Domain:    GGBasesDomain,
+		SearchUri: GGBasesSearchUri,
+		Headers:   headers,
+	}
+}
+
+func (gg *GGBases) GetName() string {
+	return gg.name
+}
+
+func (gg *GGBases) SetHeader(header map[string]string) {
+	gg.Lock()
+	for k, v := range header {
+		gg.Headers[k] = v
+	}
+	gg.Unlock()
+}
+
+func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 	data, err := gg.DoReq(http.MethodGet, fmt.Sprintf(gg.SearchUri, page-1, keyword), nil, nil)
 	if err != nil {
 		return nil, err
@@ -52,23 +79,18 @@ func (gg *GGBases) Sreach(keyword string, page int) ([]*scraper.SearchItem, erro
 	}
 
 	wait := sync.WaitGroup{}
-	signalChan := make(chan struct{}, 20)
 	var lock sync.Mutex
 	var items []*scraper.SearchItem
 	root.Find("tr.dtr").Each(func(i int, s *goquery.Selection) {
 		wait.Add(1)
-		signalChan <- struct{}{}
 
-		go func() {
-			defer func() {
-				wait.Done()
-				<-signalChan
-			}()
+		gopool.Go(func() {
+			defer wait.Done()
 
 			item := &scraper.SearchItem{
 				URl:         "https:" + s.Find("td.t-l").Eq(1).Find("a").AttrOr("href", ""),
 				Name:        s.Find("td.t-l").Eq(1).Text(),
-				ScraperName: gg.Name,
+				ScraperName: gg.name,
 			}
 			itemData, err := gg.DoReq(http.MethodGet, item.URl, nil, nil)
 			if err != nil {
@@ -83,15 +105,13 @@ func (gg *GGBases) Sreach(keyword string, page int) ([]*scraper.SearchItem, erro
 
 			item.Cover, err = gg.GetItemCover(root)
 			if err != nil {
-				zaplog.L().Error("获取封面失败", zap.String("scraper", gg.Name), zap.Error(err))
+				zaplog.L().Error("获取封面失败", zap.String("scraper", gg.name), zap.Error(err))
 			}
 
 			lock.Lock()
 			items = append(items, item)
-			fmt.Println(len(items))
 			lock.Unlock()
-		}()
-
+		})
 	})
 	wait.Wait()
 
@@ -100,9 +120,11 @@ func (gg *GGBases) Sreach(keyword string, page int) ([]*scraper.SearchItem, erro
 
 func (gg *GGBases) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
+	gg.Lock()
 	for k, v := range gg.Headers {
 		h[k] = v
 	}
+	gg.Unlock()
 	for k, v := range header {
 		h[k] = v
 	}
@@ -159,24 +181,24 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 
 	item.Name, err = gg.GetItemName(root)
 	if err != nil {
-		zaplog.L().Error("获取名称失败", zap.String("scraper", gg.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取名称失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Cover, err = gg.GetItemCover(root)
 	if err != nil {
-		zaplog.L().Error("获取封面失败", zap.String("scraper", gg.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取封面失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.IssueDate, err = gg.GetItemIssueeDate(root)
 	if err != nil {
-		zaplog.L().Error("获取发布时间失败", zap.String("scraper", gg.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取发布时间失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	links, err := gg.GetItemLink(root, id)
 	if err != nil {
-		zaplog.L().Error("获取相关链接失败", zap.String("scraper", gg.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取相关链接失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links = append(item.Links, links...)
 	item.OtherInfo, err = gg.GetItemOtherInfo(root)
 	if err != nil {
-		zaplog.L().Error("获取其它信息失败", zap.String("scraper", gg.Name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取其它信息失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 
 	str := string(data)
@@ -218,11 +240,11 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 	return item, nil
 }
 
-func (gg GGBases) GetItemName(node *goquery.Document) (string, error) {
+func (gg *GGBases) GetItemName(node *goquery.Document) (string, error) {
 	return node.Find("#atitle").Text(), nil
 }
 
-func (gg GGBases) GetItemCover(node *goquery.Document) (string, error) {
+func (gg *GGBases) GetItemCover(node *goquery.Document) (string, error) {
 	html, err := node.Html()
 	if err != nil {
 		return "", err
@@ -271,7 +293,7 @@ func (gg GGBases) GetItemCover(node *goquery.Document) (string, error) {
 	return "", nil
 }
 
-func (gg GGBases) GetItemIssueeDate(node *goquery.Document) (time.Time, error) {
+func (gg *GGBases) GetItemIssueeDate(node *goquery.Document) (time.Time, error) {
 	v := node.Find("#udate").AttrOr("v", "")
 	unix, err := strconv.ParseInt(v, 10, 64)
 	if err != nil {
@@ -280,7 +302,8 @@ func (gg GGBases) GetItemIssueeDate(node *goquery.Document) (time.Time, error) {
 
 	return time.Unix(unix/1000, 0), nil
 }
-func (gg GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link, error) {
+
+func (gg *GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link, error) {
 	links := []model.Link{}
 	node.Find("#showCoverBtn").NextAll().Each(func(i int, s *goquery.Selection) {
 		if s.Is("a") {
@@ -342,19 +365,6 @@ func (gg GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link, 
 	return links, nil
 }
 
-func (gg GGBases) GetItemOtherInfo(node *goquery.Document) (string, error) {
+func (gg *GGBases) GetItemOtherInfo(node *goquery.Document) (string, error) {
 	return node.Find("#description div[markdown-text]").Html()
-}
-
-func init() {
-	headers := make(map[string]string)
-	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = GGBasesDomain
-	headers["Accept-Language"] = config.ZhLanguage
-	GGBasesScraper = &GGBases{
-		Name:      "ggbases",
-		Domain:    GGBasesDomain,
-		SearchUri: GGBasesSearchUri,
-		Headers:   headers,
-	}
 }

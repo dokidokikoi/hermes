@@ -1,9 +1,10 @@
-package dlsite
+package dlsite_test
 
 import (
 	"bytes"
 	"fmt"
 	"hermes/config"
+	"hermes/scraper/dlsite"
 	"net/http"
 	"os"
 	"testing"
@@ -18,7 +19,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := DlSiteScraper.Sreach("彼女", 1)
+	items, err := dlsite.DlSiteScraper.Search("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +29,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItemCover(t *testing.T) {
-	data, err := DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +38,7 @@ func TestGetItemCover(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	cover, images, err := DlSiteScraper.GetItemCover(root)
+	cover, images, err := dlsite.DlSiteScraper.GetItemCover(root)
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +46,7 @@ func TestGetItemCover(t *testing.T) {
 }
 
 func TestGetItemCharacter(t *testing.T) {
-	data, err := DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +55,7 @@ func TestGetItemCharacter(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	characters, err := DlSiteScraper.GetItemCharacter(root)
+	characters, err := dlsite.DlSiteScraper.GetItemCharacter(root)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +65,7 @@ func TestGetItemCharacter(t *testing.T) {
 }
 
 func TestGetItemStory(t *testing.T) {
-	data, err := DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -73,7 +74,7 @@ func TestGetItemStory(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	story, err := DlSiteScraper.GetItemStory(root)
+	story, err := dlsite.DlSiteScraper.GetItemStory(root)
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +82,7 @@ func TestGetItemStory(t *testing.T) {
 }
 
 func TestGetItemlinks(t *testing.T) {
-	data, err := DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +91,7 @@ func TestGetItemlinks(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	links, err := DlSiteScraper.GetItemlink(root, "VJ01001190")
+	links, err := dlsite.DlSiteScraper.GetItemlink(root, "VJ01001190")
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +101,7 @@ func TestGetItemlinks(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := DlSiteScraper.GetItem("https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html")
+	item, err := dlsite.DlSiteScraper.GetItem("https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html")
 	if err != nil {
 		panic(err)
 	}
@@ -108,7 +109,7 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}

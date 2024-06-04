@@ -1,10 +1,11 @@
-package ggbases
+package ggbases_test
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"hermes/config"
+	"hermes/scraper/ggbases"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -21,7 +22,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := GGBasesScraper.Sreach("彼女", 1)
+	items, err := ggbases.GGBasesScraper.Search("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +32,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := GGBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=124340", nil, nil)
+	data, err := ggbases.GGBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=124340", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +58,7 @@ func TestReq(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := GGBasesScraper.GetItem("https://ggbases.dlgal.com/view.so?id=120270")
+	item, err := ggbases.GGBasesScraper.GetItem("https://ggbases.dlgal.com/view.so?id=120270")
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +66,7 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestGetItemLink(t *testing.T) {
-	data, err := GGBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=120270", nil, nil)
+	data, err := ggbases.GGBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=120270", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +76,7 @@ func TestGetItemLink(t *testing.T) {
 		panic(err)
 	}
 
-	links, err := GGBasesScraper.GetItemLink(root, "120270")
+	links, err := ggbases.GGBasesScraper.GetItemLink(root, "120270")
 	if err != nil {
 		panic(err)
 	}
@@ -98,7 +99,7 @@ func TestDetail(t *testing.T) {
 		return
 	}
 
-	body, err := GGBasesScraper.DoReq(method, url, map[string]string{
+	body, err := ggbases.GGBasesScraper.DoReq(method, url, map[string]string{
 		"Content-Type": writer.FormDataContentType(),
 		"Referer":      "https://ggbases.dlgal.com/view.so?id=120270",
 	}, payload)
@@ -107,7 +108,7 @@ func TestDetail(t *testing.T) {
 		return
 	}
 	fmt.Println(string(body))
-	resp := new(DetailResp)
+	resp := new(ggbases.DetailResp)
 	err = json.Unmarshal(body, resp)
 	if err != nil {
 		panic(err)

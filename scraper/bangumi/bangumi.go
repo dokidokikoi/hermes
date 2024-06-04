@@ -51,7 +51,8 @@ const (
 )
 
 type Bangumi struct {
-	Name      string
+	sync.Mutex
+	name      string
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
@@ -59,11 +60,37 @@ type Bangumi struct {
 
 var BangumiScraper *Bangumi
 
+func init() {
+	headers := make(map[string]string)
+	headers["User-Agent"] = bangumiUserAgent
+	headers["Authorization"] = fmt.Sprintf("Bearer %s", bangumiToken)
+	BangumiScraper = &Bangumi{
+		name:      "bangumi",
+		Domain:    BangumiDomain,
+		SearchUri: BangumiSearchUri,
+		Headers:   headers,
+	}
+}
+
+func (b *Bangumi) GetName() string {
+	return b.name
+}
+
+func (b *Bangumi) SetHeader(header map[string]string) {
+	b.Lock()
+	for k, v := range header {
+		b.Headers[k] = v
+	}
+	b.Unlock()
+}
+
 func (b *Bangumi) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
+	b.Lock()
 	for k, v := range b.Headers {
 		h[k] = v
 	}
+	b.Unlock()
 	for k, v := range header {
 		h[k] = v
 	}
@@ -90,7 +117,7 @@ func (b *Bangumi) AbsUrl(uri string) string {
 	return comm_tools.AbsUrl(b.Domain, uri)
 }
 
-func (b *Bangumi) Sreach(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (b *Bangumi) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 	param := SearchParam{
 		Type:          SubjectTypeGame,
 		ResponseGroup: ResponseGroupMedium,
@@ -109,7 +136,7 @@ func (b *Bangumi) Sreach(keyword string, page int) ([]*scraper.SearchItem, error
 			URl:         fmt.Sprintf(BangumiSubjectUri, strconv.Itoa(int(i.Get("id").Int()))),
 			Summary:     i.Get("summary").String(),
 			Cover:       i.Get("images.common").String(),
-			ScraperName: b.Name,
+			ScraperName: b.name,
 		})
 	}
 	return items, nil
@@ -159,11 +186,11 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 	id := strconv.Itoa(int(gjson.GetBytes(data, "id").Int()))
 	item.Characters, err = b.GetItemCharacters(id)
 	if err != nil {
-		zaplog.L().Error("get characters error", zap.String("scraper", b.Name), zap.Error(err))
+		zaplog.L().Error("get characters error", zap.String("scraper", b.name), zap.Error(err))
 	}
 	item.Staff, err = b.GetItemStaff(id)
 	if err != nil {
-		zaplog.L().Error("get staff error", zap.String("scraper", b.Name), zap.Error(err))
+		zaplog.L().Error("get staff error", zap.String("scraper", b.name), zap.Error(err))
 	}
 
 	return item, nil
@@ -277,16 +304,4 @@ func (b *Bangumi) GetItemStaff(SubjetID string) ([]handler.StaffVo, error) {
 	}
 
 	return staff, nil
-}
-
-func init() {
-	headers := make(map[string]string)
-	headers["User-Agent"] = bangumiUserAgent
-	headers["Authorization"] = fmt.Sprintf("Bearer %s", bangumiToken)
-	BangumiScraper = &Bangumi{
-		Name:      "bangumi",
-		Domain:    BangumiDomain,
-		SearchUri: BangumiSearchUri,
-		Headers:   headers,
-	}
 }

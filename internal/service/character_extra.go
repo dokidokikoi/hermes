@@ -6,7 +6,8 @@ import (
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
-	"strings"
+
+	comm_tools "github.com/dokidokikoi/go-common/tools"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
 )
@@ -25,7 +26,7 @@ func CharacterWhereNodeKeyword(ctx context.Context, param handler.CharacterListR
 		o = opt
 	}()
 
-	keyword := strings.TrimSpace(param.Keyword)
+	keyword := comm_tools.TrimBlankChar(param.Keyword)
 	if keyword != "" {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{

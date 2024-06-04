@@ -1,9 +1,10 @@
-package getchu
+package getchu_test
 
 import (
 	"bytes"
 	"fmt"
 	"hermes/config"
+	"hermes/scraper/getchu"
 	"hermes/tools"
 	"net/http"
 	"os"
@@ -19,7 +20,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := GetChuScraper.Sreach("彼女", 1)
+	items, err := getchu.GetChuScraper.Search("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +30,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := GetChuScraper.GetItem("https://www.getchu.com/soft.phtml?id=1273918")
+	item, err := getchu.GetChuScraper.GetItem("https://www.getchu.com/soft.phtml?id=1273918")
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +38,7 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestGetItemName(t *testing.T) {
-	data, err := GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1282568", nil, nil)
+	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1282568", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +48,7 @@ func TestGetItemName(t *testing.T) {
 		panic(err)
 	}
 
-	name, err := GetChuScraper.GetItemName(root)
+	name, err := getchu.GetChuScraper.GetItemName(root)
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +56,7 @@ func TestGetItemName(t *testing.T) {
 }
 
 func TestGetItemCover(t *testing.T) {
-	data, err := GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
+	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +65,7 @@ func TestGetItemCover(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	cover, images, err := GetChuScraper.GetItemCover(root, "1273918")
+	cover, images, err := getchu.GetChuScraper.GetItemCover(root, "1273918")
 	if err != nil {
 		panic(err)
 	}
@@ -72,7 +73,7 @@ func TestGetItemCover(t *testing.T) {
 }
 
 func TestGetItemCharacter(t *testing.T) {
-	data, err := GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
+	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +82,7 @@ func TestGetItemCharacter(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	cs, err := GetChuScraper.GetItemCharacter(root)
+	cs, err := getchu.GetChuScraper.GetItemCharacter(root)
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +92,7 @@ func TestGetItemCharacter(t *testing.T) {
 }
 
 func TestGetItemStory(t *testing.T) {
-	data, err := GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
+	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +101,7 @@ func TestGetItemStory(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	story, err := GetChuScraper.GetItemStory(root)
+	story, err := getchu.GetChuScraper.GetItemStory(root)
 	if err != nil {
 		panic(err)
 	}
@@ -109,7 +110,7 @@ func TestGetItemStory(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1282568", nil, nil)
+	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1282568", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -123,7 +124,7 @@ func TestReq(t *testing.T) {
 
 func TestGetImage(t *testing.T) {
 	res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
-		return GetChuScraper.DoReq(http.MethodGet, url, nil, nil)
+		return getchu.GetChuScraper.DoReq(http.MethodGet, url, nil, nil)
 	}, []string{"https://www.getchu.com/brandnew/1273918/c1273918sample3.jpg"})
 
 	fmt.Printf("%+v\n", res)

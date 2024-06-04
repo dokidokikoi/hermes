@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	configFile = flag.String("f", "/app/conf/application.yaml", "the config file")
+	configFile = flag.String("f", "./conf/application.yaml", "the config file")
 )
 
 func main() {
@@ -44,6 +44,7 @@ func main() {
 	}
 
 	go func() {
+		log.Printf("serve on :%d\n", config.GetConfig().AppConfig.Port)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			zaplog.L().Panic("server panic", zap.Error(err))
 		}

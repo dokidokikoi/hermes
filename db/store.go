@@ -16,4 +16,6 @@ type IStore interface {
 	Person() IPerson
 	GameStaff() IGameStaff
 	GameInstance() IGameInstance
+	Task() ITask
+	RefGameInstance() IRefGameInstance
 }

@@ -6,9 +6,9 @@ import (
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
-	"strings"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	comm_tools "github.com/dokidokikoi/go-common/tools"
 )
 
 var GameBasicSearchNode = []GameWhereNodeFunc{
@@ -31,7 +31,7 @@ func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *
 		o = opt
 	}()
 
-	keyword := strings.TrimSpace(param.Keyword)
+	keyword := comm_tools.TrimBlankChar(param.Keyword)
 	if keyword != "" {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{

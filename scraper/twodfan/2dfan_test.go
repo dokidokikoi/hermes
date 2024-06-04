@@ -1,9 +1,10 @@
-package twodfan
+package twodfan_test
 
 import (
 	"bytes"
 	"fmt"
 	"hermes/config"
+	"hermes/scraper/twodfan"
 	"net/http"
 	"testing"
 
@@ -17,7 +18,7 @@ func init() {
 }
 
 func TestTwoDFan_GetItem(t *testing.T) {
-	item, err := TwoDFanScraper.GetItem("https://2dfan.com/subjects/4566")
+	item, err := twodfan.TwoDFanScraper.GetItem("https://2dfan.com/subjects/4566")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -26,7 +27,7 @@ func TestTwoDFan_GetItem(t *testing.T) {
 }
 
 func TestTwoDFan_Search(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -38,14 +39,14 @@ func TestTwoDFan_Search(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemName(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女", 1)
 	if err != nil {
 		panic(err)
 	}
 
 	if len(items) > 0 {
-		url := TwoDFanScraper.AbsUrl(items[0].URl)
-		data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+		url := twodfan.TwoDFanScraper.AbsUrl(items[0].URl)
+		data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -55,7 +56,7 @@ func TestTwoDFan_GetItemName(t *testing.T) {
 			panic(err)
 		}
 
-		name, alias, err := TwoDFanScraper.GetItemName(root)
+		name, alias, err := twodfan.TwoDFanScraper.GetItemName(root)
 		if err != nil {
 			panic(err)
 		}
@@ -64,14 +65,14 @@ func TestTwoDFan_GetItemName(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemCover(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女", 1)
 	if err != nil {
 		panic(err)
 	}
 
 	if len(items) > 0 {
-		url := TwoDFanScraper.AbsUrl(items[0].URl)
-		data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+		url := twodfan.TwoDFanScraper.AbsUrl(items[0].URl)
+		data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -81,7 +82,7 @@ func TestTwoDFan_GetItemCover(t *testing.T) {
 			panic(err)
 		}
 
-		cover, images, err := TwoDFanScraper.GetItemCover(root)
+		cover, images, err := twodfan.TwoDFanScraper.GetItemCover(root)
 		if err != nil {
 			panic(err)
 		}
@@ -90,14 +91,14 @@ func TestTwoDFan_GetItemCover(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemLinks(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女はガテン系", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女はガテン系", 1)
 	if err != nil {
 		panic(err)
 	}
 
 	if len(items) > 0 {
-		url := TwoDFanScraper.AbsUrl(items[0].URl)
-		data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+		url := twodfan.TwoDFanScraper.AbsUrl(items[0].URl)
+		data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -107,7 +108,7 @@ func TestTwoDFan_GetItemLinks(t *testing.T) {
 			panic(err)
 		}
 
-		links, err := TwoDFanScraper.GetItemLinks(root)
+		links, err := twodfan.TwoDFanScraper.GetItemLinks(root)
 		if err != nil {
 			panic(err)
 		}
@@ -116,14 +117,14 @@ func TestTwoDFan_GetItemLinks(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemIssueDate(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女はガテン系", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女はガテン系", 1)
 	if err != nil {
 		panic(err)
 	}
 
 	if len(items) > 0 {
-		url := TwoDFanScraper.AbsUrl(items[0].URl)
-		data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+		url := twodfan.TwoDFanScraper.AbsUrl(items[0].URl)
+		data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -133,7 +134,7 @@ func TestTwoDFan_GetItemIssueDate(t *testing.T) {
 			panic(err)
 		}
 
-		t, err := TwoDFanScraper.GetItemIssueDate(root)
+		t, err := twodfan.TwoDFanScraper.GetItemIssueDate(root)
 		if err != nil {
 			panic(err)
 		}
@@ -142,14 +143,14 @@ func TestTwoDFan_GetItemIssueDate(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemTags(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女はガテン系", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女はガテン系", 1)
 	if err != nil {
 		panic(err)
 	}
 
 	if len(items) > 0 {
-		url := TwoDFanScraper.AbsUrl(items[0].URl)
-		data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+		url := twodfan.TwoDFanScraper.AbsUrl(items[0].URl)
+		data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -159,7 +160,7 @@ func TestTwoDFan_GetItemTags(t *testing.T) {
 			panic(err)
 		}
 
-		tags, err := TwoDFanScraper.GetItemTags(root)
+		tags, err := twodfan.TwoDFanScraper.GetItemTags(root)
 		if err != nil {
 			panic(err)
 		}
@@ -168,14 +169,14 @@ func TestTwoDFan_GetItemTags(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemStaff(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女はガテン系", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女はガテン系", 1)
 	if err != nil {
 		panic(err)
 	}
 
 	if len(items) > 0 {
-		url := TwoDFanScraper.AbsUrl(items[0].URl)
-		data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+		url := twodfan.TwoDFanScraper.AbsUrl(items[0].URl)
+		data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -185,7 +186,7 @@ func TestTwoDFan_GetItemStaff(t *testing.T) {
 			panic(err)
 		}
 
-		staff, err := TwoDFanScraper.GetItemStaff(root)
+		staff, err := twodfan.TwoDFanScraper.GetItemStaff(root)
 		if err != nil {
 			panic(err)
 		}
@@ -194,14 +195,14 @@ func TestTwoDFan_GetItemStaff(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemStory(t *testing.T) {
-	items, err := TwoDFanScraper.Sreach("ボクの彼女はガテン系", 1)
+	items, err := twodfan.TwoDFanScraper.Search("ボクの彼女はガテン系", 1)
 	if err != nil {
 		panic(err)
 	}
 
 	if len(items) > 0 {
-		url := TwoDFanScraper.AbsUrl(items[0].URl)
-		data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+		url := twodfan.TwoDFanScraper.AbsUrl(items[0].URl)
+		data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -211,7 +212,7 @@ func TestTwoDFan_GetItemStory(t *testing.T) {
 			panic(err)
 		}
 
-		story, images, err := TwoDFanScraper.GetItemStory(root)
+		story, images, err := twodfan.TwoDFanScraper.GetItemStory(root)
 		if err != nil {
 			panic(err)
 		}
@@ -221,7 +222,7 @@ func TestTwoDFan_GetItemStory(t *testing.T) {
 
 func TestTwoDFan_GetItemPublisher(t *testing.T) {
 	url := "https://2dfan.com/subjects/4566"
-	data, err := TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
+	data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -231,7 +232,7 @@ func TestTwoDFan_GetItemPublisher(t *testing.T) {
 		panic(err)
 	}
 
-	publisher, err := TwoDFanScraper.GetItemPublisher(root)
+	publisher, err := twodfan.TwoDFanScraper.GetItemPublisher(root)
 	if err != nil {
 		panic(err)
 	}

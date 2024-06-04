@@ -119,3 +119,22 @@ type PersonListReq struct {
 	CV             uint         `json:"cv"`
 	FullText       bool         `json:"full_text"`
 }
+
+type ScraperSearchReq struct {
+	Name    string `json:"name"`
+	Keyword string `json:"keyword"`
+	Page    int    `json:"page"`
+}
+
+type ScraperDetailReq struct {
+	Path    string `json:"path"`
+	Version string `json:"version"`
+	Objs    []struct {
+		Name string `json:"name"`
+		Url  string `json:"url"`
+	} `json:"objs"`
+}
+
+type ScraperGetReq struct {
+	RequestID string `form:"request_id"`
+}

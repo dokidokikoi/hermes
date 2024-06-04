@@ -60,6 +60,12 @@ func (d *data) GameStaff() db.IGameStaff {
 func (d *data) GameInstance() db.IGameInstance {
 	return newGameInstance(d)
 }
+func (d *data) Task() db.ITask {
+	return newTask(d)
+}
+func (d *data) RefGameInstance() db.IRefGameInstance {
+	return newRefGameInstance(d)
+}
 func (d *data) Transaction() db.ITransaction {
 	return newTransaction(d)
 }
