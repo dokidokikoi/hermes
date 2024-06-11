@@ -23,7 +23,7 @@ import (
 
 var (
 	GetChuDomain = "https://www.getchu.com/"
-	GetChuSearch = "https://www.getchu.com/php/search.phtml?genre=pc_soft&search_keyword=%s&check_key_dtl=1&submit=&pageID=%d"
+	GetChuSearch = "https://www.getchu.com/php/search.phtml?search_keyword=&list_count=30&sort=sales&sort2=down&search_title=%s&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=search&pageID=%d"
 	GetChuImage  = "https://www.getchu.com/soft_sampleimage.phtml?id=%s"
 )
 
@@ -71,6 +71,7 @@ func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error
 	if err != nil {
 		return nil, err
 	}
+	keyword = tools.UrlEnc(keyword)
 	url := fmt.Sprintf(GetChuSearch, keyword, page)
 
 	data, err := gc.DoReq(http.MethodGet, url, nil, nil)
@@ -149,7 +150,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "getchu", Url: uri}}}}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "getchu", Url: uri}}}, ScraperName: gc.name}
 	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -186,12 +187,8 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 			zaplog.L().Error("jp 解码错误", zap.Error(err))
 			return
 		}
-		content := ""
-		if s.Find("td a").Is("a") {
-			content = s.Find("td").Eq(1).Find("a:nth-child(1)").Text()
-		} else {
-			content = s.Find("td").Eq(1).Text()
-		}
+
+		content := s.Find("td").Eq(1).Text()
 		content, err = tools.Jp2Utf8([]byte(content))
 		if err != nil {
 			zaplog.L().Error("jp 解码错误", zap.Error(err))

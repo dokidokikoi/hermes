@@ -10,6 +10,7 @@ import (
 )
 
 func (h Handler) Create(ctx *gin.Context) {
+	requestID := ctx.Query("request_id")
 	var input handler.GameVo
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
@@ -36,10 +37,14 @@ func (h Handler) Create(ctx *gin.Context) {
 	for _, c := range input.Characters {
 		cs = append(cs, &model.GameCharacter{
 			Character: &model.Character{
-				ID:     c.ID,
-				Name:   c.Name,
-				Alias:  c.Alias,
-				Gender: model.GenderMap[c.Gender],
+				ID:      c.ID,
+				Name:    c.Name,
+				Alias:   c.Alias,
+				Gender:  model.GenderMap[c.Gender],
+				Summary: c.Summary,
+				Images:  c.Images,
+				Cover:   c.Cover,
+				Tags:    c.Tags,
 			},
 			Relation: model.CRelationMap[c.Rlation],
 		})
@@ -52,15 +57,19 @@ func (h Handler) Create(ctx *gin.Context) {
 		}
 		ss = append(ss, &model.GameStaff{
 			Person: &model.Person{
-				ID:     s.ID,
-				Name:   s.Name,
-				Alias:  s.Alias,
-				Gender: model.GenderMap[s.Gender],
+				ID:      s.ID,
+				Name:    s.Name,
+				Alias:   s.Alias,
+				Gender:  model.GenderMap[s.Gender],
+				Summary: s.Summary,
+				Cover:   s.Cover,
+				Images:  s.Images,
+				Tags:    s.Tags,
 			},
 			Relations: relations,
 		})
 	}
-	err := h.srv.Game().CreateL(ctx, g, cs, ss)
+	err := h.srv.Game().CreateL(ctx, g, cs, ss, requestID)
 	if err != nil {
 		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
 		return

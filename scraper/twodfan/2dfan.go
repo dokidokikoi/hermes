@@ -24,7 +24,7 @@ import (
 
 var (
 	twoDFanDomain    = "https://2dfan.com/"
-	twoDFanSearchUri = "https://2dfan.com/subjects%s/search?keyword=%s"
+	twoDFanSearchUri = "https://2dfan.com/subjects/search%s?keyword=%s"
 )
 
 type TwoDFan struct {
@@ -81,19 +81,11 @@ func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, err
 		return nil, err
 	}
 
+	var images []string
 	var items []*scraper.SearchItem
 	root.Find("ul.intro-list li.media").Each(func(i int, s *goquery.Selection) {
-		url := s.Find("img.subject-package").AttrOr("src", "")
-		data, err := tdf.DoReq(http.MethodGet, url, nil, nil)
-		if err != nil {
-			zaplog.L().Error("获取封面图片失败", zap.String("url", url), zap.Error(err))
-		} else {
-			path, err := tools.SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
-			if err != nil {
-				zaplog.L().Error("保存封面图片失败", zap.String("url", url), zap.Error(err))
-			}
-			url = path
-		}
+		url := s.Find("img.subject-package").AttrOr("data-normal", "")
+		images = append(images, url)
 		items = append(items, &scraper.SearchItem{
 			Name:        s.Find("#content h4.media-heading a").Text(),
 			Key:         "",
@@ -104,6 +96,13 @@ func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, err
 		})
 	})
 
+	m := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+		return tdf.DoReq(http.MethodGet, url, nil, nil)
+
+	}, images)
+	for _, item := range items {
+		item.Cover = m[item.Cover]
+	}
 	return items, nil
 }
 
@@ -141,7 +140,7 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "2dfan", Url: uri}}}}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "2dfan", Url: uri}}}, ScraperName: tdf.name}
 	// 获取名称
 	item.Name, item.Alias, err = tdf.GetItemName(root)
 	if err != nil {
@@ -314,11 +313,13 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 		return tdf.DoReq(http.MethodGet, url, nil, nil)
 	}, images)
 	images = images[:0]
-	for _, v := range res {
+	s := story.String()
+	for k, v := range res {
 		images = append(images, v)
+		s = strings.ReplaceAll(s, k, fmt.Sprintf("{{%s}}", v))
 	}
 
-	return story.String(), images, nil
+	return s, images, nil
 }
 
 func (tdf *TwoDFan) GetItemSize(node *goquery.Document) (string, error) {

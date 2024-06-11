@@ -2,14 +2,17 @@ package scraper
 
 import (
 	"encoding/json"
+	"fmt"
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
+	"hermes/scraper"
 
 	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
 
@@ -27,17 +30,39 @@ func (h Handler) Get(ctx *gin.Context) {
 		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
 		return
 	}
-	res := []handler.GameVo{}
-	for _, l := range list {
-		item := handler.GameVo{}
-		err := json.Unmarshal([]byte(l.Result), &item)
-		if err != nil {
-			zaplog.L().Error("解析任务失败", zap.String("request id", input.RequestID), zap.Error(err))
-			core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
+
+	if len(list) > 0 {
+		if list[0].Type == model.TaskTypeDetail {
+			var res []scraper.GameItem
+			for _, l := range list {
+				item := scraper.GameItem{}
+				err := json.Unmarshal([]byte(l.Result), &item)
+				if err != nil {
+					zaplog.L().Error("解析任务失败", zap.String("request id", input.RequestID), zap.Error(err))
+					core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
+					return
+				}
+				res = append(res, item)
+			}
+			rg, _ := data.GetDataFactory().RefGameInstance().Get(ctx, &model.RefGameInstance{RequestID: input.RequestID}, nil)
+			core.WriteResponse(ctx, nil, gin.H{"game": rg, "list": res})
+			return
+		} else if list[0].Type == model.TaskTypeSearch {
+			res := map[string][]scraper.SearchItem{}
+			for _, l := range list {
+				items := []scraper.SearchItem{}
+				err := json.Unmarshal([]byte(l.Result), &items)
+				if err != nil {
+					zaplog.L().Error("解析任务失败", zap.String("request id", input.RequestID), zap.Error(err))
+					core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
+					return
+				}
+
+				res[fmt.Sprintf("%s - %s - %d", l.ScraperName, gjson.Get(l.Param, "keyword").String(), gjson.Get(l.Param, "page").Int())] = items
+			}
+			core.WriteResponse(ctx, nil, res)
 			return
 		}
-		res = append(res, item)
 	}
-	rg, _ := data.GetDataFactory().RefGameInstance().Get(ctx, &model.RefGameInstance{RequestID: input.RequestID}, nil)
-	core.WriteResponse(ctx, nil, gin.H{"game": rg, "list": res})
+	core.WriteResponse(ctx, nil, nil)
 }

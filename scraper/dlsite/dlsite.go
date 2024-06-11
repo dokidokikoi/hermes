@@ -141,7 +141,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "dlsite", Url: uri}}}}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "dlsite", Url: uri}}}, ScraperName: ds.name}
 
 	id := ""
 	arr := strings.Split(uri, "/")

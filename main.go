@@ -35,6 +35,7 @@ func main() {
 		log.Printf("endpoint %v %v %v %v\n", httpMethod, absolutePath, handlerName, nuHandlers)
 	}
 	e.Use(middleware.Logger())
+	e.Use(middleware.Cors())
 
 	internal.Install(e)
 

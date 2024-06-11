@@ -8,6 +8,7 @@ import (
 
 type Policy struct {
 	ID        uint `gorm:"primaryKey"`
+	Key       string
 	Policy    string
 	CreatedAt time.Time `gorm:"autoCreateTime:milli"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
@@ -30,10 +31,27 @@ type SystemPolicy struct {
 	Proxy config.ProxyConfig `json:"proxy"`
 }
 
+func (SystemPolicy) Key() string {
+	return "system"
+}
+
 type PlatformPolicy []string
+
+func (PlatformPolicy) Key() string {
+	return "platform"
+}
+
 type LanguagePolicy []string
+
+func (LanguagePolicy) Key() string {
+	return "language"
+}
 
 type ScraperPolicy struct {
 	ScraperName string            `json:"scraper_name"`
 	Header      map[string]string `json:"header"`
+}
+
+func (ScraperPolicy) Key() string {
+	return "scraper"
 }

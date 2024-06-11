@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	bangumiToken     = "eWpvGgoL3vjyfO2EvCwjRhfjmIVZsEx4T1VxTl0W"
+	bangumiToken     = "FCEmHzHWgJPJ1B4H5S3xUPj752H2CUpWcTRnBjez"
 	bangumiUserAgent = "dokidokikoi/meta-scraper (https://github.com/dokidokikoi/meta-scraper)"
 
 	BangumiDomain        = "https://api.bgm.tv"
@@ -148,7 +148,7 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 		return nil, err
 	}
 
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "bangumi", Url: uri}}}}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "bangumi", Url: uri}}}, ScraperName: b.name}
 	// 获取名称
 	item.Name = gjson.GetBytes(data, "name").String()
 	nameCN := gjson.GetBytes(data, "name_cn").String()
@@ -255,8 +255,8 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, err
 	return characters, nil
 }
 
-func (b *Bangumi) GetItemStaff(SubjetID string) ([]handler.StaffVo, error) {
-	data, err := b.DoReq(http.MethodGet, fmt.Sprintf(BangumiPersonsUri, SubjetID), nil, nil)
+func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
+	data, err := b.DoReq(http.MethodGet, fmt.Sprintf(BangumiPersonsUri, SubjectID), nil, nil)
 	if err != nil {
 		return nil, err
 	}

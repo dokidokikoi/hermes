@@ -12,7 +12,7 @@ import (
 type LinkType int8
 
 const (
-	LinkTypeUnknow LinkType = iota
+	LinkTypeUnknown LinkType = iota
 	LinkTypeMv
 	LinkTypeInfo
 	LinkTypeWorkThrough

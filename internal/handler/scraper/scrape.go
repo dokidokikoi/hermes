@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (h Handler) Detail(ctx *gin.Context) {
+func (h Handler) Scrape(ctx *gin.Context) {
 	var input handler.ScraperDetailReq
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		zaplog.L().Error("参数校验错误", zap.Error(err))
@@ -25,7 +25,10 @@ func (h Handler) Detail(ctx *gin.Context) {
 		return
 	}
 
-	requestID := uuid.New().String()
+	if input.RequestID == "" {
+		input.RequestID = uuid.New().String()
+	}
+	requestID := input.RequestID
 	if input.Path != "" {
 		err := data.GetDataFactory().RefGameInstance().Create(ctx, &model.RefGameInstance{
 			RequestID: requestID,
@@ -39,6 +42,10 @@ func (h Handler) Detail(ctx *gin.Context) {
 		}
 	}
 	for _, req := range input.Objs {
+		_, err := data.GetDataFactory().Task().Get(ctx, &model.Task{RequestID: requestID, Param: req.Url}, nil)
+		if err == nil {
+			continue
+		}
 		s, ok := event.GameScraperMap[req.Name]
 		if !ok {
 			continue
@@ -83,4 +90,5 @@ func (h Handler) Detail(ctx *gin.Context) {
 			task.Status = model.TaskStatusSuccessed
 		})
 	}
+	core.WriteResponse(ctx, nil, requestID)
 }

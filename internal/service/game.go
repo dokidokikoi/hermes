@@ -15,7 +15,7 @@ import (
 type GameWhereNodeFunc func(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption)
 
 type IGame interface {
-	CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error
+	CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, requestID string) error
 	UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error
 	GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error)
 
@@ -39,12 +39,20 @@ type game struct {
 	store db.IStore
 }
 
-func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error {
+func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, requestID string) error {
 	tx := gsrv.store.Transaction().Begin()
 	err := tx.Game().Create(ctx, g, nil)
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
+	}
+	ref, err := tx.RefGameInstance().Get(ctx, &model.RefGameInstance{RequestID: requestID}, nil)
+	if err == nil {
+		err = tx.GameInstance().Create(ctx, &model.GameInstance{GameID: g.ID, Version: ref.Version, Path: ref.Path}, nil)
+		if err != nil {
+			tx.Transaction().Rollback()
+			return err
+		}
 	}
 
 	// character
@@ -80,26 +88,30 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 		c.GameID = g.ID
 		c.CharacterID = c.Character.ID
 	}
-	err = tx.GameCharacter().Creates(ctx, cs, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
+	if len(charactersCreate) > 0 {
+		err = tx.GameCharacter().Creates(ctx, cs, nil)
+		if err != nil {
+			tx.Transaction().Rollback()
+			return err
+		}
 	}
 
 	// staff
 	staffCreate := []*model.Person{}
 	staffUpdate := []*model.Person{}
 	for _, s := range ss {
-		if s.Person.ID != 0 {
+		if s.Person.ID == 0 {
 			staffCreate = append(staffCreate, s.Person)
 		} else {
 			staffUpdate = append(staffUpdate, s.Person)
 		}
 	}
-	err = tx.Person().Creates(ctx, staffCreate, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
+	if len(staffCreate) > 0 {
+		err = tx.Person().Creates(ctx, staffCreate, nil)
+		if err != nil {
+			tx.Transaction().Rollback()
+			return err
+		}
 	}
 	errs = tx.Person().UpdateCollection(ctx, staffUpdate, nil)
 	if len(errs) > 0 {
@@ -126,12 +138,15 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 			})
 		}
 	}
-	err = tx.GameStaff().Creates(ctx, staff, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
+	if len(staff) > 0 {
+		err = tx.GameStaff().Creates(ctx, staff, nil)
+		if err != nil {
+			tx.Transaction().Rollback()
+			return err
+		}
 	}
 
+	tx.Transaction().Commit()
 	return nil
 }
 

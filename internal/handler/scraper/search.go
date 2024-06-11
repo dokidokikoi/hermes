@@ -27,33 +27,43 @@ func (h Handler) Search(ctx *gin.Context) {
 		return
 	}
 
-	requestID := uuid.New().String()
+	if input.RequestID == "" {
+		input.RequestID = uuid.New().String()
+	}
 	if input.Name == "all" {
 		for _, s := range event.GameScraperMap {
 			s := s
 			gopool.CtxGo(ctx, func() {
-				DoSearch(ctx, requestID, input, s)
+				DoSearch(ctx, input.RequestID, input, s)
 			})
 		}
 	} else {
 		gopool.CtxGo(ctx, func() {
-			DoSearch(ctx, requestID, input, event.GameScraperMap[input.Name])
+			DoSearch(ctx, input.RequestID, input, event.GameScraperMap[input.Name])
 		})
 	}
+	core.WriteResponse(ctx, nil, input.RequestID)
 }
 
 func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearchReq, s scraper.IGameScraper) {
 	if s == nil {
 		return
 	}
+	param, err := json.Marshal(input)
+	if err != nil {
+		zaplog.L().Error("刮削参数序列化失败", zap.Any("param", input), zap.Error(err))
+		return
+	}
+
 	task := &model.Task{
 		RequestID:   requestID,
 		ScraperName: s.GetName(),
 		Type:        model.TaskTypeSearch,
+		Param:       string(param),
 		Status:      model.TaskStatusWait,
 		StartAt:     time.Now(),
 	}
-	err := data.GetDataFactory().Task().Create(ctx, task, nil)
+	err = data.GetDataFactory().Task().Create(ctx, task, nil)
 	if err != nil {
 		zaplog.L().Error("刮削失败", zap.Any("param", input), zap.Error(err))
 		return

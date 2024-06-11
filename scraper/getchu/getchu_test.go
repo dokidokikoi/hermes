@@ -110,7 +110,7 @@ func TestGetItemStory(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1282568", nil, nil)
+	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/php/search.phtml?search_keyword=&list_count=30&sort=sales&sort2=down&search_title=%C8%E0%BD%F7&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=search&pageID=1", nil, nil)
 	if err != nil {
 		panic(err)
 	}

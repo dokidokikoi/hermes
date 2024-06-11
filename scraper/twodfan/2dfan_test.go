@@ -6,6 +6,7 @@ import (
 	"hermes/config"
 	"hermes/scraper/twodfan"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
@@ -32,7 +33,7 @@ func TestTwoDFan_Search(t *testing.T) {
 		panic(err)
 	}
 	for _, item := range items {
-		fmt.Printf("%+v\n", item.URl)
+		fmt.Printf("%+v\n", item.Cover)
 	}
 
 	fmt.Println(len(items))
@@ -237,4 +238,16 @@ func TestTwoDFan_GetItemPublisher(t *testing.T) {
 		panic(err)
 	}
 	fmt.Printf("%+v\n", publisher)
+}
+
+func TestReq(t *testing.T) {
+	data, err := twodfan.TwoDFanScraper.DoReq(http.MethodGet, "https://2dfan.com/subjects/2020", nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	f, err := os.Create("index.html")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Fprint(f, string(data))
 }

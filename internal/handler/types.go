@@ -22,6 +22,17 @@ type GameListReq struct {
 	PageSize       int         `json:"page_size"`
 }
 
+type GameInlineVo struct {
+	ID        uint      `json:"id"`
+	JanCode   string    `json:"jan_code"`
+	Code      string    `json:"code"`
+	Name      string    `json:"name"`
+	Alias     []string  `json:"alias"`
+	Cover     string    `json:"cover"`
+	IssueDate time.Time `json:"issue_date"`
+	Story     string    `json:"story"`
+}
+
 type GameVo struct {
 	ID         uint             `json:"id"`
 	JanCode    string           `json:"jan_code"`
@@ -121,15 +132,17 @@ type PersonListReq struct {
 }
 
 type ScraperSearchReq struct {
-	Name    string `json:"name"`
-	Keyword string `json:"keyword"`
-	Page    int    `json:"page"`
+	Name      string `json:"name"`
+	Keyword   string `json:"keyword"`
+	Page      int    `json:"page"`
+	RequestID string `json:"request_id"`
 }
 
 type ScraperDetailReq struct {
-	Path    string `json:"path"`
-	Version string `json:"version"`
-	Objs    []struct {
+	RequestID string `json:"request_id"`
+	Path      string `json:"path"`
+	Version   string `json:"version"`
+	Objs      []struct {
 		Name string `json:"name"`
 		Url  string `json:"url"`
 	} `json:"objs"`
