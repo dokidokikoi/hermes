@@ -9,3 +9,7 @@ import (
 type IPerson interface {
 	base.BasicCURD[model.Person]
 }
+
+type IPersonTag interface {
+	base.BasicCURD[model.PersonTag]
+}

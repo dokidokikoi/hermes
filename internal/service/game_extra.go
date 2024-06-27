@@ -6,6 +6,7 @@ import (
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
+	"strings"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
@@ -26,11 +27,6 @@ var GameBasicSearchNode = []GameWhereNodeFunc{
 }
 
 func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
-	defer func() {
-		n = node.Next
-		o = opt
-	}()
-
 	keyword := comm_tools.TrimBlankChar(param.Keyword)
 	if keyword != "" {
 		node.Next = &meta.WhereNode{
@@ -41,7 +37,7 @@ func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
 				{
-					Field:    "alias",
+					Field:    "alias::text",
 					Operator: meta.LIKE,
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
@@ -61,8 +57,9 @@ func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *
 				},
 			}...)
 		}
+		node = node.Next
 	}
-	return
+	return node, opt
 }
 func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if len(param.Tags) < 1 {
@@ -72,15 +69,32 @@ func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta
 	defer func() {
 		o = opt
 	}()
-	db := data.GetDataFactory().GameTag().ListComplexDB(ctx, &model.GameTag{}, &meta.WhereNode{
+	for i := range param.Tags {
+		param.Tags[i] = strings.ToLower(param.Tags[i])
+	}
+	tmpdb := data.GetDataFactory().Tag().ListComplexDB(ctx, &model.Tag{}, &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
-				Field:    "tag_id",
+				Field:    "LOWER(name)",
 				Operator: meta.IN,
 				Value:    param.Tags,
 			},
 		},
 	}, nil)
+	db := data.GetDataFactory().GameTag().ListDB(ctx, &model.GameTag{}, &meta.ListOption{
+		GetOption: meta.GetOption{
+			Join: []*meta.Join{
+				{
+					Method:          meta.INNER_JOIN,
+					Table:           model.GameTag{}.TableName(),
+					InnerQuery:      tmpdb,
+					InnerQueryAlias: "t",
+					TableField:      "tag_id",
+					JoinTableField:  "id",
+				},
+			},
+		},
+	})
 	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
 		Method:          meta.INNER_JOIN,
 		Table:           model.Game{}.TableName(),

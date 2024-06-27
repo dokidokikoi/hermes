@@ -7,7 +7,7 @@ import (
 
 type GameListReq struct {
 	Keyword        string      `json:"keyword"`
-	Tags           []uint      `json:"tags"`
+	Tags           []string    `json:"tags"`
 	Series         uint        `json:"series"`
 	Category       uint        `json:"category"`
 	Staff          uint        `json:"staff"`
@@ -127,7 +127,6 @@ type PersonListReq struct {
 	Tags           []uint       `json:"tags"`
 	CreatedAtRange []time.Time  `json:"created_at_range"`
 	Gender         model.Gender `json:"gender"`
-	CV             uint         `json:"cv"`
 	FullText       bool         `json:"full_text"`
 }
 

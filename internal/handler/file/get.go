@@ -15,8 +15,11 @@ func (h Handler) Get(ctx *gin.Context) {
 	fileName := ctx.Param("name")
 	f, err := os.Open(filepath.Join(config.TmpDir, fileName))
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
+		f, err = os.Open(filepath.Join(config.Dir, fileName))
+		if err != nil {
+			core.WriteResponse(ctx, errors.ApiErrValidation, nil)
+			return
+		}
 	}
 	io.Copy(ctx.Writer, f)
 }

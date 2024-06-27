@@ -54,6 +54,9 @@ func (d *data) GameTag() db.IGameTag {
 func (d *data) Person() db.IPerson {
 	return newPerson(d)
 }
+func (d *data) PersonTag() db.IPersonTag {
+	return newPersonTag(d)
+}
 func (d *data) GameStaff() db.IGameStaff {
 	return newGameStaff(d)
 }

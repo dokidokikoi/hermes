@@ -86,7 +86,7 @@ type Game struct {
 	Name        string         `json:"name"`
 	Alias       pq.StringArray `gorm:"type:text[]" json:"alias"`
 	Cover       string         `json:"cover"`
-	Images      pq.StringArray `gorm:"type:json" json:"images"`
+	Images      pq.StringArray `gorm:"type:text[]" json:"images"`
 	Category    *Category      `gorm:"foreignKey:CategoryID" json:"category"`
 	CategoryID  uint           `gorm:"default:null" json:"-"`
 	Series      []Series       `gorm:"many2many:game_series;" json:"series"`

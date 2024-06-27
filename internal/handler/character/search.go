@@ -24,5 +24,30 @@ func (h Handler) Search(ctx *gin.Context) {
 		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
 		return
 	}
-	core.WriteListResponse(ctx, nil, total, list)
+	vos := make([]handler.CharacterVo, len(list))
+	for i := range list {
+		vos[i] = handler.CharacterVo{
+			ID:      list[i].ID,
+			Name:    list[i].Name,
+			Alias:   list[i].Alias,
+			Gender:  list[i].Gender.String(),
+			Summary: list[i].Summary,
+			Cover:   list[i].Cover,
+			Images:  list[i].Images,
+			CV: handler.StaffVo{
+				ID:        list[i].CV.ID,
+				Name:      list[i].CV.Name,
+				Alias:     list[i].CV.Alias,
+				Cover:     list[i].CV.Cover,
+				Images:    list[i].CV.Images,
+				Tags:      list[i].CV.Tags,
+				Summary:   list[i].CV.Summary,
+				Gender:    list[i].CV.Gender.String(),
+				CreatedAt: list[i].CV.CreatedAt,
+			},
+			Tags:      list[i].Tags,
+			CreatedAt: list[i].CreatedAt,
+		}
+	}
+	core.WriteListResponse(ctx, nil, total, vos)
 }

@@ -14,6 +14,7 @@ type IStore interface {
 	GameTag() IGameTag
 	Transaction() ITransaction
 	Person() IPerson
+	PersonTag() IPersonTag
 	GameStaff() IGameStaff
 	GameInstance() IGameInstance
 	Task() ITask

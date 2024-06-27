@@ -18,9 +18,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func SaveTmpFile(ext string, data io.Reader) (string, error) {
-	path := filepath.Join(config.TmpDir, fmt.Sprintf("%s_%d%s", time.Now().Format("20060102150405"), rand.Intn(100000), ext))
-	f, err := os.Create(path)
+func SaveFile(ext string, data io.Reader, path string) (string, error) {
+	tmpPath := filepath.Join(config.TmpDir, fmt.Sprintf("%s_%d%s", time.Now().Format("20060102150405"), rand.Intn(100000), ext))
+	f, err := os.Create(tmpPath)
 	if err != nil {
 		return "", err
 	}
@@ -30,12 +30,16 @@ func SaveTmpFile(ext string, data io.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	newPath := filepath.Join(config.TmpDir, fmt.Sprintf("%X%s", h.Sum(nil), ext))
-	err = os.Rename(path, newPath)
+	newPath := filepath.Join(path, fmt.Sprintf("%X%s", h.Sum(nil), ext))
+	err = os.Rename(tmpPath, newPath)
 	if err != nil {
 		return "", err
 	}
 	return newPath, nil
+}
+
+func SaveTmpFile(ext string, data io.Reader) (string, error) {
+	return SaveFile(ext, data, config.TmpDir)
 }
 
 func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[string]string {

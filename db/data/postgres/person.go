@@ -19,7 +19,7 @@ type PersonTags struct {
 }
 
 func NewPersonTags(db *Store) *PersonTags {
-	return &PersonTags{PgModel: base.PgModel[model.PersonTag]{DB: db.DB}}
+	return &PersonTags{PgModel: base.PgModel[model.PersonTag]{DB: db.DB.Debug()}}
 }
 
 func init() {

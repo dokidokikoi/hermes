@@ -11,7 +11,7 @@ type Games struct {
 }
 
 func NewGames(db *Store) *Games {
-	return &Games{PgModel: base.PgModel[model.Game]{DB: db.DB}}
+	return &Games{PgModel: base.PgModel[model.Game]{DB: db.DB.Debug()}}
 }
 
 type GameSeriess struct {
@@ -35,7 +35,7 @@ type GameTags struct {
 }
 
 func NewGameTags(db *Store) *GameTags {
-	return &GameTags{PgModel: base.PgModel[model.GameTag]{DB: db.DB}}
+	return &GameTags{PgModel: base.PgModel[model.GameTag]{DB: db.DB.Debug()}}
 }
 
 func init() {

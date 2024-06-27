@@ -5,6 +5,7 @@ import "hermes/db"
 type Iservice interface {
 	Game() IGame
 	Character() ICharacter
+	Person() IPerson
 }
 
 type service struct {
@@ -17,6 +18,10 @@ func (srv *service) Game() IGame {
 
 func (srv *service) Character() ICharacter {
 	return NewCharacter(srv.store)
+}
+
+func (srv *service) Person() IPerson {
+	return NewPerson(srv.store)
 }
 
 func NewSrv(store db.IStore) *service {

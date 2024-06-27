@@ -52,6 +52,10 @@ type Person struct {
 	UpdatedAt time.Time      `gorm:"autoUpdateTime:milli"`
 }
 
+func (Person) TableName() string {
+	return "people"
+}
+
 type PersonTag struct {
 	PersonID uint `gorm:"primaryKey"`
 	TagID    uint `gorm:"primaryKey"`

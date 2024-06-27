@@ -7,20 +7,18 @@ import (
 	"hermes/internal/handler"
 	"hermes/model"
 
-	comm_tools "github.com/dokidokikoi/go-common/tools"
-
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	comm_tools "github.com/dokidokikoi/go-common/tools"
 )
 
-var CharacterBasicSearchNode = []CharacterWhereNodeFunc{
-	CharacterWhereNodeCV,
-	CharacterWhereNodeCreatedAtRange,
-	CharacterWhereNodeGender,
-	CharacterWhereNodeKeyword,
-	CharacterWhereNodeTag,
+var PersonBasicSearchNode = []PersonWhereNodeFunc{
+	PersonWhereNodeKeyword,
+	PersonWhereNodeTag,
+	PersonWhereNodeCreatedAtRange,
+	PersonWhereNodeGender,
 }
 
-func CharacterWhereNodeKeyword(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func PersonWhereNodeKeyword(ctx context.Context, param handler.PersonListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	keyword := comm_tools.TrimBlankChar(param.Keyword)
 	if keyword != "" {
 		node.Next = &meta.WhereNode{
@@ -50,7 +48,7 @@ func CharacterWhereNodeKeyword(ctx context.Context, param handler.CharacterListR
 	}
 	return node, opt
 }
-func CharacterWhereNodeTag(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func PersonWhereNodeTag(ctx context.Context, param handler.PersonListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if len(param.Tags) < 1 {
 		return node, opt
 	}
@@ -58,7 +56,7 @@ func CharacterWhereNodeTag(ctx context.Context, param handler.CharacterListReq, 
 	defer func() {
 		o = opt
 	}()
-	db := data.GetDataFactory().CharacterTag().ListComplexDB(ctx, &model.CharacterTag{}, &meta.WhereNode{
+	db := data.GetDataFactory().PersonTag().ListComplexDB(ctx, &model.PersonTag{}, &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
 				Field:    "tag_id",
@@ -69,15 +67,15 @@ func CharacterWhereNodeTag(ctx context.Context, param handler.CharacterListReq, 
 	}, nil)
 	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
 		Method:          meta.INNER_JOIN,
-		Table:           model.Character{}.TableName(),
+		Table:           model.Person{}.TableName(),
 		InnerQuery:      db,
-		InnerQueryAlias: "character_tag",
+		InnerQueryAlias: "person_tag",
 		TableField:      "id",
-		JoinTableField:  "character_id",
+		JoinTableField:  "person_id",
 	})
 	return
 }
-func CharacterWhereNodeCreatedAtRange(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func PersonWhereNodeCreatedAtRange(ctx context.Context, param handler.PersonListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if len(param.CreatedAtRange) > 0 {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{
@@ -106,7 +104,7 @@ func CharacterWhereNodeCreatedAtRange(ctx context.Context, param handler.Charact
 
 	return node, opt
 }
-func CharacterWhereNodeGender(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func PersonWhereNodeGender(ctx context.Context, param handler.PersonListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if param.Gender == model.UnKnown {
 		return node, opt
 	}
@@ -116,23 +114,6 @@ func CharacterWhereNodeGender(ctx context.Context, param handler.CharacterListRe
 				Field:    "gender",
 				Operator: meta.EQUAL,
 				Value:    param.Gender,
-			},
-		},
-	}
-
-	return node.Next, opt
-}
-func CharacterWhereNodeCV(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
-	if param.CV == 0 {
-		return node, opt
-	}
-
-	node.Next = &meta.WhereNode{
-		Conditions: []*meta.Condition{
-			{
-				Field:    "person_id",
-				Operator: meta.EQUAL,
-				Value:    param.CV,
 			},
 		},
 	}

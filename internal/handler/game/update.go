@@ -18,6 +18,8 @@ func (h Handler) Update(ctx *gin.Context) {
 
 	g := &model.Game{
 		ID:        input.ID,
+		JanCode:   input.JanCode,
+		Code:      input.Code,
 		Name:      input.Name,
 		Cover:     input.Cover,
 		Images:    input.Images,
@@ -41,16 +43,39 @@ func (h Handler) Update(ctx *gin.Context) {
 			GameID:      input.ID,
 			CharacterID: c.ID,
 			Relation:    model.CRelationMap[c.Rlation],
+			Character: &model.Character{
+				ID:       c.ID,
+				Name:     c.Name,
+				Alias:    c.Alias,
+				Gender:   model.GenderMap[c.Gender],
+				Summary:  c.Summary,
+				Images:   c.Images,
+				Cover:    c.Cover,
+				Tags:     c.Tags,
+				PersonID: c.CV.ID,
+			},
 		})
 	}
 	for _, s := range input.Staff {
-		for _, sr := range s.Relation {
-			ss = append(ss, &model.GameStaff{
-				GameID:   input.ID,
-				PersonID: s.ID,
-				Relation: model.PRelationMap[sr],
-			})
+		relations := []model.PersonRelation{}
+		for _, r := range s.Relation {
+			relations = append(relations, model.PRelationMap[r])
 		}
+		ss = append(ss, &model.GameStaff{
+			GameID:   g.ID,
+			PersonID: s.ID,
+			Person: &model.Person{
+				ID:      s.ID,
+				Name:    s.Name,
+				Alias:   s.Alias,
+				Gender:  model.GenderMap[s.Gender],
+				Summary: s.Summary,
+				Cover:   s.Cover,
+				Images:  s.Images,
+				Tags:    s.Tags,
+			},
+			Relations: relations,
+		})
 	}
 	if err := h.srv.Game().UpdateL(ctx, g, cs, ss); err != nil {
 		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
