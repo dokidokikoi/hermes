@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	bangumiToken     = "FCEmHzHWgJPJ1B4H5S3xUPj752H2CUpWcTRnBjez"
+	bangumiToken     = ""
 	bangumiUserAgent = "dokidokikoi/meta-scraper (https://github.com/dokidokikoi/meta-scraper)"
 
 	BangumiDomain        = "https://api.bgm.tv"
@@ -51,7 +51,7 @@ const (
 )
 
 type Bangumi struct {
-	sync.Mutex
+	sync.RWMutex
 	name      string
 	Domain    string
 	SearchUri string
@@ -86,11 +86,11 @@ func (b *Bangumi) SetHeader(header map[string]string) {
 
 func (b *Bangumi) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
-	b.Lock()
+	b.RLock()
 	for k, v := range b.Headers {
 		h[k] = v
 	}
-	b.Unlock()
+	b.RUnlock()
 	for k, v := range header {
 		h[k] = v
 	}

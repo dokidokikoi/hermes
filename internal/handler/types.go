@@ -100,17 +100,23 @@ type StaffVo struct {
 }
 
 type CharacterVo struct {
-	ID        uint        `json:"id"`
-	Name      string      `json:"name"`
-	Alias     []string    `json:"alias"`
-	Gender    string      `json:"gender"`
-	Rlation   string      `json:"relation"`
-	Summary   string      `json:"summary"`
-	Cover     string      `json:"cover"`
-	Images    []string    `json:"images"`
-	CV        StaffVo     `json:"cv"`
-	Tags      []model.Tag `json:"tags"`
-	CreatedAt time.Time   `json:"created_at"`
+	ID        uint              `json:"id"`
+	Name      string            `json:"name"`
+	Alias     []string          `json:"alias"`
+	Gender    string            `json:"gender"`
+	Rlation   string            `json:"relation"`
+	Summary   string            `json:"summary"`
+	Cover     string            `json:"cover"`
+	Images    []string          `json:"images"`
+	CV        StaffVo           `json:"cv"`
+	Tags      []model.Tag       `json:"tags"`
+	CreatedAt time.Time         `json:"created_at"`
+	Games     []CharacterGameVo `json:"games,omitempty"`
+}
+
+type CharacterGameVo struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
 }
 
 type CharacterListReq struct {
@@ -149,4 +155,9 @@ type ScraperDetailReq struct {
 
 type ScraperGetReq struct {
 	RequestID string `form:"request_id"`
+}
+
+type UpdateProxyReq struct {
+	Key    string `json:"key" binding:"required"`
+	Policy string `json:"policy" binding:"required"`
 }

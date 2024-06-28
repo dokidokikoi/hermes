@@ -69,6 +69,9 @@ func (d *data) Task() db.ITask {
 func (d *data) RefGameInstance() db.IRefGameInstance {
 	return newRefGameInstance(d)
 }
+func (d *data) Policy() db.IPolicy {
+	return newPolicy(d)
+}
 func (d *data) Transaction() db.ITransaction {
 	return newTransaction(d)
 }

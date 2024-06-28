@@ -6,6 +6,7 @@ type Iservice interface {
 	Game() IGame
 	Character() ICharacter
 	Person() IPerson
+	Policy() IPolicy
 }
 
 type service struct {
@@ -22,6 +23,10 @@ func (srv *service) Character() ICharacter {
 
 func (srv *service) Person() IPerson {
 	return NewPerson(srv.store)
+}
+
+func (srv *service) Policy() IPolicy {
+	return NewPolicy(srv.store)
 }
 
 func NewSrv(store db.IStore) *service {

@@ -47,9 +47,9 @@ func (LanguagePolicy) Key() string {
 	return "language"
 }
 
-type ScraperPolicy struct {
-	ScraperName string            `json:"scraper_name"`
-	Header      map[string]string `json:"header"`
+type ScraperPolicy map[string]ScraperSubPolicy
+type ScraperSubPolicy struct {
+	Header map[string]string `json:"header"`
 }
 
 func (ScraperPolicy) Key() string {

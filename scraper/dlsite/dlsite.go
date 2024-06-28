@@ -31,7 +31,7 @@ var (
 )
 
 type DlSite struct {
-	sync.Mutex
+	sync.RWMutex
 	name      string
 	Domain    string
 	SearchUri string
@@ -104,11 +104,11 @@ func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error
 
 func (ds *DlSite) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
-	ds.Lock()
+	ds.RLock()
 	for k, v := range ds.Headers {
 		h[k] = v
 	}
-	ds.Unlock()
+	ds.RUnlock()
 	for k, v := range header {
 		h[k] = v
 	}

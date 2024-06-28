@@ -28,7 +28,7 @@ var (
 )
 
 type GetChu struct {
-	sync.Mutex
+	sync.RWMutex
 	name      string
 	Domain    string
 	SearchUri string
@@ -59,11 +59,11 @@ func (gc *GetChu) GetName() string {
 }
 
 func (gc *GetChu) SetHeader(header map[string]string) {
-	gc.Lock()
+	gc.RLock()
 	for k, v := range header {
 		gc.Headers[k] = v
 	}
-	gc.Unlock()
+	gc.RUnlock()
 }
 
 func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error) {

@@ -7,6 +7,7 @@ import (
 	"hermes/internal/handler/file"
 	"hermes/internal/handler/game"
 	"hermes/internal/handler/person"
+	"hermes/internal/handler/policy"
 	"hermes/internal/handler/publisher"
 	"hermes/internal/handler/scraper"
 	"hermes/internal/handler/series"
@@ -49,6 +50,8 @@ func Install(r gin.IRouter) {
 	{
 		tG.GET("", tH.List)
 		tG.POST("", tH.Create)
+		tG.DELETE("", tH.Del)
+		tG.PATCH("", tH.Update)
 	}
 
 	cH := category.NewHandler()
@@ -56,6 +59,8 @@ func Install(r gin.IRouter) {
 	{
 		cG.GET("", cH.List)
 		cG.POST("", cH.Create)
+		cG.DELETE("", cH.Del)
+		cG.PATCH("", cH.Update)
 	}
 
 	seriesH := series.NewHandler()
@@ -63,6 +68,8 @@ func Install(r gin.IRouter) {
 	{
 		seriesG.GET("", seriesH.List)
 		seriesG.POST("", seriesH.Create)
+		seriesG.DELETE("", seriesH.Del)
+		seriesG.PATCH("", seriesH.Update)
 	}
 
 	devH := developer.NewHandler()
@@ -70,6 +77,8 @@ func Install(r gin.IRouter) {
 	{
 		devG.GET("", devH.List)
 		devG.POST("", devH.Create)
+		devG.DELETE("", devH.Del)
+		devG.PATCH("", devH.Update)
 	}
 
 	pubH := publisher.NewHandler()
@@ -77,12 +86,17 @@ func Install(r gin.IRouter) {
 	{
 		pubG.GET("", pubH.List)
 		pubG.POST("", pubH.Create)
+		pubG.DELETE("", pubH.Del)
+		pubG.PATCH("", pubH.Update)
 	}
 
 	characterH := character.NewHandler()
 	characterG := r.Group("/character")
 	{
 		characterG.POST("/search", characterH.Search)
+		characterG.GET("/:id", characterH.Get)
+		characterG.DELETE("", characterH.Del)
+		characterG.PATCH("", characterH.Update)
 	}
 
 	personH := person.NewHandler()
@@ -90,5 +104,12 @@ func Install(r gin.IRouter) {
 	{
 		personG.POST("/search", personH.Search)
 		personG.POST("", personH.Upsert)
+	}
+
+	policyH := policy.NewHandler()
+	policyG := r.Group("/policy")
+	{
+		policyG.GET("", policyH.List)
+		policyG.PATCH("", policyH.Update)
 	}
 }

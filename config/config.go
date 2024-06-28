@@ -1,8 +1,14 @@
 package config
 
-import c "github.com/dokidokikoi/go-common/config"
+import (
+	"sync"
+
+	c "github.com/dokidokikoi/go-common/config"
+)
 
 var configIns *config
+
+var proxyLock sync.RWMutex
 
 type config struct {
 	PGConfig    c.PGConfig  `mapstructure:"postgresql"`
@@ -17,4 +23,17 @@ func SetConfig(path string) {
 
 func GetConfig() config {
 	return *configIns
+}
+
+func GetProxyConfig() ProxyConfig {
+	proxyLock.RLock()
+	defer proxyLock.RUnlock()
+
+	return configIns.ProxyConfig
+}
+func SetProxyConfig(p ProxyConfig) {
+	proxyLock.Lock()
+	defer proxyLock.Unlock()
+
+	configIns.ProxyConfig = p
 }

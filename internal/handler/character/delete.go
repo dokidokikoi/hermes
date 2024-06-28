@@ -1,4 +1,4 @@
-package developer
+package character
 
 import (
 	"hermes/db/data"
@@ -19,13 +19,15 @@ func (h Handler) Del(ctx *gin.Context) {
 		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
 		return
 	}
-	developerIDs := []*model.Developer{}
+
+	CharacterIDs := []*model.Character{}
 	for _, id := range ids {
-		developerIDs = append(developerIDs, &model.Developer{
+		CharacterIDs = append(CharacterIDs, &model.Character{
 			ID: id,
 		})
 	}
-	errs := data.GetDataFactory().Developer().DeleteCollection(ctx, developerIDs, nil)
+
+	errs := data.GetDataFactory().Character().DeleteCollection(ctx, CharacterIDs, nil)
 	if len(errs) > 0 {
 		zaplog.L().Error("删除失败", zap.Error(errs[0]))
 		core.WriteResponse(ctx, &errors.APIError{Code: 1, StatusCode: http.StatusOK, Message: errs[0].Error()}, nil)

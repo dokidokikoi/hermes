@@ -28,7 +28,7 @@ var (
 )
 
 type TwoDFan struct {
-	sync.Mutex
+	sync.RWMutex
 	name      string
 	Domain    string
 	SearchUri string
@@ -108,11 +108,11 @@ func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, err
 
 func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
-	tdf.Lock()
+	tdf.RLock()
 	for k, v := range tdf.Headers {
 		h[k] = v
 	}
-	tdf.Unlock()
+	tdf.RUnlock()
 	for k, v := range header {
 		h[k] = v
 	}

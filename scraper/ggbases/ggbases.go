@@ -33,7 +33,7 @@ var GGBasesBtUri = "https://ggbases.dlgal.com/down.so?id=%s"
 var GGBasesDetailUri = "https://ggbases.dlgal.com/viewDetail.so"
 
 type GGBases struct {
-	sync.Mutex
+	sync.RWMutex
 	name      string
 	Domain    string
 	SearchUri string
@@ -120,11 +120,11 @@ func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, erro
 
 func (gg *GGBases) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
-	gg.Lock()
+	gg.RLock()
 	for k, v := range gg.Headers {
 		h[k] = v
 	}
-	gg.Unlock()
+	gg.RUnlock()
 	for k, v := range header {
 		h[k] = v
 	}
