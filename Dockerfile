@@ -1,5 +1,5 @@
 # 使用一个基础的 Golang 镜像
-FROM golang:alpine as build
+FROM amd64/golang:1.22 as build
 
 # 为我们的镜像设置必要的环境变量
 ENV GO111MODULE=on \
