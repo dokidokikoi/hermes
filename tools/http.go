@@ -1,11 +1,12 @@
 package tools
 
 import (
+	"context"
 	"fmt"
 	"hermes/config"
 	"io"
+	"net"
 	"net/http"
-	"net/url"
 	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -20,12 +21,16 @@ func MakeRequest(
 	body io.Reader,
 	header map[string]string,
 	cookies []*http.Cookie) (data []byte, status int, err error) {
+
+	client := &http.Client{}
 	// 构建请求客户端
-	p, err := tools.Socks5Proxy(fmt.Sprintf("%s://%s:%d", proxy.Scheme, proxy.Host, proxy.Port), proxy.Username, proxy.Password)
-	if err != nil {
-		zaplog.L().Error("proxy error", zap.Error(err))
+	if proxy.Host != "" && proxy.Port != 0 {
+		p, err := tools.Socks5Proxy(fmt.Sprintf("%s:%d", proxy.Host, proxy.Port), proxy.Username, proxy.Password)
+		if err != nil {
+			zaplog.L().Error("proxy error", zap.Error(err))
+		}
+		client = createHTTPClient(p)
 	}
-	client := createHTTPClient(p)
 
 	// 创建请求对象
 	req, err := createRequest(method, uri, body, header, cookies)
@@ -56,8 +61,8 @@ func createHTTPClient(dialer proxy.Dialer) *http.Client {
 	var transport http.RoundTripper
 	if dialer != nil {
 		transport = &http.Transport{
-			Proxy: func(r *http.Request) (*url.URL, error) {
-				return url.Parse("socks5://127.0.0.1:7890")
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return dialer.Dial(network, addr)
 			},
 		}
 	}

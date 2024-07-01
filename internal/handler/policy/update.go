@@ -33,6 +33,7 @@ func (h Handler) Update(ctx *gin.Context) {
 			return
 		}
 		policy = t
+		h.srv.Policy().SystemPolicyEffect(ctx, t)
 	case model.ScraperPolicy{}.Key():
 		t := new(model.ScraperPolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
@@ -42,6 +43,7 @@ func (h Handler) Update(ctx *gin.Context) {
 			return
 		}
 		policy = t
+		h.srv.Policy().ScraperPolicyEffect(ctx, t)
 	case model.LanguagePolicy{}.Key():
 		t := new(model.LanguagePolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)

@@ -87,7 +87,7 @@ func (h Handler) Scrape(ctx *gin.Context) {
 				return
 			}
 			task.Result = string(data)
-			task.Status = model.TaskStatusSuccessed
+			task.Status = model.TaskStatusSucceed
 		})
 	}
 	core.WriteResponse(ctx, nil, requestID)

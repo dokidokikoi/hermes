@@ -24,7 +24,7 @@ func (h Handler) Get(ctx *gin.Context) {
 		return
 	}
 
-	list, err := data.GetDataFactory().Task().List(ctx, &model.Task{RequestID: input.RequestID, Status: model.TaskStatusSuccessed}, nil)
+	list, err := data.GetDataFactory().Task().List(ctx, &model.Task{RequestID: input.RequestID, Status: model.TaskStatusSucceed}, nil)
 	if err != nil {
 		zaplog.L().Error("获取任务失败", zap.String("request id", input.RequestID), zap.Error(err))
 		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)

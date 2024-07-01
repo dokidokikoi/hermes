@@ -1,0 +1,42 @@
+version: "3"
+
+services:
+  backend: 
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      HERMES_DATA_DIR: /data/hermes
+    volumes:
+      - ./conf:/app/conf
+      - ./data:/app/data/hermes
+    depends_on:
+      - postgres
+    restart: always
+    networks:
+      - hermes-net
+  frontend:
+    build: 
+      context: ../hermes-front
+      dockerfile: ../hermes-front/Dockerfile
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - 19877:19877
+    networks:
+      - hermes-net
+  postgres:
+    image: postgres:latest
+    volumes:
+      - ./pg/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: 1234567
+      POSTGRES_USER: hermes
+      POSTGRES_DB: hermes
+    ports:
+      - 5432:5432
+    networks:
+      - hermes-net
+networks:
+  hermes-net:

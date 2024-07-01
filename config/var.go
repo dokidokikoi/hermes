@@ -2,9 +2,12 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
+)
+
+const (
+	DIR_ENV = "HERMES_DATA_DIR"
 )
 
 var (
@@ -21,12 +24,16 @@ func init() {
 			panic(err)
 		}
 	}
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		panic(err)
+	dir := os.Getenv(DIR_ENV)
+	if dir == "" {
+		dir, err = os.UserConfigDir()
+		if err != nil {
+			panic(err)
+		}
+		dir = filepath.Join(dir, "hermes")
 	}
-	fmt.Println(dir)
-	Dir = filepath.Join(dir, "hermes", "files")
+	Dir = dir
+
 	err = os.MkdirAll(Dir, os.ModePerm)
 	if err != nil {
 		if errors.Is(err, os.ErrExist) {

@@ -1,9 +1,9 @@
 postgresql:
-  host: 127.0.0.1
-  port: 15432
-  username: postgres
+  host: hermes-postgres-1
+  port: 5432
+  username: hermes
   database: hermes
-  password: root
+  password: 1234567
 app: 
   port: 19876
 log:
@@ -11,7 +11,3 @@ log:
     level_range: "[info,error)"
   - filename: ./log/error.log
     level_range: "[error,)"
-proxy:
-  scheme: socks5
-  host: 127.0.0.1
-  port: 7890

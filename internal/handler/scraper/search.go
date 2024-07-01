@@ -92,5 +92,5 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 		return
 	}
 	task.Result = string(data)
-	task.Status = model.TaskStatusSuccessed
+	task.Status = model.TaskStatusSucceed
 }

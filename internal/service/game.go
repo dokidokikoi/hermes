@@ -538,11 +538,14 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 				zaplog.L().Error("save file error", zap.Error(err))
 				return
 			}
+			p := tools.GetFileName(path)
 			for _, v := range vs {
-				*v = tools.GetFileName(path)
+				*v = p
 			}
 		})
 	}
+	zaplog.L().Info("images", zap.Any("data", images))
+	zaplog.L().Info("dir", zap.Any("name", config.Dir))
 	for _, image := range images {
 		err := os.Rename(image, filepath.Join(config.Dir, tools.GetFileName(image)))
 		if err != nil {

@@ -4,7 +4,7 @@ import "time"
 
 const (
 	TaskStatusWait int8 = iota
-	TaskStatusSuccessed
+	TaskStatusSucceed
 	TaskStatusFailed
 	TaskStatusCanceled
 )

@@ -1,11 +1,13 @@
 module hermes
 
-go 1.22.1
+go 1.22.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
-	github.com/dokidokikoi/go-common v0.0.0-20240528071826-b8364fd98f4c
+	github.com/dokidokikoi/go-common v0.0.0-20240627063024-5b1f0eb5da46
+	github.com/dop251/goja v0.0.0-20240516125602-ccbae20bcec2
 	github.com/gin-gonic/gin v1.8.2
+	github.com/google/uuid v1.1.2
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	golang.org/x/text v0.14.0
@@ -14,7 +16,6 @@ require (
 
 require (
 	github.com/dlclark/regexp2 v1.7.0 // indirect
-	github.com/dop251/goja v0.0.0-20240516125602-ccbae20bcec2 // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect

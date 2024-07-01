@@ -59,8 +59,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.7.0 h1:7lJfhqlPssTb1WQx4yvTHN0uElPEv52sbaECrAQxjAo=
 github.com/dlclark/regexp2 v1.7.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/dokidokikoi/go-common v0.0.0-20240528071826-b8364fd98f4c h1:AnkxRDMjz1fpaiBcgKmelKnuzzbARGL7aMLozjFQqiM=
-github.com/dokidokikoi/go-common v0.0.0-20240528071826-b8364fd98f4c/go.mod h1:mPiFw8AGxTTMxOTRPO4YwLFyK/sGdjo6TIoe/QJ7tac=
+github.com/dokidokikoi/go-common v0.0.0-20240627063024-5b1f0eb5da46 h1:GIOqn9QDfK6iDhPBpZdbQpgHSZ6VRVIIddFsy1GhGZs=
+github.com/dokidokikoi/go-common v0.0.0-20240627063024-5b1f0eb5da46/go.mod h1:do735Qyr4Ve6CsgcBryLowxSNVOubfGV/tbvty+Njo0=
 github.com/dop251/goja v0.0.0-20240516125602-ccbae20bcec2 h1:OFTHt+yJDo/uaIKMGjEKzc3DGhrpQZoqvMUIloZv6ZY=
 github.com/dop251/goja v0.0.0-20240516125602-ccbae20bcec2/go.mod h1:o31y53rb/qiIAONF7w3FHJZRqqP3fzHUr1HqanthByw=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
@@ -154,6 +154,7 @@ github.com/google/pprof v0.0.0-20201218002935-b9804c9f04c2/go.mod h1:kpwsk12EmLe
 github.com/google/pprof v0.0.0-20230207041349-798e818bf904 h1:4/hN5RUoecvl+RmJRE2YxKWtnnQls6rQjjW5oV7qg2U=
 github.com/google/pprof v0.0.0-20230207041349-798e818bf904/go.mod h1:uglQLonpP8qtYCYyzA+8c/9qtqgA3qsXGYqCPKARAFg=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
+github.com/google/uuid v1.1.2 h1:EVhdT+1Kseyi1/pUmXKaFxYsDNy9RQYkMWRH68J/W7Y=
 github.com/google/uuid v1.1.2/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/googleapis/gax-go/v2 v2.0.4/go.mod h1:0Wqv26UfaUD9n4G6kQubkQ+KchISgw+vpHVxEJEs9eg=
 github.com/googleapis/gax-go/v2 v2.0.5/go.mod h1:DWXyrwAJ9X0FpwwEdw+IPEYBICEFu5mhpdKc/us6bOk=
