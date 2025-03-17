@@ -2,6 +2,7 @@ package notice
 
 import (
 	"bytes"
+	"net/http"
 	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -44,15 +45,15 @@ func (h *Hub) Run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case <-h.broadcast:
-			// for client := range h.clients {
-			// 	select {
-			// 	case client.send <- message:
-			// 	default:
-			// 		close(client.send)
-			// 		delete(h.clients, client)
-			// 	}
-			// }
+		case message := <-h.broadcast:
+			for client := range h.clients {
+				select {
+				case client.send <- message:
+				default:
+					close(client.send)
+					delete(h.clients, client)
+				}
+			}
 		}
 	}
 }
@@ -90,6 +91,7 @@ var (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 // Client is a middleman between the websocket connection and the hub.

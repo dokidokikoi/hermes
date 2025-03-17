@@ -524,7 +524,7 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 		gopool.CtxGo(ctx, func() {
 			defer wait.Done()
 
-			data, code, err := tools.MakeRequest(http.MethodGet, url, config.GetConfig().ProxyConfig, nil, nil, nil)
+			data, code, err := tools.MakeRequest(http.MethodGet, url, config.GetConfig().ProxyConfig, nil, nil, nil, config.DefaultRetryCnt)
 			if err != nil {
 				zaplog.L().Error("fetch file error", zap.String("file url", url), zap.Error(err))
 				return

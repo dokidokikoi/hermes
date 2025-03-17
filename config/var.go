@@ -15,6 +15,7 @@ var (
 	ZhLanguage       = "zh-CN,zh-HK;q=0.9,zh;q=0.8"
 	TmpDir           = filepath.Join(os.TempDir(), "hermes")
 	Dir              = ""
+	DefaultRetryCnt  = 5
 )
 
 func init() {

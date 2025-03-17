@@ -20,7 +20,8 @@ func MakeRequest(
 	proxy config.ProxyConfig,
 	body io.Reader,
 	header map[string]string,
-	cookies []*http.Cookie) (data []byte, status int, err error) {
+	cookies []*http.Cookie,
+	retryCnt int) (data []byte, status int, err error) {
 
 	client := &http.Client{}
 	// 构建请求客户端
@@ -39,9 +40,18 @@ func MakeRequest(
 		return nil, 0, err
 	}
 
-	// 执行请求
-	res, err := client.Do(req)
-	// 检查错误
+	var retry int = 0
+	var res *http.Response
+	for retry <= retryCnt {
+		// 执行请求
+		res, err = client.Do(req)
+		// 检查错误
+		if err == nil {
+			break
+		}
+		zaplog.L().Warn("request failed", zap.String("url", uri), zap.Error(err), zap.Int("retry", retry))
+		retry++
+	}
 	if err != nil {
 		return nil, 0, fmt.Errorf("%s [Request]: %s", uri, err)
 	}

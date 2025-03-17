@@ -148,7 +148,7 @@ func (gg *GGBases) DoReq(method, uri string, header map[string]string, body inte
 		}
 	}
 
-	data, _, err := tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, r, h, nil)
+	data, _, err := tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, r, h, nil, config.DefaultRetryCnt)
 	return data, err
 }
 

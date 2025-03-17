@@ -122,7 +122,7 @@ func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body int
 		return nil, err
 	}
 
-	data, _, err = tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, bytes.NewBuffer(data), h, nil)
+	data, _, err = tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, bytes.NewBuffer(data), h, nil, config.DefaultRetryCnt)
 	return data, err
 }
 

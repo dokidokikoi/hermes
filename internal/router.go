@@ -6,6 +6,7 @@ import (
 	"hermes/internal/handler/developer"
 	"hermes/internal/handler/file"
 	"hermes/internal/handler/game"
+	"hermes/internal/handler/notice"
 	"hermes/internal/handler/person"
 	"hermes/internal/handler/policy"
 	"hermes/internal/handler/publisher"
@@ -111,5 +112,10 @@ func Install(r gin.IRouter) {
 	{
 		policyG.GET("", policyH.List)
 		policyG.PATCH("", policyH.Update)
+	}
+
+	notifyG := r.Group("/notify")
+	{
+		notifyG.GET("scrap", notice.ServeWs)
 	}
 }

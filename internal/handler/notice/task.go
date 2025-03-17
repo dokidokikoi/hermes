@@ -8,6 +8,10 @@ import (
 
 var HubIns = NewHub()
 
+func init() {
+	go HubIns.Run()
+}
+
 // serveWs handles websocket requests from the peer.
 func ServeWs(ctx *gin.Context) {
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
@@ -21,5 +25,5 @@ func ServeWs(ctx *gin.Context) {
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
-	client.readPump()
+	go client.readPump()
 }

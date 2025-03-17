@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"hermes/db/data"
 	"hermes/internal/handler"
+	"hermes/internal/handler/notice"
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/scraper/event"
@@ -46,6 +47,9 @@ func (h Handler) Search(ctx *gin.Context) {
 }
 
 func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearchReq, s scraper.IGameScraper) {
+	defer func() {
+		notice.HubIns.SendMsg([]byte("success"))
+	}()
 	if s == nil {
 		return
 	}
