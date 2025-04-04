@@ -48,7 +48,7 @@ func (h Handler) Search(ctx *gin.Context) {
 
 func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearchReq, s scraper.IGameScraper) {
 	defer func() {
-		notice.HubIns.SendMsg([]byte("success"))
+		notice.HubIns.SendMsg([]byte(s.GetName()))
 	}()
 	if s == nil {
 		return

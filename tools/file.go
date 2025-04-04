@@ -3,15 +3,17 @@ package tools
 import (
 	"bytes"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"hermes/config"
 	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -31,11 +33,53 @@ func SaveFile(ext string, data io.Reader, path string) (string, error) {
 		return "", err
 	}
 	newPath := filepath.Join(path, fmt.Sprintf("%X%s", h.Sum(nil), ext))
-	err = os.Rename(tmpPath, newPath)
+	_, err = os.Stat(newPath)
+	if err == nil {
+		return newPath, nil
+	}
+	err = Move(tmpPath, newPath)
 	if err != nil {
 		return "", err
 	}
 	return newPath, nil
+}
+
+func Move(source, destination string) error {
+	err := os.Rename(source, destination)
+	if err != nil && strings.Contains(err.Error(), "invalid cross-device link") {
+		return moveCrossDevice(source, destination)
+	}
+	return err
+}
+
+func moveCrossDevice(source, destination string) error {
+	src, err := os.Open(source)
+	if err != nil {
+		return errors.Wrap(err, "Open(source)")
+	}
+	dst, err := os.Create(destination)
+	if err != nil {
+		src.Close()
+		return errors.Wrap(err, "Create(destination)")
+	}
+	_, err = io.Copy(dst, src)
+	src.Close()
+	dst.Close()
+	if err != nil {
+		return errors.Wrap(err, "Copy")
+	}
+	fi, err := os.Stat(source)
+	if err != nil {
+		os.Remove(destination)
+		return errors.Wrap(err, "Stat")
+	}
+	err = os.Chmod(destination, fi.Mode())
+	if err != nil {
+		os.Remove(destination)
+		return errors.Wrap(err, "Stat")
+	}
+	os.Remove(source)
+	return nil
 }
 
 func SaveTmpFile(ext string, data io.Reader) (string, error) {

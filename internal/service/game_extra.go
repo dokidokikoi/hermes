@@ -68,6 +68,7 @@ func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta
 
 	defer func() {
 		o = opt
+		n = node
 	}()
 	for i := range param.Tags {
 		param.Tags[i] = strings.ToLower(param.Tags[i])

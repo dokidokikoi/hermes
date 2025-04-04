@@ -265,30 +265,16 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 			}
 		}
 	}
-	err = tx.GameStaff().Delete(ctx, &model.GameStaff{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
 
 	var staff []*model.GameStaff
 	for _, s := range ss {
-		if s.Relation > 0 {
-			for _, r := range s.Relations {
-				staff = append(staff, &model.GameStaff{
-					GameID:   g.ID,
-					PersonID: s.Person.ID,
-					Relation: r,
-				})
-			}
-		} else {
+		for _, r := range s.Relations {
 			staff = append(staff, &model.GameStaff{
 				GameID:   g.ID,
 				PersonID: s.Person.ID,
-				Relation: 0,
+				Relation: r,
 			})
 		}
-
 	}
 	err = tx.GameStaff().Creates(ctx, staff, nil)
 	if err != nil {
@@ -377,6 +363,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 			prMap[gs.PersonID] = prs
 		} else {
 			pIDs = append(pIDs, gs.PersonID)
+			prMap[gs.PersonID] = []model.PersonRelation{gs.Relation}
 		}
 	}
 	node = &meta.WhereNode{
@@ -534,7 +521,7 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 				return
 			}
 			path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(data), config.Dir)
-			if code != http.StatusOK {
+			if err != nil {
 				zaplog.L().Error("save file error", zap.Error(err))
 				return
 			}
