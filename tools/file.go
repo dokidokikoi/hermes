@@ -89,6 +89,7 @@ func SaveTmpFile(ext string, data io.Reader) (string, error) {
 func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[string]string {
 	res := map[string]string{}
 
+	var lock sync.Mutex
 	wait := sync.WaitGroup{}
 	for _, url := range urls {
 		url := url
@@ -110,7 +111,9 @@ func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[st
 				zaplog.L().Error("fetch file failed", zap.String("url", url))
 			}
 
+			lock.Lock()
 			res[url], err = SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
+			lock.Unlock()
 			if err != nil {
 				zaplog.L().Error("fetch file failed", zap.String("url", url), zap.Error(err))
 			}

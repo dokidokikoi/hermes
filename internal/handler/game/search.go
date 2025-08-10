@@ -1,32 +1,26 @@
 package game
 
 import (
+	"context"
 	"hermes/internal/handler"
 	"hermes/internal/service"
 
 	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/dokidokikoi/go-common/query"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
-func (h Handler) Search(ctx *gin.Context) {
-	var input handler.GameListReq
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		zaplog.L().Error(errors.ApiErrValidation.Message, zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
+func (h Handler) Search(ctx context.Context, req handler.GameListReq) (*core.ListResponseData[handler.GameVo], *errors.APIError) {
 	var q query.PageQuery
-	ctx.ShouldBindQuery(&q)
+	q.Page = req.Page
+	q.PageSize = req.PageSize
 
-	total, vos, err := h.srv.Game().Search(ctx, input, q.GetListOption(), service.GameBasicSearchNode...)
+	total, vos, err := h.srv.Game().Search(ctx, req, q.GetListOption(), service.GameBasicSearchNode...)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
-
-	core.WriteListResponse(ctx, nil, total, vos)
+	return &core.ListResponseData[handler.GameVo]{
+		List:  vos,
+		Total: total,
+	}, nil
 }

@@ -1,54 +1,26 @@
 package game
 
 import (
+	"context"
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
-	"strconv"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	meta "github.com/dokidokikoi/go-common/meta/option"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 32)
+type GetInsRequest struct {
+	ID      uint   `form:"id" query:"id" json:"id"`
+	Version string `form:"version" query:"version" json:"version"`
+}
+
+func (h Handler) GetIns(ctx context.Context, req GetInsRequest) (*handler.GameInsVo, *errors.APIError) {
+	gvo, err := h.srv.Game().GetVOByID(ctx, req.ID)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
+		return nil, errors.ApiErrSystemErr
 	}
-
-	gvo, err := h.srv.Game().GetVOByID(ctx, uint(id))
-	if err != nil {
-		core.WriteResponse(ctx, nil, errors.ErrSystemErr)
-		return
-	}
-
-	ver := ctx.Query("version")
-	if ver == "" {
-		// veriosn
-		gins, err := data.GetDataFactory().GameInstance().List(ctx, &model.GameInstance{GameID: uint(id)}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID", "GameID", "Version"}}})
-		if err != nil {
-			core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-			return
-		}
-		var version []string
-		for _, v := range gins {
-			version = append(version, v.Version)
-		}
-		gvo.Versions = version
-
-		core.WriteResponse(ctx, nil, gvo)
-		return
-	}
-
-	gIns, err := data.GetDataFactory().GameInstance().Get(ctx, &model.GameInstance{GameID: uint(id), Version: ver}, nil)
-	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
-	}
-	gInsVo := handler.GameInsVo{
+	gInsVo := &handler.GameInsVo{
 		ID:         gvo.ID,
 		Name:       gvo.Name,
 		Alias:      gvo.Alias,
@@ -67,12 +39,38 @@ func (h Handler) Get(ctx *gin.Context) {
 		Staff:      gvo.Staff,
 		Links:      gvo.Links,
 		OtherInfo:  gvo.OtherInfo,
-
-		Version:   gIns.Version,
-		Path:      gIns.Path,
-		Language:  gIns.Language,
-		Size:      gIns.Size,
-		CreatedAt: gIns.CreatedAt,
 	}
-	core.WriteResponse(ctx, nil, gInsVo)
+
+	ver := req.Version
+	if ver != "" {
+		gIns, err := data.GetDataFactory().GameInstance().Get(ctx, &model.GameInstance{GameID: req.ID, Version: ver}, nil)
+		if err != nil {
+			return nil, errors.ApiErrSystemErr
+		}
+		gInsVo.Version = gIns.Version
+		gInsVo.Path = gIns.Path
+		gInsVo.Language = gIns.Language
+		gInsVo.Size = gIns.Size
+		gInsVo.CreatedAt = gIns.CreatedAt
+	}
+
+	return gInsVo, nil
+}
+
+type GetVerRequest struct {
+	ID uint `form:"id" query:"id" json:"id"`
+}
+
+func (h Handler) GetVer(ctx context.Context, req GetVerRequest) ([]string, *errors.APIError) {
+	// veriosn
+	gins, err := data.GetDataFactory().GameInstance().List(ctx, &model.GameInstance{GameID: req.ID}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID", "GameID", "Version"}}})
+	if err != nil {
+		return nil, errors.ApiErrSystemErr
+	}
+	var versions []string
+	for _, v := range gins {
+		versions = append(versions, v.Version)
+	}
+
+	return versions, nil
 }

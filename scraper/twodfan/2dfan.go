@@ -2,7 +2,6 @@ package twodfan
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"hermes/config"
 	"hermes/internal/handler"
@@ -10,6 +9,8 @@ import (
 	"hermes/scraper"
 	"hermes/tools"
 	"net/http"
+	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -42,7 +43,7 @@ func init() {
 	headers["User-Agent"] = config.DefaultUserAgent
 	headers["Referer"] = twoDFanDomain
 	headers["Accept-Language"] = config.ZhLanguage
-	headers["Cookie"] = "_ga=GA1.1.566177421.1716285606; pop-blocked=true; _project_hgc_session=amhvTGpZYTdmc3VidU4yQUc2cm01aFdTQzhlTk9NdjI2MXFRVWFsUUw3dmRLTXZ4blYwZ2Q4ZUFOOGtkMld2aTg2YWFtSEpzOFJjTkZSejMvaXg5UytTVzYramdaNzNzbFRXYXJ6a1VLNW5RRzU1L29TK3lyWWJaY0wyVWFKUnN2UDQ0K0hPV2ZDTWx0UFVLdE1tajZ6QndtOGRnWkRndFZIM3BkR0FmaUxVWG5PeGtaeEczRXVWTngvd2hQY25MLS1EbzhJc1ZsbFp3VS92dy8wWGIwWG1nPT0%3D--68accc4aae207d572af489e2c4cfa260efdd5f57; _ga_RF77TZ6QMN=GS1.1.1716638766.7.1.1716641708.0.0.0"
+	headers["Cookie"] = "_ga=GA1.1.274316804.1751095279; _ga_RF77TZ6QMN=GS2.1.s1751095279$o1$g1$t1751095328$j11$l0$h0; _project_hgc_session=ZnlS6F05146BhfkKsXHOEt3ewMCtzyUjnWY1VZM34Ix31OLzodQDGw2i%2FXIEZJER95WXODpVHKxgiOgruCz2YyVRDqzSPpSVSg7yZIIZiTvKZ3KMaFYeU833GjlKT92JH2%2BrOumlx81gmVZh3eHK3Xl94SwBPeac24%2BfLQKiPgoGJ661KGACNvGX3uAKRhdrJwrsKIaXO4f9w%2BKvtHYOBJHfBTtum10e3nRqTgc%2BtNdfxyDTVb80T%2B0S8G1hrZ%2F%2FyP4PtTUpPLxlb9XS4XBfvDv8jnLMeY94BY%2BiYRcL5MxFQMVqsI0%2FoTBBXJHtaTik7BwV54qFfFCudJ1gAAzT1YtfFxO6SARFusy1aHk%2FWh2zlBegAl3J7Jf3S5M%3D--SFuz5Ln45ktVvec7--hR4VT3NvYGEcup6dWqvRpQ%3D%3D"
 	TwoDFanScraper = &TwoDFan{
 		name:      "2dfan",
 		Domain:    twoDFanDomain,
@@ -64,17 +65,27 @@ func (tdf *TwoDFan) SetHeader(header map[string]string) {
 }
 
 func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
-	url := ""
+	u := ""
 	if page > 1 {
-		url = fmt.Sprintf(tdf.SearchUri, fmt.Sprintf("/page/%d", page), keyword)
+		u = fmt.Sprintf(tdf.SearchUri, fmt.Sprintf("/page/%d", page), keyword)
 	} else {
-		url = fmt.Sprintf(tdf.SearchUri, "", keyword)
+		u = fmt.Sprintf(tdf.SearchUri, "", keyword)
 	}
 
-	data, err := tdf.DoReq(http.MethodGet, url, nil, nil)
+	uri, err := url.Parse(u)
 	if err != nil {
 		return nil, err
 	}
+
+	uri.RawQuery = uri.Query().Encode()
+	data, err := tdf.DoReq(http.MethodGet, uri.String(), nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	f, _ := os.Create("index.html")
+	f.Write(data)
+	f.Close()
 
 	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
 	if err != nil {
@@ -117,13 +128,11 @@ func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body int
 		h[k] = v
 	}
 
-	data, err := json.Marshal(body)
+	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
 	if err != nil {
 		return nil, err
 	}
-
-	data, _, err = tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, bytes.NewBuffer(data), h, nil, config.DefaultRetryCnt)
-	return data, err
+	return rsp.Bytes(), nil
 }
 
 func (tdf *TwoDFan) AbsUrl(uri string) string {

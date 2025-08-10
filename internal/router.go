@@ -6,6 +6,7 @@ import (
 	"hermes/internal/handler/developer"
 	"hermes/internal/handler/file"
 	"hermes/internal/handler/game"
+	"hermes/internal/handler/library"
 	"hermes/internal/handler/notice"
 	"hermes/internal/handler/person"
 	"hermes/internal/handler/policy"
@@ -25,9 +26,10 @@ func Install(r gin.IRouter) {
 	gG := r.Group("/game")
 	{
 		gG.PUT("", gH.Create)
-		gG.POST("/search", gH.Search)
-		gG.GET("/:id", gH.Get)
+		gG.POST("/search", middleware.PreHandle(gH.Search))
+		gG.GET("/ins", middleware.PreHandle(gH.GetIns))
 		gG.PATCH("", gH.Update)
+		gG.GET("/ver", middleware.PreHandle(gH.GetVer))
 	}
 
 	sH := scraper.NewHandler()
@@ -117,5 +119,11 @@ func Install(r gin.IRouter) {
 	notifyG := r.Group("/notify")
 	{
 		notifyG.GET("scrap", notice.ServeWs)
+	}
+
+	libraryH := library.NewHandler()
+	libraryG := r.Group("/library")
+	{
+		libraryG.GET("", middleware.PreHandle(libraryH.Ls))
 	}
 }

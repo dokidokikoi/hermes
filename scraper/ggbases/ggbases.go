@@ -10,7 +10,6 @@ import (
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/tools"
-	"io"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -22,13 +21,12 @@ import (
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
-	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 var GGBasesDomain = "https://ggbases.dlgal.com/"
 var GGBasesSearchUri = "https://ggbases.dlgal.com/search.so?p=%d&title=%s&advanced=0"
-var GGBasesMagnetUri = "https://ggbases.dlgal.com/magnet.so?id=%s"
+var GGBasesMagnetUri = "https://ggb.dlgal.com/magnet.so?id=%s"
 var GGBasesBtUri = "https://ggbases.dlgal.com/down.so?id=%s"
 var GGBasesDetailUri = "https://ggbases.dlgal.com/viewDetail.so"
 
@@ -46,7 +44,8 @@ func init() {
 	headers := make(map[string]string)
 	headers["User-Agent"] = config.DefaultUserAgent
 	headers["Referer"] = GGBasesDomain
-	headers["Accept-Language"] = config.ZhLanguage
+	// headers["Accept-Language"] = config.ZhLanguage
+	// headers["Cookie"] = "GGBASESSESSIONID=83D39E9973F44502AFAE0E648A2EF263"
 	GGBasesScraper = &GGBases{
 		name:      "ggbases",
 		Domain:    GGBasesDomain,
@@ -89,21 +88,13 @@ func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, erro
 
 			item := &scraper.SearchItem{
 				URl:         "https:" + s.Find("td.t-l").Eq(1).Find("a").AttrOr("href", ""),
-				Name:        s.Find("td.t-l").Eq(1).Text(),
+				Name:        comm_tools.TrimBlankChar(s.Find("td.t-l").Eq(1).Text()),
 				ScraperName: gg.name,
 			}
-			itemData, err := gg.DoReq(http.MethodGet, item.URl, nil, nil)
-			if err != nil {
-				return
-			}
-			root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(itemData))
-			if err != nil {
-				return
-			}
-			item.Name = root.Find("#atitle").Text()
-			item.Summary, _ = root.Find("#description div[markdown-text]").Html()
 
-			item.Cover, err = gg.GetItemCover(root)
+			item.Name = s.Find("a[name='title']").Text()
+
+			item.Cover, err = gg.GetListItemCover(s, item.URl)
 			if err != nil {
 				zaplog.L().Error("获取封面失败", zap.String("scraper", gg.name), zap.Error(err))
 			}
@@ -129,27 +120,11 @@ func (gg *GGBases) DoReq(method, uri string, header map[string]string, body inte
 		h[k] = v
 	}
 
-	var r io.Reader
-	if method == http.MethodGet {
-		query := comm_tools.GenQueryParams(body)
-		if query != "" {
-			uri += "?" + query
-		}
-	} else {
-		reader, ok := body.(io.Reader)
-		if ok {
-			r = reader
-		} else {
-			data, err := json.Marshal(body)
-			if err != nil {
-				return nil, err
-			}
-			r = bytes.NewBuffer(data)
-		}
+	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	if err != nil {
+		return nil, err
 	}
-
-	data, _, err := tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, r, h, nil, config.DefaultRetryCnt)
-	return data, err
+	return rsp.Bytes(), nil
 }
 
 func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
@@ -181,26 +156,34 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 
 	item.Name, err = gg.GetItemName(root)
 	if err != nil {
-		zaplog.L().Error("获取名称失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Warn("获取名称失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Cover, err = gg.GetItemCover(root)
+	item.Cover, err = gg.GetItemCover(root.Selection)
 	if err != nil {
-		zaplog.L().Error("获取封面失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Warn("获取封面失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.IssueDate, err = gg.GetItemIssueeDate(root)
 	if err != nil {
-		zaplog.L().Error("获取发布时间失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Warn("获取发布时间失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	links, err := gg.GetItemLink(root, id)
 	if err != nil {
-		zaplog.L().Error("获取相关链接失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Warn("获取相关链接失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links = append(item.Links, links...)
 	item.OtherInfo, err = gg.GetItemOtherInfo(root)
 	if err != nil {
-		zaplog.L().Error("获取其它信息失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Warn("获取其它信息失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
-
+	magnet, err := gg.GetMagnet(id)
+	if err != nil {
+		zaplog.L().Warn("获取磁力失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+	} else {
+		item.DownloadInfos = append(item.DownloadInfos, model.DownloadInfo{
+			Content: magnet,
+			Type:    model.DownloadMagnet,
+		})
+	}
 	str := string(data)
 	idx := strings.Index(str, `var extags = "`)
 	idx += len(`var extags = "`)
@@ -244,53 +227,57 @@ func (gg *GGBases) GetItemName(node *goquery.Document) (string, error) {
 	return node.Find("#atitle").Text(), nil
 }
 
-func (gg *GGBases) GetItemCover(node *goquery.Document) (string, error) {
-	html, err := node.Html()
-	if err != nil {
-		return "", err
-	}
-	idx := strings.Index(html, `$("#showCoverBtn").attr("href", "`)
-	idx += len(`$("#showCoverBtn").attr("href", "`)
-	buf := bytes.Buffer{}
-	for ; idx < len(html); idx++ {
-		if html[idx] == '"' {
-			break
+func (gg *GGBases) GetListItemCover(node *goquery.Selection, detailUrl string) (string, error) {
+	c := node.Find("a[name='title']").Eq(0).AttrOr("c", "")
+	cover := GetCover(c)
+	if cover == "" {
+		itemData, err := gg.DoReq(http.MethodGet, detailUrl, nil, nil)
+		if err != nil {
+			return "", err
 		}
-		buf.WriteByte(html[idx])
+		root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(itemData))
+		if err != nil {
+			return "", err
+		}
+		cover, err = gg.GetItemCover(root.Selection)
+		if err != nil {
+			return "", err
+		}
+	}
+	return cover, nil
+}
+
+func (gg *GGBases) GetItemCover(root *goquery.Selection) (string, error) {
+	cover := root.Find("#ecover").Eq(0).AttrOr("src", "")
+	if cover == "" {
+		html, err := root.Html()
+		if err != nil {
+			return "", err
+		}
+		idx := strings.Index(html, `$("#showCoverBtn").attr("href", "//www.galpic.xyz/show/`)
+		sb := strings.Builder{}
+		if idx > -1 {
+			idx += len(`$("#showCoverBtn").attr("href", "//www.galpic.xyz/show/`)
+			for {
+				if html[idx] == '"' {
+					break
+				} else {
+					sb.WriteByte(html[idx])
+				}
+				idx++
+			}
+		}
+		did := sb.String()
+		cover = GetCover(did)
+		if cover == "" {
+			images := MarkdownImg(root.Find("div[markdown-text]").Text())
+			if len(images) > 0 {
+				cover = images[0]
+			}
+		}
 	}
 
-	data, _ := gg.DoReq(http.MethodGet, "https:"+buf.String(), nil, nil)
-	str := string(data)
-	befIdx := strings.Index(str, `<script type="text/javascript">`)
-	for befIdx > -1 {
-		aftIdx := strings.Index(str[befIdx:], "</script>")
-		if !strings.Contains(str[befIdx:befIdx+aftIdx], "geturl") {
-			str = str[befIdx+aftIdx:]
-			befIdx = strings.Index(str, `<script type="text/javascript">`)
-		} else {
-			vm := goja.New()
-			str = strings.ReplaceAll(str[befIdx:befIdx+aftIdx], `<script type="text/javascript">`, "")
-			str = strings.ReplaceAll(str, "</script>", "")
-			arr := strings.Split(str, "\r\n")
-			buf := bytes.Buffer{}
-			for _, a := range arr {
-				if !strings.Contains(a, "$(") {
-					buf.WriteString(a)
-					buf.WriteString("\r\n")
-				}
-			}
-			_, err := vm.RunString(buf.String())
-			if err != nil {
-				return "", err
-			}
-			v, err := vm.RunString("geturl(gid, currentp)")
-			if err != nil {
-				return "", err
-			}
-			return "https:" + v.String(), nil
-		}
-	}
-	return "", nil
+	return cover, nil
 }
 
 func (gg *GGBases) GetItemIssueeDate(node *goquery.Document) (time.Time, error) {
@@ -367,4 +354,43 @@ func (gg *GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link,
 
 func (gg *GGBases) GetItemOtherInfo(node *goquery.Document) (string, error) {
 	return node.Find("#description div[markdown-text]").Html()
+}
+
+func (gg *GGBases) GetMagnet(id string) (string, error) {
+	data, err := gg.DoReq(http.MethodGet, fmt.Sprintf(GGBasesMagnetUri, id), map[string]string{
+		"Accept":  "application/json",
+		"Origin":  "https://ggb.dlgal.com",
+		"referer": fmt.Sprintf(GGBasesMagnetUri, id),
+	}, nil)
+	if err != nil {
+		return "", err
+	}
+	idx := bytes.Index(data, []byte("/magnet.so?"))
+	if idx < 0 {
+		return "", err
+	}
+	magnetUrl := ""
+	for i := idx; i < len(data); i++ {
+		if data[i] == '"' {
+			magnetUrl = "https://ggb.dlgal.com" + string(data[idx:i])
+			break
+		}
+	}
+
+	body, err := gg.DoReq(http.MethodPost, magnetUrl, map[string]string{
+		"Origin":  "https://ggb.dlgal.com",
+		"Referer": fmt.Sprintf(GGBasesMagnetUri, id),
+	}, nil)
+	if err != nil {
+		return "", err
+	}
+
+	result := new(struct {
+		Hash string `json:"hash"`
+	})
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return "", err
+	}
+	return "magnet:?xt=urn:btih:" + result.Hash, nil
 }

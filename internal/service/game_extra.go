@@ -89,11 +89,12 @@ func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta
 					Method:          meta.INNER_JOIN,
 					Table:           model.GameTag{}.TableName(),
 					InnerQuery:      tmpdb,
-					InnerQueryAlias: "t",
+					InnerQueryAlias: "t1",
 					TableField:      "tag_id",
 					JoinTableField:  "id",
 				},
 			},
+			Select: []string{"DISTINCT \"game_tag\".\"game_id\""},
 		},
 	})
 	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{

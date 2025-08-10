@@ -34,28 +34,29 @@ type GameInlineVo struct {
 }
 
 type GameVo struct {
-	ID         uint             `json:"id"`
-	JanCode    string           `json:"jan_code"`
-	Code       string           `json:"code"`
-	Name       string           `json:"name"`
-	Alias      []string         `json:"alias"`
-	Cover      string           `json:"cover"`
-	Images     []string         `json:"images"`
-	Versions   []string         `json:"versions"`
-	Category   *model.Category  `json:"category"`
-	Series     []model.Series   `json:"series"`
-	Developer  *model.Developer `json:"developer"`
-	Publisher  *model.Publisher `json:"publisher"`
-	Price      string           `json:"price"`
-	IssueDate  time.Time        `json:"issue_date"`
-	Story      string           `json:"story"`
-	Platform   string           `json:"platform"`
-	Tags       []model.Tag      `json:"tags"`
-	Characters []CharacterVo    `json:"characters"`
-	Links      []model.Link     `json:"links"`
-	OtherInfo  string           `json:"other_info"`
-	Staff      []StaffVo        `json:"staff"`
-	CreatedAt  time.Time        `json:"created_at"`
+	ID            uint                `json:"id"`
+	JanCode       string              `json:"jan_code"`
+	Code          string              `json:"code"`
+	Name          string              `json:"name"`
+	Alias         []string            `json:"alias"`
+	Cover         string              `json:"cover"`
+	Images        []string            `json:"images"`
+	Versions      []string            `json:"versions"`
+	Category      *model.Category     `json:"category"`
+	Series        []model.Series      `json:"series"`
+	Developer     *model.Developer    `json:"developer"`
+	Publisher     *model.Publisher    `json:"publisher"`
+	Price         string              `json:"price"`
+	IssueDate     time.Time           `json:"issue_date"`
+	Story         string              `json:"story"`
+	Platform      string              `json:"platform"`
+	Tags          []model.Tag         `json:"tags"`
+	Characters    []CharacterVo       `json:"characters"`
+	Links         []model.Link        `json:"links"`
+	OtherInfo     string              `json:"other_info"`
+	Staff         []StaffVo           `json:"staff"`
+	CreatedAt     time.Time           `json:"created_at"`
+	DownloadInfos model.DownloadInfos `json:"download_info"`
 }
 
 type GameInsVo struct {
@@ -160,4 +161,8 @@ type ScraperGetReq struct {
 type UpdateProxyReq struct {
 	Key    string `json:"key" binding:"required"`
 	Policy string `json:"policy" binding:"required"`
+}
+
+type LsReq struct {
+	Path string `form:"path"`
 }

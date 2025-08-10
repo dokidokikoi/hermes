@@ -1,9 +1,9 @@
 postgresql:
-  host: hermes-postgres-1
+  host: localhost
   port: 5432
   username: hermes
   database: hermes
-  password: 1234567
+  password: hermes
 app: 
   port: 19876
 log:

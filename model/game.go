@@ -63,16 +63,59 @@ func (a Links) Value() (driver.Value, error) {
 	return data, nil
 }
 
+type DownloadType string
+
+const (
+	DownloadMagnet = "magnet"
+)
+
+type DownloadInfo struct {
+	Content string       `json:"content"`
+	Type    DownloadType `json:"type"`
+}
+
+type DownloadInfos []DownloadInfo
+
+// Scan implements the sql.Scanner interface.
+func (a *DownloadInfos) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case []byte:
+		return json.Unmarshal(src, a)
+	case string:
+		return json.Unmarshal([]byte(src), a)
+	case nil:
+		*a = nil
+		return nil
+	}
+
+	return fmt.Errorf("cannot convert %T to Link", src)
+}
+
+// Value implements the driver.Valuer interface.
+func (a DownloadInfos) Value() (driver.Value, error) {
+	if a == nil {
+		return "[]", nil
+	}
+
+	data, err := json.Marshal(a)
+	if err != nil {
+		return "[]", err
+	}
+
+	return data, nil
+}
+
 type GameInstance struct {
-	ID        uint   `gorm:"primaryKey" json:"id"`
-	GameID    uint   `gorm:"uniqueIndex:uk_game_version"`
-	Version   string `gorm:"uniqueIndex:uk_game_version" json:"version"`
-	Path      string `gorm:"index:idx_game_path" json:"path"`
-	Size      int64  `json:"size"`
-	Language  string `json:"language"`
-	Comment   string
-	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
+	ID            uint          `gorm:"primaryKey" json:"id"`
+	GameID        uint          `gorm:"uniqueIndex:uk_game_version"`
+	Version       string        `gorm:"uniqueIndex:uk_game_version" json:"version"`
+	Path          string        `gorm:"index:idx_game_path" json:"path"`
+	Size          int64         `json:"size"`
+	Language      string        `json:"language"`
+	Comment       string        `json:"comment"`
+	DownloadInfos DownloadInfos `json:"download_infos"`
+	CreatedAt     time.Time     `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt     time.Time     `gorm:"autoUpdateTime:milli"`
 }
 
 func (GameInstance) TableName() string {

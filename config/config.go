@@ -18,7 +18,7 @@ type config struct {
 }
 
 func SetConfig(path string) {
-	c.Parse(path, &configIns)
+	c.Parse(path, &configIns, "HERMES")
 }
 
 func GetConfig() config {

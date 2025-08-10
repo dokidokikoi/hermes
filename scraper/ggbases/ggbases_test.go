@@ -22,7 +22,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := ggbases.GGBasesScraper.Search("彼女", 1)
+	items, err := ggbases.GGBasesScraper.Search("白濁のレッスン", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -58,7 +58,7 @@ func TestReq(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := ggbases.GGBasesScraper.GetItem("https://ggbases.dlgal.com/view.so?id=120270")
+	item, err := ggbases.GGBasesScraper.GetItem("https://ggbases.dlgal.com/view.so?id=125945")
 	if err != nil {
 		panic(err)
 	}
@@ -114,4 +114,12 @@ func TestDetail(t *testing.T) {
 		panic(err)
 	}
 	fmt.Printf("%+v", resp)
+}
+
+func TestGetMagnet(t *testing.T) {
+	hash, err := ggbases.GGBasesScraper.GetMagnet("128413")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(hash)
 }

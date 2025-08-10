@@ -7,6 +7,7 @@ type Iservice interface {
 	Character() ICharacter
 	Person() IPerson
 	Policy() IPolicy
+	Library() ILibrary
 }
 
 type service struct {
@@ -27,6 +28,10 @@ func (srv *service) Person() IPerson {
 
 func (srv *service) Policy() IPolicy {
 	return NewPolicy(srv.store)
+}
+
+func (srv *service) Library() ILibrary {
+	return NewLibrary(srv.store)
 }
 
 func NewSrv(store db.IStore) *service {
