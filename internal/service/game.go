@@ -25,7 +25,7 @@ import (
 type GameWhereNodeFunc func(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption)
 
 type IGame interface {
-	CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, requestID string) error
+	CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error
 	UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error
 	GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error)
 
@@ -50,16 +50,15 @@ type game struct {
 	store db.IStore
 }
 
-func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, requestID string) error {
+func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error {
 	tx := gsrv.store.Transaction().Begin()
 	err := tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Developer", "Category", "Publisher"}})
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
 	}
-	ref, err := tx.RefGameInstance().Get(ctx, &model.RefGameInstance{RequestID: requestID}, nil)
-	if err == nil {
-		err = tx.GameInstance().Create(ctx, &model.GameInstance{GameID: g.ID, Version: ref.Version, Path: ref.Path}, nil)
+	if gIns != nil {
+		err = tx.GameInstance().Create(ctx, gIns, nil)
 		if err != nil {
 			tx.Transaction().Rollback()
 			return err
@@ -327,8 +326,8 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 			ID:      c.ID,
 			Name:    c.Name,
 			Alias:   c.Alias,
-			Gender:  c.Gender.String(),
-			Rlation: crMap[c.ID].String(),
+			Gender:  c.Gender,
+			Rlation: crMap[c.ID],
 			Summary: c.Summary,
 			Cover:   c.Cover,
 			Images:  c.Images,
@@ -341,7 +340,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 				Alias:     c.CV.Alias,
 				CreatedAt: c.CV.CreatedAt,
 				Tags:      c.CV.Tags,
-				Gender:    c.CV.Gender.String(),
+				Gender:    c.CV.Gender,
 				Summary:   c.CV.Summary,
 			},
 			CreatedAt: c.CreatedAt,
@@ -380,9 +379,9 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		return nil, err
 	}
 	for _, s := range ss {
-		var prs []string
+		var prs []model.PersonRelation
 		for _, pr := range prMap[s.ID] {
-			prs = append(prs, pr.String())
+			prs = append(prs, pr)
 		}
 		sVos = append(sVos, handler.StaffVo{
 			ID:        s.ID,
@@ -392,7 +391,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 			Images:    s.Images,
 			Tags:      s.Tags,
 			Summary:   s.Summary,
-			Gender:    s.Gender.String(),
+			Gender:    s.Gender,
 			Relation:  prs,
 			CreatedAt: s.CreatedAt,
 		})
@@ -407,7 +406,6 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		Category:   g.Category,
 		Series:     g.Series,
 		Developer:  g.Developer,
-		Publisher:  g.Publisher,
 		Price:      g.Price,
 		IssueDate:  g.IssueDate,
 		Story:      g.Story,

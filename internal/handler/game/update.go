@@ -1,21 +1,14 @@
 package game
 
 import (
+	"context"
 	"hermes/internal/handler"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Update(ctx *gin.Context) {
-	var input handler.GameVo
-	if err := ctx.ShouldBindJSON(&input); err != nil || input.ID == 0 {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
-
+func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, *errors.APIError) {
 	g := &model.Game{
 		ID:        input.ID,
 		JanCode:   input.JanCode,
@@ -25,7 +18,6 @@ func (h Handler) Update(ctx *gin.Context) {
 		Images:    input.Images,
 		Alias:     input.Alias,
 		Category:  input.Category,
-		Publisher: input.Publisher,
 		Developer: input.Developer,
 		Price:     input.Price,
 		Platform:  input.Platform,
@@ -42,12 +34,12 @@ func (h Handler) Update(ctx *gin.Context) {
 		cs = append(cs, &model.GameCharacter{
 			GameID:      input.ID,
 			CharacterID: c.ID,
-			Relation:    model.CRelationMap[c.Rlation],
+			Relation:    c.Rlation,
 			Character: &model.Character{
 				ID:       c.ID,
 				Name:     c.Name,
 				Alias:    c.Alias,
-				Gender:   model.GenderMap[c.Gender],
+				Gender:   c.Gender,
 				Summary:  c.Summary,
 				Images:   c.Images,
 				Cover:    c.Cover,
@@ -59,7 +51,7 @@ func (h Handler) Update(ctx *gin.Context) {
 	for _, s := range input.Staff {
 		relations := []model.PersonRelation{}
 		for _, r := range s.Relation {
-			relations = append(relations, model.PRelationMap[r])
+			relations = append(relations, r)
 		}
 		ss = append(ss, &model.GameStaff{
 			GameID:   g.ID,
@@ -68,7 +60,7 @@ func (h Handler) Update(ctx *gin.Context) {
 				ID:      s.ID,
 				Name:    s.Name,
 				Alias:   s.Alias,
-				Gender:  model.GenderMap[s.Gender],
+				Gender:  s.Gender,
 				Summary: s.Summary,
 				Cover:   s.Cover,
 				Images:  s.Images,
@@ -78,9 +70,8 @@ func (h Handler) Update(ctx *gin.Context) {
 		})
 	}
 	if err := h.srv.Game().UpdateL(ctx, g, cs, ss); err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
 
-	core.WriteResponse(ctx, nil, nil)
+	return nil, nil
 }

@@ -1,20 +1,18 @@
 package category
 
 import (
+	"context"
 	"hermes/db/data"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	meta "github.com/dokidokikoi/go-common/meta/option"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) List(ctx *gin.Context) {
+func (h Handler) List(ctx context.Context, req any) ([]*model.Category, *errors.APIError) {
 	list, err := data.GetDataFactory().Category().List(ctx, &model.Category{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
-	core.WriteListResponse(ctx, nil, int64(len(list)), list)
+	return list, nil
 }

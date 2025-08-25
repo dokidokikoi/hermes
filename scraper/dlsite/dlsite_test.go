@@ -10,16 +10,26 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
 )
 
+var dlSiteScraper *dlsite.DlSite
+
 func init() {
-	config.SetConfig("../../conf/application.yaml")
-	zaplog.SetLogger(config.GetConfig().LogConfig)
+	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
+	dlSiteScraper = dlsite.NewDlSite(map[string]string{
+		"User-Agent":         config.DefaultUserAgent,
+		"Accept-Language":    config.ZhLanguage,
+		"Cookie":             dlsite.DefaultHeader_Cookie,
+		"Sec-Ch-Ua":          dlsite.DefaultHeader_SecChUa,
+		"Sec-Ch-Ua-Mobile":   dlsite.DefaultHeader_SecChUaMobile,
+		"Sec-Ch-Ua-Platform": dlsite.DefaultHeader_SecChUaPlatform,
+	})
 }
 
 func TestSearch(t *testing.T) {
-	items, err := dlsite.DlSiteScraper.Search("彼女", 1)
+	items, err := dlSiteScraper.Search("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +39,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItemCover(t *testing.T) {
-	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +48,7 @@ func TestGetItemCover(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	cover, images, err := dlsite.DlSiteScraper.GetItemCover(root)
+	cover, images, err := dlSiteScraper.GetItemCover(root)
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +56,7 @@ func TestGetItemCover(t *testing.T) {
 }
 
 func TestGetItemCharacter(t *testing.T) {
-	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +65,7 @@ func TestGetItemCharacter(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	characters, err := dlsite.DlSiteScraper.GetItemCharacter(root)
+	characters, err := dlSiteScraper.GetItemCharacter(root)
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +75,7 @@ func TestGetItemCharacter(t *testing.T) {
 }
 
 func TestGetItemStory(t *testing.T) {
-	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -74,7 +84,7 @@ func TestGetItemStory(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	story, err := dlsite.DlSiteScraper.GetItemStory(root)
+	story, err := dlSiteScraper.GetItemStory(root)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +92,7 @@ func TestGetItemStory(t *testing.T) {
 }
 
 func TestGetItemlinks(t *testing.T) {
-	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +101,7 @@ func TestGetItemlinks(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	links, err := dlsite.DlSiteScraper.GetItemlink(root, "VJ01001190")
+	links, err := dlSiteScraper.GetItemlink(root, "VJ01001190")
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +111,7 @@ func TestGetItemlinks(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := dlsite.DlSiteScraper.GetItem("https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html")
+	item, err := dlSiteScraper.GetItem("https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html")
 	if err != nil {
 		panic(err)
 	}
@@ -109,7 +119,7 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := dlsite.DlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
+	data, err := dlSiteScraper.DoReq(http.MethodGet, "https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html", nil, nil)
 	if err != nil {
 		panic(err)
 	}

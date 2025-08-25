@@ -1,25 +1,24 @@
 package developer
 
 import (
+	"context"
 	"hermes/db/data"
 	"hermes/model"
 	"strconv"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 32)
+func (h Handler) Get(ctx context.Context, id uint64) (*model.Developer, *errors.APIError) {
+	id, err := strconv.ParseUint(ctx.(*gin.Context).Param("id"), 10, 32)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrValidation, err)
 	}
-	cate, err := data.GetDataFactory().Developer().Get(ctx, &model.Developer{ID: uint(id)}, nil)
+	developer, err := data.GetDataFactory().Developer().Get(ctx, &model.Developer{ID: uint(id)}, nil)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
-	core.WriteResponse(ctx, nil, cate)
+
+	return developer, nil
 }

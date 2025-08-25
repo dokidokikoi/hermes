@@ -1,29 +1,21 @@
 package category
 
 import (
+	"context"
 	"errors"
 	"hermes/db/data"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	comm_errors "github.com/dokidokikoi/go-common/errors"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Update(ctx *gin.Context) {
-	var input model.Category
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		core.WriteResponse(ctx, comm_errors.ApiErrValidation, nil)
-		return
-	}
-
-	if err := data.GetDataFactory().Category().Update(ctx, &input, nil); err != nil {
+func (h Handler) Update(ctx context.Context, req *model.Category) (any, *comm_errors.APIError) {
+	if err := data.GetDataFactory().Category().Update(ctx, req, nil); err != nil {
 		if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
-			core.WriteResponse(ctx, comm_errors.ApiErrSystemErr, nil)
-			return
+			return nil, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
 		}
 
 	}
 
-	core.WriteResponse(ctx, nil, nil)
+	return nil, nil
 }

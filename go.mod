@@ -7,24 +7,22 @@ toolchain go1.24.4
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/dokidokikoi/go-common v0.0.0-20250214082022-f3c12c3c2f4a
-	github.com/dop251/goja v0.0.0-20240516125602-ccbae20bcec2
 	github.com/gin-gonic/gin v1.8.2
-	github.com/gomarkdown/markdown v0.0.0-20250207164621-7a1f277a159e
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
-	github.com/maxence-charriere/go-app/v10 v10.1.3
 	github.com/pkg/errors v0.9.1
 	golang.org/x/text v0.22.0
-	gorm.io/gorm v1.25.7
+	gorm.io/gorm v1.30.0
 	resty.dev/v3 v3.0.0-beta.3
 )
 
 require (
-	github.com/dlclark/regexp2 v1.7.0 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
-	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
-	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 )
@@ -58,10 +56,10 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/tidwall/gjson v1.17.1
+	github.com/tidwall/gjson v1.18.0
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/net v0.35.0

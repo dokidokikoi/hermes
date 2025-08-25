@@ -1,28 +1,28 @@
 package character
 
 import (
+	"context"
 	"hermes/internal/handler"
 	"hermes/internal/service"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/query"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Search(ctx *gin.Context) {
-	var input handler.CharacterListReq
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
-	var q query.PageQuery
-	ctx.ShouldBindQuery(&q)
+type SearchResponse struct {
+	List  []handler.CharacterVo `json:"list"`
+	Total int64                 `json:"total"`
+}
 
-	total, list, err := h.srv.Character().Search(ctx, input, q.GetListOption(), service.CharacterBasicSearchNode...)
+func (h Handler) Search(ctx context.Context, input *handler.CharacterSearchReq) (*SearchResponse, *errors.APIError) {
+	q := &query.PageQuery{
+		Page:     input.Page,
+		PageSize: input.PageSize,
+		Order:    input.OrderBy,
+	}
+	total, list, err := h.srv.Character().Search(ctx, *input, q.GetListOption(), service.CharacterBasicSearchNode...)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
 	vos := make([]handler.CharacterVo, len(list))
 	for i := range list {
@@ -30,7 +30,7 @@ func (h Handler) Search(ctx *gin.Context) {
 			ID:      list[i].ID,
 			Name:    list[i].Name,
 			Alias:   list[i].Alias,
-			Gender:  list[i].Gender.String(),
+			Gender:  list[i].Gender,
 			Summary: list[i].Summary,
 			Cover:   list[i].Cover,
 			Images:  list[i].Images,
@@ -42,12 +42,16 @@ func (h Handler) Search(ctx *gin.Context) {
 				Images:    list[i].CV.Images,
 				Tags:      list[i].CV.Tags,
 				Summary:   list[i].CV.Summary,
-				Gender:    list[i].CV.Gender.String(),
+				Gender:    list[i].CV.Gender,
 				CreatedAt: list[i].CV.CreatedAt,
 			},
 			Tags:      list[i].Tags,
 			CreatedAt: list[i].CreatedAt,
 		}
 	}
-	core.WriteListResponse(ctx, nil, total, vos)
+
+	return &SearchResponse{
+		List:  vos,
+		Total: total,
+	}, nil
 }

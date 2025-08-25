@@ -1,34 +1,28 @@
 package person
 
 import (
+	"context"
 	"hermes/internal/handler"
 	"hermes/internal/service"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/dokidokikoi/go-common/query"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
-func (h Handler) Search(ctx *gin.Context) {
-	var input handler.PersonListReq
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		zaplog.L().Error(errors.ApiErrValidation.Message, zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
-	var q query.PageQuery
-	if err := ctx.ShouldBindQuery(&q); err != nil {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
+type SearchResponse struct {
+	List  []handler.StaffVo `json:"list"`
+	Total int64             `json:"total"`
+}
 
-	total, list, err := h.srv.Person().Search(ctx, input, q.GetListOption(), service.PersonBasicSearchNode...)
+func (h Handler) Search(ctx context.Context, input *handler.PersonListReq) (*SearchResponse, *errors.APIError) {
+	var q = &query.PageQuery{
+		Page:     input.Page,
+		PageSize: input.PageSize,
+		Order:    input.OrderBy,
+	}
+	total, list, err := h.srv.Person().Search(ctx, *input, q.GetListOption(), service.PersonBasicSearchNode...)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
 
 	vos := make([]handler.StaffVo, len(list))
@@ -41,10 +35,13 @@ func (h Handler) Search(ctx *gin.Context) {
 			Images:    list[i].Images,
 			Tags:      list[i].Tags,
 			Summary:   list[i].Summary,
-			Gender:    list[i].Gender.String(),
+			Gender:    list[i].Gender,
 			CreatedAt: list[i].CreatedAt,
 		}
 	}
 
-	core.WriteListResponse(ctx, nil, total, vos)
+	return &SearchResponse{
+		List:  vos,
+		Total: total,
+	}, nil
 }

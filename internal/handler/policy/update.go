@@ -1,26 +1,17 @@
 package policy
 
 import (
+	"context"
 	"encoding/json"
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
-func (h Handler) Update(ctx *gin.Context) {
-	var input handler.UpdateProxyReq
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		zaplog.L().Error("参数解析错误", zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
+func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any, *errors.APIError) {
 	var policy any
 
 	switch input.Key {
@@ -28,9 +19,7 @@ func (h Handler) Update(ctx *gin.Context) {
 		t := new(model.SystemPolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			zaplog.L().Error("参数解析错误", zap.Error(err))
-			core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-			return
+			return nil, errors.Wrap(errors.ApiErrValidation, err)
 		}
 		policy = t
 		h.srv.Policy().SystemPolicyEffect(ctx, t)
@@ -38,9 +27,7 @@ func (h Handler) Update(ctx *gin.Context) {
 		t := new(model.ScraperPolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			zaplog.L().Error("参数解析错误", zap.Error(err))
-			core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-			return
+			return nil, errors.Wrap(errors.ApiErrValidation, err)
 		}
 		policy = t
 		h.srv.Policy().ScraperPolicyEffect(ctx, t)
@@ -48,26 +35,20 @@ func (h Handler) Update(ctx *gin.Context) {
 		t := new(model.LanguagePolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			zaplog.L().Error("参数解析错误", zap.Error(err))
-			core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-			return
+			return nil, errors.Wrap(errors.ApiErrValidation, err)
 		}
 		policy = t
 	case model.PlatformPolicy{}.Key():
 		t := new(model.PlatformPolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			zaplog.L().Error("参数解析错误", zap.Error(err))
-			core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-			return
+			return nil, errors.Wrap(errors.ApiErrValidation, err)
 		}
 		policy = t
 	}
 	d, err := json.Marshal(policy)
 	if err != nil {
-		zaplog.L().Error("json编码失败", zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrValidation, err)
 	}
 
 	err = data.GetDataFactory().Policy().UpdateByWhere(ctx, &meta.WhereNode{
@@ -80,9 +61,8 @@ func (h Handler) Update(ctx *gin.Context) {
 		},
 	}, &model.Policy{Policy: string(d)}, nil)
 	if err != nil {
-		zaplog.L().Error("更新policy数据库失败", zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
-	core.WriteResponse(ctx, nil, "")
+
+	return nil, nil
 }

@@ -14,11 +14,3 @@ type task struct {
 func newTask(d *data) *task {
 	return &task{Tasks: *postgres.NewTasks(d.pg)}
 }
-
-type refGameInstance struct {
-	postgres.RefGameInstances
-}
-
-func newRefGameInstance(d *data) *refGameInstance {
-	return &refGameInstance{RefGameInstances: *postgres.NewRefGameInstances(d.pg)}
-}

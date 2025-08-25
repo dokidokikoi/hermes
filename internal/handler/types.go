@@ -20,6 +20,7 @@ type GameListReq struct {
 	FullText       bool        `json:"full_text"`
 	Page           int         `json:"page"`
 	PageSize       int         `json:"page_size"`
+	OrderBy        string      `json:"order_by"`
 }
 
 type GameInlineVo struct {
@@ -41,11 +42,9 @@ type GameVo struct {
 	Alias         []string            `json:"alias"`
 	Cover         string              `json:"cover"`
 	Images        []string            `json:"images"`
-	Versions      []string            `json:"versions"`
 	Category      *model.Category     `json:"category"`
 	Series        []model.Series      `json:"series"`
 	Developer     *model.Developer    `json:"developer"`
-	Publisher     *model.Publisher    `json:"publisher"`
 	Price         string              `json:"price"`
 	IssueDate     time.Time           `json:"issue_date"`
 	Story         string              `json:"story"`
@@ -59,74 +58,37 @@ type GameVo struct {
 	DownloadInfos model.DownloadInfos `json:"download_info"`
 }
 
-type GameInsVo struct {
-	ID         uint             `json:"id"`
-	Name       string           `json:"name"`
-	Alias      []string         `json:"alias"`
-	Cover      string           `json:"cover"`
-	Images     []string         `json:"images"`
-	Version    string           `json:"version"`
-	Category   *model.Category  `json:"category"`
-	Series     []model.Series   `json:"series"`
-	Developer  *model.Developer `json:"developer"`
-	Publisher  *model.Publisher `json:"publisher"`
-	Price      string           `json:"price"`
-	IssueDate  time.Time        `json:"issue_date"`
-	Story      string           `json:"story"`
-	Platform   string           `json:"platform"`
-	Tags       []model.Tag      `json:"tags"`
-	Characters []CharacterVo    `json:"characters"`
-	Links      []model.Link     `json:"links"`
-	OtherInfo  string           `json:"other_info"`
-	Staff      []StaffVo        `json:"staff"`
-	CreatedAt  time.Time        `json:"created_at"`
-
-	Size     int64  `json:"size"`
-	Path     string `json:"path"`
-	Language string `json:"language"`
-	Comment  string `json:"comment"`
-}
-
 type StaffVo struct {
-	ID        uint        `json:"id"`
-	Name      string      `json:"name"`
-	Alias     []string    `json:"alias"`
-	Cover     string      `json:"cover"`
-	Images    []string    `json:"images"`
-	Tags      []model.Tag `json:"tags"`
-	Summary   string      `json:"summary"`
-	Gender    string      `json:"gender"`
-	Relation  []string    `json:"relation"`
-	CreatedAt time.Time   `json:"created_at"`
+	ID        uint                   `json:"id"`
+	Name      string                 `json:"name"`
+	Alias     []string               `json:"alias"`
+	Cover     string                 `json:"cover"`
+	Images    []string               `json:"images"`
+	Tags      []model.Tag            `json:"tags"`
+	Summary   string                 `json:"summary"`
+	Gender    model.Gender           `json:"gender"`
+	Relation  []model.PersonRelation `json:"relation"`
+	CreatedAt time.Time              `json:"created_at"`
 }
 
 type CharacterVo struct {
-	ID        uint              `json:"id"`
-	Name      string            `json:"name"`
-	Alias     []string          `json:"alias"`
-	Gender    string            `json:"gender"`
-	Rlation   string            `json:"relation"`
-	Summary   string            `json:"summary"`
-	Cover     string            `json:"cover"`
-	Images    []string          `json:"images"`
-	CV        StaffVo           `json:"cv"`
-	Tags      []model.Tag       `json:"tags"`
-	CreatedAt time.Time         `json:"created_at"`
-	Games     []CharacterGameVo `json:"games,omitempty"`
+	ID        uint                    `json:"id"`
+	Name      string                  `json:"name"`
+	Alias     []string                `json:"alias"`
+	Gender    model.Gender            `json:"gender"`
+	Rlation   model.CharacterRelation `json:"relation"`
+	Summary   string                  `json:"summary"`
+	Cover     string                  `json:"cover"`
+	Images    []string                `json:"images"`
+	CV        StaffVo                 `json:"cv"`
+	Tags      []model.Tag             `json:"tags"`
+	CreatedAt time.Time               `json:"created_at"`
+	Games     []CharacterGameVo       `json:"games,omitempty"`
 }
 
 type CharacterGameVo struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
-}
-
-type CharacterListReq struct {
-	Keyword        string       `json:"keyword"`
-	Tags           []uint       `json:"tags"`
-	CreatedAtRange []time.Time  `json:"created_at_range"`
-	Gender         model.Gender `json:"gender"`
-	CV             uint         `json:"cv"`
-	FullText       bool         `json:"full_text"`
 }
 
 type PersonListReq struct {
@@ -135,6 +97,23 @@ type PersonListReq struct {
 	CreatedAtRange []time.Time  `json:"created_at_range"`
 	Gender         model.Gender `json:"gender"`
 	FullText       bool         `json:"full_text"`
+
+	Page     int    `json:"page"`
+	PageSize int    `json:"page_size"`
+	OrderBy  string `json:"order_by"`
+}
+
+type CharacterSearchReq struct {
+	Keyword        string       `json:"keyword"`
+	Tags           []uint       `json:"tags"`
+	CreatedAtRange []time.Time  `json:"created_at_range"`
+	Gender         model.Gender `json:"gender"`
+	CV             uint         `json:"cv"`
+	FullText       bool         `json:"full_text"`
+
+	Page     int    `json:"page"`
+	PageSize int    `json:"page_size"`
+	OrderBy  string `json:"order_by"`
 }
 
 type ScraperSearchReq struct {

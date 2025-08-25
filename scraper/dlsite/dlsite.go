@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hermes/config"
 	"hermes/internal/handler"
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/tools"
-	"io"
+	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,8 +18,18 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
+)
+
+const Name = "dlsite"
+
+const (
+	DefaultHeader_SecChUa         = `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`
+	DefaultHeader_SecChUaPlatform = `"macOS"`
+	DefaultHeader_SecChUaMobile   = "?0"
+	DefaultHeader_Cookie          = "_im_vid=01HYF9KCRA1MT8HSM4EWETGX8S; _gid=GA1.2.1781699859.1717215574; getchu_adalt_flag=getchu.com; ITEM_HISTORY=1282568%7C1273918; _ga_BSNR8334HV=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga_JBMY6G3QFS=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga=GA1.2.1343565952.1716352800; _gat=1"
 )
 
 var (
@@ -38,22 +47,12 @@ type DlSite struct {
 	Headers   map[string]string
 }
 
-var DlSiteScraper *DlSite
-
-func init() {
-	headers := make(map[string]string)
-	headers["Sec-Ch-Ua"] = `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`
-	headers["Sec-Ch-Ua-Mobile"] = "?0"
-	headers["Sec-Ch-Ua-Platform"] = `"macOS"`
-	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = "https://www.getchu.com/php/search.phtml?search_keyword=%C8%E0%BD%F7&list_count=30&sort=sales&sort2=down&search_title=&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=1&pageID=1"
-	headers["Accept-Language"] = config.ZhLanguage
-	headers["Cookie"] = "__DLsite_SID=782pmg62psm037ve711d3mcvou; _vwo_uuid_v2=D58EED3043B8C8712836CA3A0CEE347EA|60e7665c582ba675b0d38e5d2fff3d4a; _gcl_au=1.1.1614214747.1716352480; uniqid=0.1jznx3ayl8r; _inflow_ad_params=%7B%22ad_name%22%3A%22organic%22%7D; _fbp=fb.1.1716352481206.123734068; _gaid=876588495.1716352481; _yjsu_yjad=1716352481.85b8a4d8-d0ef-40c3-9add-72cdbb9aefb2; __lt__cid=d543a8ce-a077-4fc3-9c2e-8f3174d95c59; localesuggested=true; locale=zh-cn; _tt_enable_cookie=1; _ttp=rjrtRsh6ouv0PmOqGCRhvWVWaIs; _im_vid=01HYF98ZMNGPY3Z39Q5YJMZW7W; universe_aid=bcf505d16a92b2a620515be740e116240a1a00eccd6e9b0e; adr_id=S7YehhRFnRk3O6gLUtpysCXLJ0EzAGzX1yWf6W6kB4FhT3yt; adultchecked=1; _inflow_params=%7B%22referrer_uri%22%3A%22www.google.com.hk%22%7D; _gid=GA1.2.771398923.1717239817; _ga_QEETZHFB1S=GS1.1.1717290605.1.1.1717290605.0.0.0; _ga_YG879NVEC7=GS1.1.1717290602.1.1.1717290636.0.0.0; _ga_sid=1717304107; __lt__sid=a4160a04-dddad713; DL_PRODUCT_LOG=%2CVJ011538%2CVJ01001190%2CVJ01001393%2CVJ01002056; OptanonConsent=isGpcEnabled=0&datestamp=Sun+Jun+02+2024+14%3A08%3A57+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=6.23.0&isIABGlobal=false&hosts=&landingPath=NotLandingPage&groups=C0001%3A1%2CC0002%3A0%2CC0003%3A0%2CC0004%3A0&AwaitingReconsent=false; _ga_ZW5GTXK6EV=GS1.1.1717304107.5.1.1717308538.0.0.0; _ga=GA1.1.876588495.1716352481; _inflow_dlsite_params=%7B%22dlsite_referrer_url%22%3A%22https%3A%2F%2Fwww.dlsite.com%2Fpro%2Fwork%2F%3D%2Fproduct_id%2FVJ01001190.html%22%7D"
-	DlSiteScraper = &DlSite{
-		name:      "dlsite",
+func NewDlSite(header map[string]string) *DlSite {
+	return &DlSite{
+		name:      Name,
 		Domain:    DlSiteDomain,
 		SearchUri: "",
-		Headers:   headers,
+		Headers:   header,
 	}
 }
 
@@ -105,30 +104,24 @@ func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error
 func (ds *DlSite) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
 	ds.RLock()
-	for k, v := range ds.Headers {
-		h[k] = v
-	}
+	maps.Copy(h, ds.Headers)
 	ds.RUnlock()
-	for k, v := range header {
-		h[k] = v
+	maps.Copy(h, header)
+
+	query := comm_tools.GenQueryParams(body)
+	if query != "" {
+		uri += "?" + query
 	}
 
-	var r io.Reader
-	if method == http.MethodGet {
-		query := comm_tools.GenQueryParams(body)
-		if query != "" {
-			uri += "?" + query
-		}
-	} else {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		r = bytes.NewBuffer(data)
+	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	if err != nil {
+		return nil, err
+	}
+	if rsp.StatusCode()/100 != 2 {
+		return nil, errors.Errorf("status code: %d, body: %s", rsp.StatusCode(), rsp.String())
 	}
 
-	data, _, err := tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, r, h, nil, config.DefaultRetryCnt)
-	return data, err
+	return rsp.Bytes(), nil
 }
 
 func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
@@ -141,7 +134,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "dlsite", Url: uri}}}, ScraperName: ds.name}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: Name, Url: uri}}}, ScraperName: ds.name}
 
 	id := ""
 	arr := strings.Split(uri, "/")
@@ -158,9 +151,9 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		zaplog.L().Error("获取封面失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Publisher, err = ds.GetItemPublisher(root)
+	item.Developer, err = ds.GetItemDeveloper(root)
 	if err != nil {
-		zaplog.L().Error("获取商标失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
+		zaplog.L().Error("获取开发商失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Characters, err = ds.GetItemCharacter(root)
 	if err != nil {
@@ -185,11 +178,11 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			s.Find("td").First().Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter.String())
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter)
 				} else {
 					item.Staff = append(item.Staff, handler.StaffVo{
 						Name:     name,
-						Relation: []string{model.PRelationWriter.String()},
+						Relation: []model.PersonRelation{model.PRelationWriter},
 					})
 				}
 			})
@@ -197,11 +190,11 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter.String())
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter)
 				} else {
 					item.Staff = append(item.Staff, handler.StaffVo{
-						Name:     name,
-						Relation: []string{model.PRelationPainter.String()},
+						Name:     comm_tools.TrimBlankChar(name),
+						Relation: []model.PersonRelation{model.PRelationPainter},
 					})
 				}
 			})
@@ -209,11 +202,11 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationCV.String())
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationCV)
 				} else {
 					item.Staff = append(item.Staff, handler.StaffVo{
 						Name:     name,
-						Relation: []string{model.PRelationCV.String()},
+						Relation: []model.PersonRelation{model.PRelationCV},
 					})
 				}
 			})
@@ -221,11 +214,11 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationMusic.String())
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationMusic)
 				} else {
 					item.Staff = append(item.Staff, handler.StaffVo{
 						Name:     name,
-						Relation: []string{model.PRelationMusic.String()},
+						Relation: []model.PersonRelation{model.PRelationMusic},
 					})
 				}
 			})
@@ -274,9 +267,9 @@ func (ds *DlSite) GetItemCover(node *goquery.Document) (string, []string, error)
 	return images[0], images[1:], nil
 }
 
-func (ds *DlSite) GetItemPublisher(node *goquery.Document) (*model.Publisher, error) {
-	return &model.Publisher{
-		Name: node.Find("#work_maker span.maker_name").Text(),
+func (ds *DlSite) GetItemDeveloper(node *goquery.Document) (*model.Developer, error) {
+	return &model.Developer{
+		Name: comm_tools.TrimBlankChar(node.Find("#work_maker span.maker_name").Text()),
 	}, nil
 }
 
@@ -288,7 +281,7 @@ func (ds *DlSite) GetItemStory(node *goquery.Document) (string, error) {
 		story.WriteByte('\n')
 	})
 
-	return story.String(), nil
+	return comm_tools.TrimBlankChar(story.String()), nil
 }
 
 func (ds *DlSite) GetItemlink(node *goquery.Document, id string) ([]model.Link, error) {

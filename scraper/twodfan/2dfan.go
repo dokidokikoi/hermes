@@ -3,7 +3,6 @@ package twodfan
 import (
 	"bytes"
 	"fmt"
-	"hermes/config"
 	"hermes/internal/handler"
 	"hermes/model"
 	"hermes/scraper"
@@ -23,6 +22,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const Name = "2dfan"
+
+const (
+	DefaultHeader_Cookie = "_ga=GA1.1.274316804.1751095279; _ga_RF77TZ6QMN=GS2.1.s1751095279$o1$g1$t1751095328$j11$l0$h0; _project_hgc_session=ZnlS6F05146BhfkKsXHOEt3ewMCtzyUjnWY1VZM34Ix31OLzodQDGw2i%2FXIEZJER95WXODpVHKxgiOgruCz2YyVRDqzSPpSVSg7yZIIZiTvKZ3KMaFYeU833GjlKT92JH2%2BrOumlx81gmVZh3eHK3Xl94SwBPeac24%2BfLQKiPgoGJ661KGACNvGX3uAKRhdrJwrsKIaXO4f9w%2BKvtHYOBJHfBTtum10e3nRqTgc%2BtNdfxyDTVb80T%2B0S8G1hrZ%2F%2FyP4PtTUpPLxlb9XS4XBfvDv8jnLMeY94BY%2BiYRcL5MxFQMVqsI0%2FoTBBXJHtaTik7BwV54qFfFCudJ1gAAzT1YtfFxO6SARFusy1aHk%2FWh2zlBegAl3J7Jf3S5M%3D--SFuz5Ln45ktVvec7--hR4VT3NvYGEcup6dWqvRpQ%3D%3D"
+)
+
 var (
 	twoDFanDomain    = "https://2dfan.com/"
 	twoDFanSearchUri = "https://2dfan.com/subjects/search%s?keyword=%s"
@@ -36,19 +41,12 @@ type TwoDFan struct {
 	Headers   map[string]string
 }
 
-var TwoDFanScraper *TwoDFan
-
-func init() {
-	headers := make(map[string]string)
-	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = twoDFanDomain
-	headers["Accept-Language"] = config.ZhLanguage
-	headers["Cookie"] = "_ga=GA1.1.274316804.1751095279; _ga_RF77TZ6QMN=GS2.1.s1751095279$o1$g1$t1751095328$j11$l0$h0; _project_hgc_session=ZnlS6F05146BhfkKsXHOEt3ewMCtzyUjnWY1VZM34Ix31OLzodQDGw2i%2FXIEZJER95WXODpVHKxgiOgruCz2YyVRDqzSPpSVSg7yZIIZiTvKZ3KMaFYeU833GjlKT92JH2%2BrOumlx81gmVZh3eHK3Xl94SwBPeac24%2BfLQKiPgoGJ661KGACNvGX3uAKRhdrJwrsKIaXO4f9w%2BKvtHYOBJHfBTtum10e3nRqTgc%2BtNdfxyDTVb80T%2B0S8G1hrZ%2F%2FyP4PtTUpPLxlb9XS4XBfvDv8jnLMeY94BY%2BiYRcL5MxFQMVqsI0%2FoTBBXJHtaTik7BwV54qFfFCudJ1gAAzT1YtfFxO6SARFusy1aHk%2FWh2zlBegAl3J7Jf3S5M%3D--SFuz5Ln45ktVvec7--hR4VT3NvYGEcup6dWqvRpQ%3D%3D"
-	TwoDFanScraper = &TwoDFan{
-		name:      "2dfan",
+func NewTwoDFan(header map[string]string) *TwoDFan {
+	return &TwoDFan{
+		name:      Name,
 		Domain:    twoDFanDomain,
 		SearchUri: twoDFanSearchUri,
-		Headers:   headers,
+		Headers:   header,
 	}
 }
 
@@ -176,7 +174,7 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		zaplog.L().Error("获取开发厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Publisher, err = tdf.GetItemPublisher(root)
+	item.Developer, err = tdf.GetItemDeveloper(root)
 	if err != nil {
 		zaplog.L().Error("获取发布厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
@@ -192,6 +190,10 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		zaplog.L().Error("获取链接失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
+	item.Links = append(item.Links, model.Link{
+		Name: Name,
+		Url:  uri,
+	})
 	item.Story, item.AllImages, err = tdf.GetItemStory(root)
 	if err != nil {
 		zaplog.L().Error("获取故事失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
@@ -241,11 +243,7 @@ func (tdf *TwoDFan) GetItemCategory(node *goquery.Document) (*model.Category, er
 }
 
 func (tdf *TwoDFan) GetItemDeveloper(node *goquery.Document) (*model.Developer, error) {
-	return nil, nil
-}
-
-func (tdf *TwoDFan) GetItemPublisher(node *goquery.Document) (*model.Publisher, error) {
-	return &model.Publisher{
+	return &model.Developer{
 		Name: node.Find("#content div.control-group p.tags").First().Find("a").Text(),
 	}, nil
 }
@@ -327,6 +325,7 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 		images = append(images, v)
 		s = strings.ReplaceAll(s, k, fmt.Sprintf("{{%s}}", v))
 	}
+	s = comm_tools.TrimBlankChar(s)
 
 	return s, images, nil
 }
@@ -405,11 +404,11 @@ func (tdf *TwoDFan) GetItemStaff(node *goquery.Document) ([]handler.StaffVo, err
 			s.Find("a").Each(func(i int, s *goquery.Selection) {
 				sta, ok := staffMap[s.Text()]
 				if ok {
-					sta.Relation = append(sta.Relation, model.PRelationPainter.String())
+					sta.Relation = append(sta.Relation, model.PRelationPainter)
 				} else {
 					sta = handler.StaffVo{
 						Name:     s.Text(),
-						Relation: []string{model.PRelationPainter.String()},
+						Relation: []model.PersonRelation{model.PRelationPainter},
 					}
 				}
 				staffMap[s.Text()] = sta
@@ -418,11 +417,11 @@ func (tdf *TwoDFan) GetItemStaff(node *goquery.Document) ([]handler.StaffVo, err
 			s.Find("a").Each(func(i int, s *goquery.Selection) {
 				sta, ok := staffMap[s.Text()]
 				if ok {
-					sta.Relation = append(sta.Relation, model.PRelationPainter.String())
+					sta.Relation = append(sta.Relation, model.PRelationPainter)
 				} else {
 					sta = handler.StaffVo{
 						Name:     s.Text(),
-						Relation: []string{model.PRelationWriter.String()},
+						Relation: []model.PersonRelation{model.PRelationWriter},
 					}
 				}
 				staffMap[s.Text()] = sta

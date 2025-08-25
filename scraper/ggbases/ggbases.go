@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hermes/config"
 	"hermes/internal/handler"
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/tools"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -22,6 +22,12 @@ import (
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
 	"go.uber.org/zap"
+)
+
+const Name = "ggbases"
+
+const (
+	DefaultHeader_Cookie = "GGBASESSESSIONID=83D39E9973F44502AFAE0E648A2EF263"
 )
 
 var GGBasesDomain = "https://ggbases.dlgal.com/"
@@ -38,19 +44,16 @@ type GGBases struct {
 	Headers   map[string]string
 }
 
-var GGBasesScraper *GGBases
-
-func init() {
-	headers := make(map[string]string)
-	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = GGBasesDomain
-	// headers["Accept-Language"] = config.ZhLanguage
-	// headers["Cookie"] = "GGBASESSESSIONID=83D39E9973F44502AFAE0E648A2EF263"
-	GGBasesScraper = &GGBases{
-		name:      "ggbases",
+func NewGGBases(header map[string]string) *GGBases {
+	if header == nil {
+		header = make(map[string]string)
+	}
+	header["Referer"] = GGBasesDomain
+	return &GGBases{
+		name:      Name,
 		Domain:    GGBasesDomain,
 		SearchUri: GGBasesSearchUri,
-		Headers:   headers,
+		Headers:   header,
 	}
 }
 
@@ -112,13 +115,9 @@ func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, erro
 func (gg *GGBases) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
 	gg.RLock()
-	for k, v := range gg.Headers {
-		h[k] = v
-	}
+	maps.Copy(h, gg.Headers)
 	gg.RUnlock()
-	for k, v := range header {
-		h[k] = v
-	}
+	maps.Copy(h, header)
 
 	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
 	if err != nil {
@@ -202,10 +201,10 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 					case "artist":
 						item.Staff = append(item.Staff, handler.StaffVo{
 							Name:     content,
-							Relation: []string{model.PRelationPainter.String()},
+							Relation: []model.PersonRelation{model.PRelationPainter},
 						})
 					case "group":
-						item.Publisher = &model.Publisher{
+						item.Developer = &model.Developer{
 							Name: content,
 						}
 					default:
@@ -329,7 +328,7 @@ func (gg *GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link,
 		return links, err
 	}
 
-	body, err := GGBasesScraper.DoReq(http.MethodPost, GGBasesDetailUri, map[string]string{
+	body, err := gg.DoReq(http.MethodPost, GGBasesDetailUri, map[string]string{
 		"Content-Type": writer.FormDataContentType(),
 		"Referer":      fmt.Sprintf("https://ggbases.dlgal.com/view.so?id=%s", id),
 	}, payload)

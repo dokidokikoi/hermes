@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"encoding/json"
 	"hermes/db/data"
 	"hermes/internal/handler"
@@ -8,39 +9,18 @@ import (
 	"hermes/scraper/event"
 	"time"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-func (h Handler) Scrape(ctx *gin.Context) {
-	var input handler.ScraperDetailReq
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		zaplog.L().Error("参数校验错误", zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
-
+func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq) (string, *errors.APIError) {
 	if input.RequestID == "" {
 		input.RequestID = uuid.New().String()
 	}
 	requestID := input.RequestID
-	if input.Path != "" {
-		err := data.GetDataFactory().RefGameInstance().Create(ctx, &model.RefGameInstance{
-			RequestID: requestID,
-			Path:      input.Path,
-			Version:   input.Version,
-		}, nil)
-		if err != nil {
-			zaplog.L().Error("保存任务关联游戏错误", zap.Error(err))
-			core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-			return
-		}
-	}
 	for _, req := range input.Objs {
 		_, err := data.GetDataFactory().Task().Get(ctx, &model.Task{RequestID: requestID, Param: req.Url}, nil)
 		if err == nil {
@@ -90,5 +70,5 @@ func (h Handler) Scrape(ctx *gin.Context) {
 			task.Status = model.TaskStatusSucceed
 		})
 	}
-	core.WriteResponse(ctx, nil, requestID)
+	return requestID, nil
 }

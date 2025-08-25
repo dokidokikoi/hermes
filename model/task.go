@@ -33,16 +33,3 @@ type Task struct {
 func (Task) TableName() string {
 	return "tasks"
 }
-
-type RefGameInstance struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	RequestID string    `gorm:"uniqueIndex:uni_request_id" json:"request_id"`
-	Path      string    `json:"path"`
-	Version   string    `json:"version"`
-	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
-}
-
-func (RefGameInstance) TableName() string {
-	return "ref_gameInstances"
-}

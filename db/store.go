@@ -18,6 +18,5 @@ type IStore interface {
 	GameStaff() IGameStaff
 	GameInstance() IGameInstance
 	Task() ITask
-	RefGameInstance() IRefGameInstance
 	Policy() IPolicy
 }

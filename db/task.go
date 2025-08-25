@@ -9,7 +9,3 @@ import (
 type ITask interface {
 	base.BasicCURD[model.Task]
 }
-
-type IRefGameInstance interface {
-	base.BasicCURD[model.RefGameInstance]
-}

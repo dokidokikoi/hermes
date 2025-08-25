@@ -6,38 +6,14 @@ import (
 	"github.com/lib/pq"
 )
 
-type Gender int8
+type Gender string
 
 const (
-	UnKnown Gender = iota
-	Male
-	Female
-	Futa
+	UnKnown Gender = "unknow"
+	Male    Gender = "male"
+	Female  Gender = "female"
+	Futa    Gender = "futa"
 )
-
-var GenderMap = map[string]Gender{
-	"男":  Male,
-	"女":  Female,
-	"扶她": Futa,
-
-	"male":     Male,
-	"female":   Female,
-	"futa":     Futa,
-	"futanari": Futa,
-}
-
-func (g Gender) String() string {
-	switch g {
-	case Male:
-		return "男"
-	case Female:
-		return "女"
-	case Futa:
-		return "扶她"
-	default:
-		return "unknow"
-	}
-}
 
 type Person struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`

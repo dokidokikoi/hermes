@@ -1,25 +1,17 @@
 package series
 
 import (
+	"context"
 	"hermes/db/data"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Create(ctx *gin.Context) {
-	var input model.Series
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
+func (h Handler) Create(ctx context.Context, input *model.Series) (uint, *errors.APIError) {
+	if err := data.GetDataFactory().Series().Create(ctx, input, nil); err != nil {
+		return 0, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
 
-	if err := data.GetDataFactory().Series().Create(ctx, &input, nil); err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
-	}
-
-	core.WriteResponse(ctx, nil, nil)
+	return input.ID, nil
 }

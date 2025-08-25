@@ -1,28 +1,20 @@
 package tag
 
 import (
+	"context"
 	"errors"
 	"hermes/db/data"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	comm_errors "github.com/dokidokikoi/go-common/errors"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Create(ctx *gin.Context) {
-	var input model.Tag
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		core.WriteResponse(ctx, comm_errors.ApiErrValidation, nil)
-		return
-	}
-
-	if err := data.GetDataFactory().Tag().Create(ctx, &input, nil); err != nil {
+func (h Handler) Create(ctx context.Context, input *model.Tag) (uint, *comm_errors.APIError) {
+	if err := data.GetDataFactory().Tag().Create(ctx, input, nil); err != nil {
 		if !errors.Is(err, comm_errors.ErrNameDuplicate) {
-			core.WriteResponse(ctx, comm_errors.ApiErrSystemErr, nil)
-			return
+			return 0, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
 		}
 	}
 
-	core.WriteResponse(ctx, nil, nil)
+	return input.ID, nil
 }

@@ -1,27 +1,25 @@
 package character
 
 import (
+	"context"
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
 	"strconv"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 32)
+func (h Handler) Get(ctx context.Context, id uint64) (*handler.CharacterVo, *errors.APIError) {
+	id, err := strconv.ParseUint(ctx.(*gin.Context).Param("id"), 10, 32)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrValidation, err)
 	}
 	c, err := data.GetDataFactory().Character().Get(ctx, &model.Character{ID: uint(id)}, nil)
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
 
 	gs, err := data.GetDataFactory().Game().List(ctx, &model.Game{}, &meta.ListOption{
@@ -45,6 +43,9 @@ func (h Handler) Get(ctx *gin.Context) {
 			Select: []string{"ID", "Name"},
 		},
 	})
+	if err != nil {
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+	}
 
 	cgvos := make([]handler.CharacterGameVo, len(gs))
 	for i, g := range gs {
@@ -58,7 +59,7 @@ func (h Handler) Get(ctx *gin.Context) {
 		ID:      c.ID,
 		Name:    c.Name,
 		Alias:   c.Alias,
-		Gender:  c.Gender.String(),
+		Gender:  c.Gender,
 		Summary: c.Summary,
 		Cover:   c.Cover,
 		Images:  c.Images,
@@ -70,12 +71,13 @@ func (h Handler) Get(ctx *gin.Context) {
 			Images:    c.CV.Images,
 			Tags:      c.CV.Tags,
 			Summary:   c.CV.Summary,
-			Gender:    c.CV.Gender.String(),
+			Gender:    c.CV.Gender,
 			CreatedAt: c.CV.CreatedAt,
 		},
 		Tags:      c.Tags,
 		CreatedAt: c.CreatedAt,
 		Games:     cgvos,
 	}
-	core.WriteResponse(ctx, nil, vo)
+
+	return &vo, nil
 }

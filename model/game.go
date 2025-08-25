@@ -9,13 +9,12 @@ import (
 	"github.com/lib/pq"
 )
 
-type LinkType int8
+type LinkType string
 
 const (
-	LinkTypeUnknown LinkType = iota
-	LinkTypeMv
-	LinkTypeInfo
-	LinkTypeWorkThrough
+	LinkTypeMv          LinkType = "mv"           // mv
+	LinkTypeInfo        LinkType = "info"         // 介绍
+	LinkTypeWorkThrough LinkType = "work_through" // 攻略
 )
 
 var LinkTypeMap = map[string]LinkType{
@@ -72,6 +71,7 @@ const (
 type DownloadInfo struct {
 	Content string       `json:"content"`
 	Type    DownloadType `json:"type"`
+	Version string       `json:"version"`
 }
 
 type DownloadInfos []DownloadInfo
@@ -106,16 +106,15 @@ func (a DownloadInfos) Value() (driver.Value, error) {
 }
 
 type GameInstance struct {
-	ID            uint          `gorm:"primaryKey" json:"id"`
-	GameID        uint          `gorm:"uniqueIndex:uk_game_version"`
-	Version       string        `gorm:"uniqueIndex:uk_game_version" json:"version"`
-	Path          string        `gorm:"index:idx_game_path" json:"path"`
-	Size          int64         `json:"size"`
-	Language      string        `json:"language"`
-	Comment       string        `json:"comment"`
-	DownloadInfos DownloadInfos `json:"download_infos"`
-	CreatedAt     time.Time     `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt     time.Time     `gorm:"autoUpdateTime:milli"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	GameID    uint      `gorm:"uniqueIndex:uk_game_version"`
+	Version   string    `gorm:"uniqueIndex:uk_game_version" json:"version"`
+	Path      string    `gorm:"index:idx_game_path" json:"path"`
+	Size      int64     `json:"size"`
+	Language  string    `json:"language"`
+	Comment   string    `json:"comment"`
+	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
 
 func (GameInstance) TableName() string {
@@ -161,46 +160,13 @@ func (GameSeries) TableName() string {
 	return "game_series"
 }
 
-type CharacterRelation int8
+type CharacterRelation string
 
 const (
-	CRelationNone CharacterRelation = iota
-	CRelationMain
-	CRelationMinor
-	CRelationMob
+	CRelationMain  CharacterRelation = "main"
+	CRelationMinor CharacterRelation = "minor"
+	CRelationMob   CharacterRelation = "mob"
 )
-
-var CRelationMap = map[string]CharacterRelation{
-	"主角": CRelationMain,
-	"配角": CRelationMinor,
-	"路人": CRelationMob,
-}
-
-func (r CharacterRelation) String() string {
-	switch r {
-	case 1:
-		return "主角"
-	case 2:
-		return "配角"
-	case 3:
-		return "路人"
-	default:
-		return "none"
-	}
-}
-
-func Str2CRelation(str string) CharacterRelation {
-	switch str {
-	case "主角":
-		return CRelationMain
-	case "配角":
-		return CRelationMinor
-	case "路人":
-		return CRelationMob
-	default:
-		return CRelationNone
-	}
-}
 
 type GameCharacter struct {
 	GameID      uint              `gorm:"primaryKey"`
@@ -222,37 +188,15 @@ func (GameTag) TableName() string {
 	return "game_tag"
 }
 
-type PersonRelation int8
+type PersonRelation string
 
 const (
-	PRelationNone PersonRelation = iota
-	PRelationPainter
-	PRelationWriter
-	PRelationCV
-	PRelationMusic
+	PRelationUnknown PersonRelation = "unknown"
+	PRelationPainter PersonRelation = "painter"
+	PRelationWriter  PersonRelation = "writer"
+	PRelationCV      PersonRelation = "cv"
+	PRelationMusic   PersonRelation = "music"
 )
-
-var PRelationMap = map[string]PersonRelation{
-	"原画": PRelationPainter,
-	"剧本": PRelationWriter,
-	"声优": PRelationCV,
-	"音乐": PRelationMusic,
-}
-
-func (r PersonRelation) String() string {
-	switch r {
-	case 1:
-		return "原画"
-	case 2:
-		return "剧本"
-	case 3:
-		return "声优"
-	case 4:
-		return "音乐"
-	default:
-		return "none"
-	}
-}
 
 type GameStaff struct {
 	GameID    uint             `gorm:"primaryKey"`

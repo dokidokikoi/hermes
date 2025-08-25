@@ -11,16 +11,27 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
 )
 
+var getChuScraper *getchu.GetChu
+
 func init() {
-	config.SetConfig("../../conf/application.yaml")
-	zaplog.SetLogger(config.GetConfig().LogConfig)
+	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
+	getChuScraper = getchu.NewGetChu(map[string]string{
+		"User-Agent":         config.DefaultUserAgent,
+		"Accept-Language":    config.ZhLanguage,
+		"Cookie":             getchu.DefaultHeader_Cookie,
+		"Sec-Ch-Ua":          getchu.DefaultHeader_SecChUa,
+		"Sec-Ch-Ua-Mobile":   getchu.DefaultHeader_SecChUaMobile,
+		"Sec-Ch-Ua-Platform": getchu.DefaultHeader_SecChUaPlatform,
+		"Referer":            getchu.DefaultHeader_Referer,
+	})
 }
 
 func TestSearch(t *testing.T) {
-	items, err := getchu.GetChuScraper.Search("彼女", 1)
+	items, err := getChuScraper.Search("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +41,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := getchu.GetChuScraper.GetItem("https://www.getchu.com/soft.phtml?id=1273918")
+	item, err := getChuScraper.GetItem("https://www.getchu.com/soft.phtml?id=1273918")
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +49,7 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestGetItemName(t *testing.T) {
-	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1282568", nil, nil)
+	data, err := getChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1282568", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +59,7 @@ func TestGetItemName(t *testing.T) {
 		panic(err)
 	}
 
-	name, err := getchu.GetChuScraper.GetItemName(root)
+	name, err := getChuScraper.GetItemName(root)
 	if err != nil {
 		panic(err)
 	}
@@ -56,7 +67,7 @@ func TestGetItemName(t *testing.T) {
 }
 
 func TestGetItemCover(t *testing.T) {
-	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
+	data, err := getChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +76,7 @@ func TestGetItemCover(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	cover, images, err := getchu.GetChuScraper.GetItemCover(root, "1273918")
+	cover, images, err := getChuScraper.GetItemCover(root, "1273918")
 	if err != nil {
 		panic(err)
 	}
@@ -73,7 +84,7 @@ func TestGetItemCover(t *testing.T) {
 }
 
 func TestGetItemCharacter(t *testing.T) {
-	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
+	data, err := getChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +93,7 @@ func TestGetItemCharacter(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	cs, err := getchu.GetChuScraper.GetItemCharacter(root)
+	cs, err := getChuScraper.GetItemCharacter(root)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +103,7 @@ func TestGetItemCharacter(t *testing.T) {
 }
 
 func TestGetItemStory(t *testing.T) {
-	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
+	data, err := getChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +112,7 @@ func TestGetItemStory(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	story, err := getchu.GetChuScraper.GetItemStory(root)
+	story, err := getChuScraper.GetItemStory(root)
 	if err != nil {
 		panic(err)
 	}
@@ -110,7 +121,7 @@ func TestGetItemStory(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := getchu.GetChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/php/search.phtml?search_keyword=&list_count=30&sort=sales&sort2=down&search_title=%C8%E0%BD%F7&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=search&pageID=1", nil, nil)
+	data, err := getChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/php/search.phtml?search_keyword=&list_count=30&sort=sales&sort2=down&search_title=%C8%E0%BD%F7&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=search&pageID=1", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -124,7 +135,7 @@ func TestReq(t *testing.T) {
 
 func TestGetImage(t *testing.T) {
 	res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
-		return getchu.GetChuScraper.DoReq(http.MethodGet, url, nil, nil)
+		return getChuScraper.DoReq(http.MethodGet, url, nil, nil)
 	}, []string{"https://www.getchu.com/brandnew/1273918/c1273918sample3.jpg"})
 
 	fmt.Printf("%+v\n", res)

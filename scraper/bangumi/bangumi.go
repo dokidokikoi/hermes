@@ -1,15 +1,11 @@
 package bangumi
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"hermes/config"
 	"hermes/internal/handler"
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/tools"
-	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -20,12 +16,15 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	bangumiToken     = ""
-	bangumiUserAgent = "dokidokikoi/meta-scraper (https://github.com/dokidokikoi/meta-scraper)"
+const Name = "bangumi"
 
+var (
+	DefaultHeader_UserAgent = "dokidokikoi/izumi (https://github.com/dokidokikoi/izumi)"
+)
+
+var (
 	BangumiDomain        = "https://api.bgm.tv"
-	BangumiSearchUri     = BangumiDomain + "/search/subject/%s"
+	BangumiSearchUri     = BangumiDomain + "/v0/search/subjects"
 	BangumiSubjectUri    = BangumiDomain + "/v0/subjects/%s"
 	BangumiCharactersUri = BangumiDomain + "/v0/subjects/%s/characters"
 	BangumiPersonsUri    = BangumiDomain + "/v0/subjects/%s/persons"
@@ -44,12 +43,6 @@ const (
 	SubjectTypeReal = 6
 )
 
-const (
-	ResponseGroupSmall  = "small"
-	ResponseGroupMedium = "medium"
-	ResponseGroupLarge  = "large"
-)
-
 type Bangumi struct {
 	sync.RWMutex
 	name      string
@@ -58,17 +51,12 @@ type Bangumi struct {
 	Headers   map[string]string
 }
 
-var BangumiScraper *Bangumi
-
-func init() {
-	headers := make(map[string]string)
-	headers["User-Agent"] = bangumiUserAgent
-	headers["Authorization"] = fmt.Sprintf("Bearer %s", bangumiToken)
-	BangumiScraper = &Bangumi{
-		name:      "bangumi",
+func NewBangumi(header map[string]string) *Bangumi {
+	return &Bangumi{
+		name:      Name,
 		Domain:    BangumiDomain,
 		SearchUri: BangumiSearchUri,
-		Headers:   headers,
+		Headers:   header,
 	}
 }
 
@@ -84,58 +72,41 @@ func (b *Bangumi) SetHeader(header map[string]string) {
 	b.Unlock()
 }
 
-func (b *Bangumi) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
-	h := map[string]string{}
-	b.RLock()
-	for k, v := range b.Headers {
-		h[k] = v
-	}
-	b.RUnlock()
-	for k, v := range header {
-		h[k] = v
-	}
-
-	var r io.Reader
-	if method == http.MethodGet {
-		query := comm_tools.GenQueryParams(body)
-		if query != "" {
-			uri += "?" + query
-		}
-	} else {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		r = bytes.NewBuffer(data)
-	}
-
-	data, _, err := tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, r, h, nil, config.DefaultRetryCnt)
-	return data, err
-}
-
 func (b *Bangumi) AbsUrl(uri string) string {
 	return comm_tools.AbsUrl(b.Domain, uri)
 }
 
 func (b *Bangumi) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 	param := SearchParam{
-		Type:          SubjectTypeGame,
-		ResponseGroup: ResponseGroupMedium,
-		Start:         (page-1)*defaultPageSize + 1,
-		MaxResults:    defaultPageSize,
+		Filter: SearchParamFilter{
+			Nsfw: true,
+			Type: []int{SubjectTypeGame},
+		},
+		Keyword: keyword,
+		Limit:   defaultPageSize,
+		Offset:  (page - 1) * defaultPageSize,
 	}
-	data, err := b.DoReq(http.MethodGet, fmt.Sprintf(b.SearchUri, keyword), nil, param)
+	data, err := b.DoReq(http.MethodPost, b.SearchUri, nil, param)
 	if err != nil {
 		return nil, err
 	}
 	var items []*scraper.SearchItem
-	for _, i := range gjson.GetBytes(data, "list").Array() {
+	for _, i := range gjson.GetBytes(data, "data").Array() {
 		items = append(items, &scraper.SearchItem{
-			Name:        i.Get("name").String(),
-			Key:         strconv.Itoa(int(i.Get("id").Int())),
-			URl:         fmt.Sprintf(BangumiSubjectUri, strconv.Itoa(int(i.Get("id").Int()))),
-			Summary:     i.Get("summary").String(),
-			Cover:       i.Get("images.common").String(),
+			Name:    i.Get("name").String(),
+			Key:     strconv.Itoa(int(i.Get("id").Int())),
+			URl:     fmt.Sprintf(BangumiSubjectUri, strconv.Itoa(int(i.Get("id").Int()))),
+			Summary: i.Get("summary").String(),
+			Cover: func() string {
+				cover := i.Get("images.large").String()
+				if cover == "" {
+					cover = i.Get("images.medium").String()
+				}
+				if cover == "" {
+					cover = i.Get("images.common").String()
+				}
+				return cover
+			}(),
 			ScraperName: b.name,
 		})
 	}
@@ -155,7 +126,15 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 	if nameCN != "" {
 		item.Alias = []string{nameCN}
 	}
-	item.Cover = gjson.GetBytes(data, "images.medium").String()
+
+	cover := gjson.GetBytes(data, "images.large").String()
+	if cover == "" {
+		cover = gjson.GetBytes(data, "images.medium").String()
+	}
+	if cover == "" {
+		cover = gjson.GetBytes(data, "images.common").String()
+	}
+	item.Cover = cover
 	item.Story = gjson.GetBytes(data, "summary").String()
 	for _, tag := range gjson.GetBytes(data, "tags").Array() {
 		item.Tags = append(item.Tags, model.Tag{
@@ -178,7 +157,7 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 			item.Price = info.Get("value").String()
 		case "website":
 			item.Links = append(item.Links, model.Link{
-				Name: "相关网站",
+				Name: "官网",
 				Url:  info.Get("value").String(),
 			})
 		}
@@ -229,17 +208,35 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, err
 			}
 			character := handler.CharacterVo{
 				Name:    c.Get("name").String(),
-				Rlation: c.Get("relation").String(),
-				Cover:   c.Get("images.medium").String(),
-				Gender:  model.GenderMap[cc.Get("gender").String()].String(),
+				Rlation: model.CharacterRelation(c.Get("relation").String()),
+				Cover: func() string {
+					cover := c.Get("images.large").String()
+					if cover == "" {
+						cover = c.Get("images.medium").String()
+					}
+					if cover == "" {
+						cover = c.Get("images.common").String()
+					}
+					return cover
+				}(),
+				Gender:  Gender(cc.Get("gender").String()),
 				Summary: cc.Get("summary").String(),
 				Alias:   alias,
 			}
 			arr := c.Get("actors").Array()
 			if len(arr) > 0 {
 				character.CV = handler.StaffVo{
-					Name:    arr[0].Get("name").String(),
-					Cover:   arr[0].Get("images.medium").String(),
+					Name: arr[0].Get("name").String(),
+					Cover: func() string {
+						cover := arr[0].Get("images.large").String()
+						if cover == "" {
+							cover = arr[0].Get("images.medium").String()
+						}
+						if cover == "" {
+							cover = arr[0].Get("images.common").String()
+						}
+						return cover
+					}(),
 					Summary: arr[0].Get("short_summary").String(),
 				}
 			}
@@ -276,10 +273,7 @@ func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
 			}
 			ss := gjson.ParseBytes(data)
 
-			relation := model.PRelationMap[s.Get("relation").String()]
-			if relation == model.PRelationNone {
-				return
-			}
+			relation := PersonRelation(s.Get("relation").String())
 
 			var alias []string
 			for _, a := range ss.Get("infobox").Array() {
@@ -291,10 +285,19 @@ func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
 			}
 			lock.Lock()
 			staff = append(staff, handler.StaffVo{
-				Name:     s.Get("name").String(),
-				Cover:    s.Get("images.medium").String(),
-				Relation: []string{relation.String()},
-				Gender:   model.GenderMap[ss.Get("gender").String()].String(),
+				Name: s.Get("name").String(),
+				Cover: func() string {
+					cover := s.Get("images.large").String()
+					if cover == "" {
+						cover = s.Get("images.medium").String()
+					}
+					if cover == "" {
+						cover = s.Get("images.common").String()
+					}
+					return cover
+				}(),
+				Relation: []model.PersonRelation{relation},
+				Gender:   Gender(ss.Get("gender").String()),
 				Summary:  ss.Get("short_summary").String(),
 				Alias:    alias,
 			})

@@ -20,7 +20,7 @@ var CharacterBasicSearchNode = []CharacterWhereNodeFunc{
 	CharacterWhereNodeTag,
 }
 
-func CharacterWhereNodeKeyword(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func CharacterWhereNodeKeyword(ctx context.Context, param handler.CharacterSearchReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	keyword := comm_tools.TrimBlankChar(param.Keyword)
 	if keyword != "" {
 		node.Next = &meta.WhereNode{
@@ -50,7 +50,7 @@ func CharacterWhereNodeKeyword(ctx context.Context, param handler.CharacterListR
 	}
 	return node, opt
 }
-func CharacterWhereNodeTag(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+func CharacterWhereNodeTag(ctx context.Context, param handler.CharacterSearchReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
 	if len(param.Tags) < 1 {
 		return node, opt
 	}
@@ -77,7 +77,7 @@ func CharacterWhereNodeTag(ctx context.Context, param handler.CharacterListReq, 
 	})
 	return
 }
-func CharacterWhereNodeCreatedAtRange(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func CharacterWhereNodeCreatedAtRange(ctx context.Context, param handler.CharacterSearchReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if len(param.CreatedAtRange) > 0 {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{
@@ -106,7 +106,7 @@ func CharacterWhereNodeCreatedAtRange(ctx context.Context, param handler.Charact
 
 	return node, opt
 }
-func CharacterWhereNodeGender(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func CharacterWhereNodeGender(ctx context.Context, param handler.CharacterSearchReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if param.Gender == model.UnKnown {
 		return node, opt
 	}
@@ -122,7 +122,7 @@ func CharacterWhereNodeGender(ctx context.Context, param handler.CharacterListRe
 
 	return node.Next, opt
 }
-func CharacterWhereNodeCV(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
+func CharacterWhereNodeCV(ctx context.Context, param handler.CharacterSearchReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
 	if param.CV == 0 {
 		return node, opt
 	}

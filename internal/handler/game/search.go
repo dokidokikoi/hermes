@@ -14,6 +14,7 @@ func (h Handler) Search(ctx context.Context, req handler.GameListReq) (*core.Lis
 	var q query.PageQuery
 	q.Page = req.Page
 	q.PageSize = req.PageSize
+	q.Order = req.OrderBy
 
 	total, vos, err := h.srv.Game().Search(ctx, req, q.GetListOption(), service.GameBasicSearchNode...)
 	if err != nil {

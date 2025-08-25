@@ -11,23 +11,14 @@ import (
 	"hermes/scraper/event"
 	"time"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-func (h Handler) Search(ctx *gin.Context) {
-	var input handler.ScraperSearchReq
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		zaplog.L().Error("参数校验错误", zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
-
+func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (string, *errors.APIError) {
 	if input.RequestID == "" {
 		input.RequestID = uuid.New().String()
 	}
@@ -35,15 +26,15 @@ func (h Handler) Search(ctx *gin.Context) {
 		for _, s := range event.GameScraperMap {
 			s := s
 			gopool.CtxGo(ctx, func() {
-				DoSearch(ctx, input.RequestID, input, s)
+				DoSearch(ctx, input.RequestID, *input, s)
 			})
 		}
 	} else {
 		gopool.CtxGo(ctx, func() {
-			DoSearch(ctx, input.RequestID, input, event.GameScraperMap[input.Name])
+			DoSearch(ctx, input.RequestID, *input, event.GameScraperMap[input.Name])
 		})
 	}
-	core.WriteResponse(ctx, nil, input.RequestID)
+	return input.RequestID, nil
 }
 
 func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearchReq, s scraper.IGameScraper) {

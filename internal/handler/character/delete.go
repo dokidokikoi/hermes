@@ -1,27 +1,21 @@
 package character
 
 import (
+	"context"
+	"errors"
 	"hermes/db/data"
 	"hermes/model"
-	"net/http"
 
-	"github.com/dokidokikoi/go-common/core"
-	"github.com/dokidokikoi/go-common/errors"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	comm_errs "github.com/dokidokikoi/go-common/errors"
 )
 
-func (h Handler) Del(ctx *gin.Context) {
-	ids := []uint{}
-	if err := ctx.ShouldBindJSON(&ids); err != nil {
-		zaplog.L().Error("参数校验错误", zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
+type DelRequest struct {
+	IDs []uint `json:"ids"`
+}
 
+func (h Handler) Del(ctx context.Context, req *DelRequest) (any, *comm_errs.APIError) {
 	CharacterIDs := []*model.Character{}
-	for _, id := range ids {
+	for _, id := range req.IDs {
 		CharacterIDs = append(CharacterIDs, &model.Character{
 			ID: id,
 		})
@@ -29,9 +23,7 @@ func (h Handler) Del(ctx *gin.Context) {
 
 	errs := data.GetDataFactory().Character().DeleteCollection(ctx, CharacterIDs, nil)
 	if len(errs) > 0 {
-		zaplog.L().Error("删除失败", zap.Error(errs[0]))
-		core.WriteResponse(ctx, &errors.APIError{Code: 1, StatusCode: http.StatusOK, Message: errs[0].Error()}, nil)
-		return
+		return nil, comm_errs.Wrap(comm_errs.ApiErrDatabaseOp, errors.Join(errs...))
 	}
-	core.WriteResponse(ctx, nil, nil)
+	return nil, nil
 }

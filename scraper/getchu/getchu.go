@@ -2,23 +2,32 @@ package getchu
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"hermes/config"
 	"hermes/internal/handler"
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/tools"
-	"io"
+	"maps"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/PuerkitoBio/goquery"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
 	"go.uber.org/zap"
+)
+
+const Name = "getchu"
+
+const (
+	DefaultHeader_SecChUa         = `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`
+	DefaultHeader_SecChUaPlatform = `"macOS"`
+	DefaultHeader_SecChUaMobile   = "?0"
+	DefaultHeader_Referer         = "https://www.getchu.com/php/search.phtml?search_keyword=%C8%E0%BD%F7&list_count=30&sort=sales&sort2=down&search_title=&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=1&pageID=1"
+	DefaultHeader_Cookie          = "_im_vid=01HYF9KCRA1MT8HSM4EWETGX8S; _gid=GA1.2.1781699859.1717215574; getchu_adalt_flag=getchu.com; ITEM_HISTORY=1282568%7C1273918; _ga_BSNR8334HV=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga_JBMY6G3QFS=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga=GA1.2.1343565952.1716352800; _gat=1"
 )
 
 var (
@@ -35,18 +44,8 @@ type GetChu struct {
 	Headers   map[string]string
 }
 
-var GetChuScraper *GetChu
-
-func init() {
-	headers := make(map[string]string)
-	headers["Sec-Ch-Ua"] = `"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"`
-	headers["Sec-Ch-Ua-Mobile"] = "?0"
-	headers["Sec-Ch-Ua-Platform"] = `"macOS"`
-	headers["User-Agent"] = config.DefaultUserAgent
-	headers["Referer"] = "https://www.getchu.com/php/search.phtml?search_keyword=%C8%E0%BD%F7&list_count=30&sort=sales&sort2=down&search_title=&search_brand=&search_person=&search_jan=&search_isbn=&genre=pc_soft&start_date=&end_date=&age=&list_type=list&search=1&pageID=1"
-	headers["Accept-Language"] = config.ZhLanguage
-	headers["Cookie"] = "_im_vid=01HYF9KCRA1MT8HSM4EWETGX8S; _gid=GA1.2.1781699859.1717215574; getchu_adalt_flag=getchu.com; ITEM_HISTORY=1282568%7C1273918; _ga_BSNR8334HV=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga_JBMY6G3QFS=GS1.1.1717222828.5.1.1717225315.53.0.0; _ga=GA1.2.1343565952.1716352800; _gat=1"
-	GetChuScraper = &GetChu{
+func NewGetChu(headers map[string]string) *GetChu {
+	return &GetChu{
 		name:      "getchu",
 		Domain:    GetChuDomain,
 		SearchUri: "",
@@ -115,30 +114,24 @@ func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error
 func (gc *GetChu) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
 	h := map[string]string{}
 	gc.Lock()
-	for k, v := range gc.Headers {
-		h[k] = v
-	}
+	maps.Copy(h, gc.Headers)
 	gc.Unlock()
-	for k, v := range header {
-		h[k] = v
+	maps.Copy(h, header)
+
+	query := comm_tools.GenQueryParams(body)
+	if query != "" {
+		uri += "?" + query
 	}
 
-	var r io.Reader
-	if method == http.MethodGet {
-		query := comm_tools.GenQueryParams(body)
-		if query != "" {
-			uri += "?" + query
-		}
-	} else {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		r = bytes.NewBuffer(data)
+	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	if err != nil {
+		return nil, err
 	}
 
-	data, _, err := tools.MakeRequest(method, uri, config.GetConfig().ProxyConfig, r, h, nil, config.DefaultRetryCnt)
-	return data, err
+	if rsp.StatusCode()/100 != 2 {
+		return nil, errors.Errorf("status code: %d, body: %s", rsp.StatusCode(), rsp.String())
+	}
+	return rsp.Bytes(), nil
 }
 
 func (gc *GetChu) AbsUrl(uri string) string {
@@ -199,7 +192,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 
 		title = comm_tools.TrimBlankChar(title)
 		if strings.Contains(title, "ブランド") {
-			item.Publisher = &model.Publisher{
+			item.Developer = &model.Developer{
 				Name: content,
 			}
 		} else if strings.Contains(title, "定価") {
@@ -220,11 +213,11 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 				name = comm_tools.TrimBlankChar(name)
 
 				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter.String())
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter)
 				} else {
 					item.Staff = append(item.Staff, handler.StaffVo{
 						Name:     name,
-						Relation: []string{model.PRelationPainter.String()},
+						Relation: []model.PersonRelation{model.PRelationPainter},
 					})
 					nameSet[name] = len(item.Staff) - 1
 				}
@@ -239,11 +232,11 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 				name = comm_tools.TrimBlankChar(name)
 
 				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter.String())
+					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter)
 				} else {
 					item.Staff = append(item.Staff, handler.StaffVo{
 						Name:     name,
-						Relation: []string{model.PRelationWriter.String()},
+						Relation: []model.PersonRelation{model.PRelationWriter},
 					})
 					nameSet[name] = len(item.Staff) - 1
 				}
@@ -324,7 +317,7 @@ func (gc *GetChu) GetItemStory(node *goquery.Document) (string, error) {
 			return
 		}
 	})
-	return strings.TrimSpace(story), nil
+	return comm_tools.TrimBlankChar(story), nil
 }
 
 func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, error) {
@@ -344,14 +337,14 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				avatar, _ := selection.Find("td:nth-child(1) img").Attr("src")
 				name, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name").Text()))
 				if err != nil {
-					zaplog.L().Error("")
-					return
+					zaplog.L().With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
+				name = comm_tools.TrimBlankChar(name)
 				introduction, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) dd").Text()))
 				if err != nil {
-					zaplog.L().Error("")
-					return
+					zaplog.L().With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
+				introduction = comm_tools.TrimBlankChar(introduction)
 				image, _ := selection.Find("td:nth-child(3) a").Attr("href")
 				characters = append(characters, handler.CharacterVo{
 					Name:    name,

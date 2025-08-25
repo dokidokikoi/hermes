@@ -1,37 +1,41 @@
 package character
 
 import (
+	"context"
 	"errors"
 	"hermes/db/data"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	comm_errors "github.com/dokidokikoi/go-common/errors"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Update(ctx *gin.Context) {
-	var input model.Character
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		core.WriteResponse(ctx, comm_errors.ApiErrValidation, nil)
-		return
-	}
-
+func (h Handler) Update(ctx context.Context, input *model.Character) (any, *comm_errors.APIError) {
 	tx := data.GetDataFactory().Transaction().Begin()
 	err := tx.CharacterTag().Delete(ctx, &model.CharacterTag{CharacterID: input.ID}, nil)
 	if err != nil {
 		tx.Transaction().Rollback()
-		core.WriteResponse(ctx, comm_errors.ApiErrSystemErr, nil)
-		return
+		return nil, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
 	}
 
-	if err := tx.Character().Update(ctx, &input, nil); err != nil {
+	tags := []*model.CharacterTag{}
+	for _, tag := range input.Tags {
+		tags = append(tags, &model.CharacterTag{
+			CharacterID: input.ID,
+			TagID:       tag.ID,
+		})
+	}
+	err = tx.CharacterTag().Creates(ctx, tags, nil)
+	if err != nil {
+		tx.Transaction().Rollback()
+		return nil, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
+	}
+
+	if err := tx.Character().Update(ctx, input, nil); err != nil {
 		if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
 			tx.Transaction().Rollback()
-			core.WriteResponse(ctx, comm_errors.ApiErrSystemErr, nil)
-			return
+			return nil, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
 		}
 	}
 
-	core.WriteResponse(ctx, nil, nil)
+	return nil, nil
 }

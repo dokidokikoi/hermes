@@ -9,10 +9,10 @@ import (
 	meta "github.com/dokidokikoi/go-common/meta/option"
 )
 
-type CharacterWhereNodeFunc func(ctx context.Context, param handler.CharacterListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption)
+type CharacterWhereNodeFunc func(ctx context.Context, param handler.CharacterSearchReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption)
 
 type ICharacter interface {
-	Search(ctx context.Context, param handler.CharacterListReq, opt *meta.ListOption, cwfs ...CharacterWhereNodeFunc) (int64, []*model.Character, error)
+	Search(ctx context.Context, param handler.CharacterSearchReq, opt *meta.ListOption, cwfs ...CharacterWhereNodeFunc) (int64, []*model.Character, error)
 }
 
 var _ ICharacter = (*character)(nil)
@@ -21,7 +21,7 @@ type character struct {
 	store db.IStore
 }
 
-func (csrv *character) Search(ctx context.Context, param handler.CharacterListReq, opt *meta.ListOption, cwfs ...CharacterWhereNodeFunc) (int64, []*model.Character, error) {
+func (csrv *character) Search(ctx context.Context, param handler.CharacterSearchReq, opt *meta.ListOption, cwfs ...CharacterWhereNodeFunc) (int64, []*model.Character, error) {
 	head := &meta.WhereNode{}
 	node := head
 	if opt == nil {

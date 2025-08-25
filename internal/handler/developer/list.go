@@ -1,20 +1,27 @@
 package developer
 
 import (
+	"context"
 	"hermes/db/data"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
 	meta "github.com/dokidokikoi/go-common/meta/option"
-	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) List(ctx *gin.Context) {
+type ListResponse struct {
+	List  []*model.Developer `json:"list"`
+	Total int64              `json:"total"`
+}
+
+func (h Handler) List(ctx context.Context, req any) (any, *errors.APIError) {
 	list, err := data.GetDataFactory().Developer().List(ctx, &model.Developer{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return nil, errors.ApiErrSystemErr
 	}
-	core.WriteListResponse(ctx, nil, int64(len(list)), list)
+
+	return &ListResponse{
+		List:  list,
+		Total: int64(len(list)),
+	}, nil
 }

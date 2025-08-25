@@ -1,25 +1,15 @@
 package person
 
 import (
+	"context"
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/core"
 	"github.com/dokidokikoi/go-common/errors"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
-func (h Handler) Upsert(ctx *gin.Context) {
-	var input handler.StaffVo
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		zaplog.L().Error(errors.ApiErrValidation.Message, zap.Error(err))
-		core.WriteResponse(ctx, errors.ApiErrValidation, nil)
-		return
-	}
-
+func (h Handler) Upsert(ctx context.Context, input *handler.StaffVo) (uint, *errors.APIError) {
 	p := &model.Person{
 		ID:      input.ID,
 		Name:    input.Name,
@@ -28,7 +18,7 @@ func (h Handler) Upsert(ctx *gin.Context) {
 		Images:  input.Images,
 		Tags:    input.Tags,
 		Summary: input.Summary,
-		Gender:  model.GenderMap[input.Gender],
+		Gender:  input.Gender,
 	}
 
 	var err error
@@ -38,8 +28,8 @@ func (h Handler) Upsert(ctx *gin.Context) {
 		err = data.GetDataFactory().Person().Update(ctx, p, nil)
 	}
 	if err != nil {
-		core.WriteResponse(ctx, errors.ApiErrSystemErr, nil)
-		return
+		return 0, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
-	core.WriteResponse(ctx, nil, input.ID)
+
+	return p.ID, nil
 }

@@ -13,16 +13,20 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
 )
 
+var ggBasesScraper *ggbases.GGBases
+
 func init() {
-	config.SetConfig("../../conf/application.yaml")
-	zaplog.SetLogger(config.GetConfig().LogConfig)
+	ggBasesScraper = ggbases.NewGGBases(map[string]string{
+		"User-Agent":      config.DefaultUserAgent,
+		"Accept-Language": config.ZhLanguage,
+		// "Cookie":          ggbases.DefaultHeader_Cookie,
+	})
 }
 
 func TestSearch(t *testing.T) {
-	items, err := ggbases.GGBasesScraper.Search("白濁のレッスン", 1)
+	items, err := ggBasesScraper.Search("白濁のレッスン", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +36,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := ggbases.GGBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=124340", nil, nil)
+	data, err := ggBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=124340", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -58,7 +62,7 @@ func TestReq(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := ggbases.GGBasesScraper.GetItem("https://ggbases.dlgal.com/view.so?id=125945")
+	item, err := ggBasesScraper.GetItem("https://ggbases.dlgal.com/view.so?id=125945")
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +70,7 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestGetItemLink(t *testing.T) {
-	data, err := ggbases.GGBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=120270", nil, nil)
+	data, err := ggBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=120270", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +80,7 @@ func TestGetItemLink(t *testing.T) {
 		panic(err)
 	}
 
-	links, err := ggbases.GGBasesScraper.GetItemLink(root, "120270")
+	links, err := ggBasesScraper.GetItemLink(root, "120270")
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +103,7 @@ func TestDetail(t *testing.T) {
 		return
 	}
 
-	body, err := ggbases.GGBasesScraper.DoReq(method, url, map[string]string{
+	body, err := ggBasesScraper.DoReq(method, url, map[string]string{
 		"Content-Type": writer.FormDataContentType(),
 		"Referer":      "https://ggbases.dlgal.com/view.so?id=120270",
 	}, payload)
@@ -117,7 +121,7 @@ func TestDetail(t *testing.T) {
 }
 
 func TestGetMagnet(t *testing.T) {
-	hash, err := ggbases.GGBasesScraper.GetMagnet("128413")
+	hash, err := ggBasesScraper.GetMagnet("128413")
 	if err != nil {
 		t.Fatal(err)
 	}

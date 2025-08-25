@@ -66,9 +66,7 @@ func (d *data) GameInstance() db.IGameInstance {
 func (d *data) Task() db.ITask {
 	return newTask(d)
 }
-func (d *data) RefGameInstance() db.IRefGameInstance {
-	return newRefGameInstance(d)
-}
+
 func (d *data) Policy() db.IPolicy {
 	return newPolicy(d)
 }
