@@ -1,9 +1,11 @@
-postgresql:
-  host: 127.0.0.1
-  port: 5432
-  username: hermes
-  database: hermes
-  password: hermes
+# postgresql:
+#   host: 127.0.0.1
+#   port: 5432
+#   username: izumi
+#   database: izumi
+#   password: 1234567
+sqlite:
+  database: ./izumi.db
 app: 
   port: 19876
 log:
@@ -11,3 +13,4 @@ log:
     level_range: "[info,error)"
   - filename: ./log/error.log
     level_range: "[error,)"
+  

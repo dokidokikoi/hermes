@@ -18,11 +18,12 @@ import (
 var ggBasesScraper *ggbases.GGBases
 
 func init() {
-	ggBasesScraper = ggbases.NewGGBases(map[string]string{
+	scraper := ggbases.NewGGBases(map[string]string{
 		"User-Agent":      config.DefaultUserAgent,
 		"Accept-Language": config.ZhLanguage,
 		// "Cookie":          ggbases.DefaultHeader_Cookie,
 	})
+	ggBasesScraper = scraper.(*ggbases.GGBases)
 }
 
 func TestSearch(t *testing.T) {

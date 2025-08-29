@@ -8,12 +8,12 @@ import (
 
 type Character struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
-	Name      string         `json:"name"`
-	Alias     pq.StringArray `gorm:"type:text[]" json:"alias"`
-	Gender    Gender         `json:"gender"`
+	Name      string         `gorm:"type:varchar(255)" json:"name"`
+	Alias     pq.StringArray `gorm:"type:json" json:"alias"`
+	Gender    Gender         `gorm:"type:varchar(10)" json:"gender"`
 	Summary   string         `json:"summary"`
-	Cover     string         `json:"cover"`
-	Images    pq.StringArray `gorm:"type:text[]" json:"images"`
+	Cover     string         `gorm:"type:varchar(512)" json:"cover"`
+	Images    pq.StringArray `gorm:"type:json" json:"images"`
 	CV        Person         `gorm:"foreignKey:PersonID" json:"cv"`
 	PersonID  uint           `gorm:"default:null" json:"-"`
 	Tags      []Tag          `gorm:"many2many:character_tag;" json:"tags"`

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"hermes/db/data"
 	"hermes/internal/handler"
+	"hermes/internal/handler/notice"
 	"hermes/model"
 	"hermes/scraper/event"
 	"time"
@@ -31,6 +32,21 @@ func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq) (s
 			continue
 		}
 		gopool.CtxGo(ctx, func() {
+			var err error
+			defer func() {
+				msg := map[string]any{
+					"type":       "scrape",
+					"name":       s.GetName(),
+					"request_id": requestID,
+					"result":     "success",
+				}
+				if err != nil {
+					msg["result"] = "failed"
+				}
+				data, _ := json.Marshal(msg)
+				notice.HubIns.SendMsg(data)
+			}()
+
 			task := &model.Task{
 				RequestID:   requestID,
 				ScraperName: req.Name,
@@ -39,7 +55,7 @@ func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq) (s
 				Status:      model.TaskStatusWait,
 				StartAt:     time.Now(),
 			}
-			err := data.GetDataFactory().Task().Create(ctx, task, nil)
+			err = data.GetDataFactory().Task().Create(ctx, task, nil)
 			if err != nil {
 				zaplog.L().Error("创建任务失败", zap.Error(err))
 				return

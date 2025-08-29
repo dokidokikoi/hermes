@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx context.Context, id uint64) (*handler.CharacterVo, *errors.APIError) {
+func (h Handler) Get(ctx context.Context, req *struct{}) (*handler.CharacterVo, *errors.APIError) {
 	id, err := strconv.ParseUint(ctx.(*gin.Context).Param("id"), 10, 32)
 	if err != nil {
 		return nil, errors.Wrap(errors.ApiErrValidation, err)

@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
 
@@ -20,7 +21,6 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, *error
 		Category:  input.Category,
 		Developer: input.Developer,
 		Price:     input.Price,
-		Platform:  input.Platform,
 		Story:     input.Platform,
 		Series:    input.Series,
 		IssueDate: input.IssueDate,
@@ -49,10 +49,6 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, *error
 		})
 	}
 	for _, s := range input.Staff {
-		relations := []model.PersonRelation{}
-		for _, r := range s.Relation {
-			relations = append(relations, r)
-		}
 		ss = append(ss, &model.GameStaff{
 			GameID:   g.ID,
 			PersonID: s.ID,
@@ -66,12 +62,20 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, *error
 				Images:  s.Images,
 				Tags:    s.Tags,
 			},
-			Relations: relations,
+			Relations: s.Relation,
 		})
 	}
 	if err := h.srv.Game().UpdateL(ctx, g, cs, ss); err != nil {
 		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
 
+	return nil, nil
+}
+
+func (h Handler) UpdateIns(ctx context.Context, input *model.GameInstance) (any, *errors.APIError) {
+	err := data.GetDataFactory().GameInstance().Update(ctx, input, nil)
+	if err != nil {
+		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+	}
 	return nil, nil
 }

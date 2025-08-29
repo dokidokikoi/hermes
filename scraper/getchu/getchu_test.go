@@ -19,7 +19,7 @@ func init() {
 	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
 	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
 	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
-	getChuScraper = getchu.NewGetChu(map[string]string{
+	scraper := getchu.NewGetChu(map[string]string{
 		"User-Agent":         config.DefaultUserAgent,
 		"Accept-Language":    config.ZhLanguage,
 		"Cookie":             getchu.DefaultHeader_Cookie,
@@ -28,6 +28,7 @@ func init() {
 		"Sec-Ch-Ua-Platform": getchu.DefaultHeader_SecChUaPlatform,
 		"Referer":            getchu.DefaultHeader_Referer,
 	})
+	getChuScraper = scraper.(*getchu.GetChu)
 }
 
 func TestSearch(t *testing.T) {

@@ -2,14 +2,13 @@ package model
 
 import (
 	"encoding/json"
-	"hermes/config"
 	"time"
 )
 
 type Policy struct {
-	ID        uint `gorm:"primaryKey"`
-	Key       string
-	Policy    string
+	ID        uint      `gorm:"primaryKey"`
+	Key       string    `gorm:"type:varchar(32)"`
+	Policy    string    `gorm:"type:json"`
 	CreatedAt time.Time `gorm:"autoCreateTime:milli"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
@@ -28,7 +27,6 @@ func Parse[T SystemPolicy | PlatformPolicy | LanguagePolicy | ScraperPolicy](str
 }
 
 type SystemPolicy struct {
-	Proxy config.ProxyConfig `json:"proxy"`
 }
 
 func (SystemPolicy) Key() string {

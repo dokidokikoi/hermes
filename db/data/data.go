@@ -30,9 +30,6 @@ func (d *data) CharacterTag() db.ICharacterTag {
 func (d *data) Developer() db.IDeveloper {
 	return newDeveloper(d)
 }
-func (d *data) Publisher() db.IPublisher {
-	return newPublisher(d)
-}
 func (d *data) Series() db.ISeries {
 	return newSeries(d)
 }
@@ -76,8 +73,14 @@ func (d *data) Transaction() db.ITransaction {
 
 func GetDataFactory() *data {
 	once.Do(func() {
+		var pg *postgres.Store
+		if config.GetConfig().PGConfig.Database == "" {
+			pg = postgres.NewSqliteStore(config.GetConfig().SqliteConfig)
+		} else {
+			pg = postgres.NewPostgresStore(config.GetConfig().PGConfig)
+		}
 		dataIns = &data{
-			pg: postgres.NewPostgresStore(config.GetConfig().PGConfig),
+			pg: pg,
 		}
 	})
 

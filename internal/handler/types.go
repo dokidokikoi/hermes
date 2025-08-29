@@ -125,8 +125,6 @@ type ScraperSearchReq struct {
 
 type ScraperDetailReq struct {
 	RequestID string `json:"request_id"`
-	Path      string `json:"path"`
-	Version   string `json:"version"`
 	Objs      []struct {
 		Name string `json:"name"`
 		Url  string `json:"url"`

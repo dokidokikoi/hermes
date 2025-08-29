@@ -9,7 +9,7 @@ import (
 	"github.com/dokidokikoi/go-common/errors"
 )
 
-func (h *Handler) Ls(ctx context.Context, req handler.LsReq) (*core.ListResponseData[service.PathInfo], *errors.APIError) {
+func (h *Handler) Ls(ctx context.Context, req *handler.LsReq) (*core.ListResponseData[service.PathInfo], *errors.APIError) {
 	resp := new(core.ListResponseData[service.PathInfo])
 	if req.Path == "" {
 		req.Path = "/"

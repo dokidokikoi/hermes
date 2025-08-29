@@ -44,7 +44,7 @@ type GetChu struct {
 	Headers   map[string]string
 }
 
-func NewGetChu(headers map[string]string) *GetChu {
+func NewGetChu(headers map[string]string) scraper.IGameScraper {
 	return &GetChu{
 		name:      "getchu",
 		Domain:    GetChuDomain,

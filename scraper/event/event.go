@@ -11,6 +11,14 @@ import (
 	"hermes/scraper/twodfan"
 )
 
+var GameScraperConstructors = map[string]func(header map[string]string) scraper.IGameScraper{
+	bangumi.Name: bangumi.NewBangumi,
+	dlsite.Name:  dlsite.NewDlSite,
+	getchu.Name:  getchu.NewGetChu,
+	ggbases.Name: ggbases.NewGGBases,
+	twodfan.Name: twodfan.NewTwoDFan,
+}
+
 var GameScraperMap = map[string]scraper.IGameScraper{
 	// bangumi.BangumiScraper.GetName(): bangumi.BangumiScraper,
 	// dlsite.DlSiteScraper.GetName():   dlsite.DlSiteScraper,

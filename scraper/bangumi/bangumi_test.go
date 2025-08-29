@@ -3,11 +3,12 @@ package bangumi_test
 import (
 	"encoding/json"
 	"fmt"
+	"hermes/scraper"
 	"hermes/scraper/bangumi"
 	"testing"
 )
 
-var bangumiScraper *bangumi.Bangumi
+var bangumiScraper scraper.IGameScraper
 
 func init() {
 	// zaplog.SetLogger(config.GetConfig().LogConfig)

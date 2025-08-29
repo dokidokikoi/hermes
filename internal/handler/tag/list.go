@@ -14,7 +14,7 @@ type ListResponse struct {
 	Total int64        `json:"total"`
 }
 
-func (h Handler) List(ctx context.Context, req any) (*ListResponse, *errors.APIError) {
+func (h Handler) List(ctx context.Context, req *struct{}) (*ListResponse, *errors.APIError) {
 	list, err := data.GetDataFactory().Tag().List(ctx, &model.Tag{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
 		return nil, errors.Wrap(errors.ApiErrSystemErr, err)

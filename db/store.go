@@ -5,7 +5,6 @@ type IStore interface {
 	Character() ICharacter
 	CharacterTag() ICharacterTag
 	Developer() IDeveloper
-	Publisher() IPublisher
 	Series() ISeries
 	Tag() ITag
 	Game() IGame

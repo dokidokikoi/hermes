@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
 
@@ -9,12 +10,12 @@ import (
 )
 
 type CreateGameInstanceRequst struct {
-	GameID   uint   `json:"game_id"`
-	Version  string `json:"version"`
-	Path     string `json:"path"`
-	Size     int64  `json:"size"`
-	Language string `json:"language"`
-	Comment  string `json:"comment"`
+	GameID   uint     `json:"game_id"`
+	Version  string   `json:"version"`
+	Path     string   `json:"path"`
+	Size     int64    `json:"size"`
+	Language []string `json:"language"`
+	Comment  string   `json:"comment"`
 }
 
 type CreateGameRequest struct {
@@ -36,16 +37,12 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, *e
 		Price:       input.Game.Price,
 		IssueDate:   input.Game.IssueDate,
 		Story:       input.Game.Story,
-		Platform:    input.Game.Platform,
 		Tags:        input.Game.Tags,
 		Links:       input.Game.Links,
 		OtherInfo:   input.Game.OtherInfo,
 	}
 	if g.Developer != nil && g.Developer.Name == "" && g.Developer.ID == 0 {
 		g.Developer = nil
-	}
-	if g.Publisher != nil && g.Publisher.Name == "" && g.Publisher.ID == 0 {
-		g.Publisher = nil
 	}
 
 	// 角色
@@ -112,4 +109,20 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, *e
 		return 0, errors.Wrap(errors.ApiErrSystemErr, err)
 	}
 	return g.ID, nil
+}
+
+func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst) (uint, *errors.APIError) {
+	gameIns := &model.GameInstance{
+		GameID:   input.GameID,
+		Version:  input.Version,
+		Path:     input.Path,
+		Size:     input.Size,
+		Language: input.Language,
+		Comment:  input.Comment,
+	}
+	if err := data.GetDataFactory().GameInstance().Create(ctx, gameIns, nil); err != nil {
+		return 0, errors.Wrap(errors.ApiErrSystemErr, err)
+	}
+
+	return gameIns.ID, nil
 }

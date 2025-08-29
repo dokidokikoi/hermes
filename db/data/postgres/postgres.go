@@ -53,6 +53,22 @@ func NewPostgresStore(c config.PGConfig) *Store {
 	return pgFactory
 }
 
+func NewSqliteStore(c config.SqliteConfig) *Store {
+	dbIns, err := db.NewSqlite(c.Database)
+	if err != nil {
+		panic(err)
+	}
+	dbIns = dbIns.Session(&gorm.Session{FullSaveAssociations: true})
+	pgFactory := &Store{dbIns}
+
+	// cleanDatabase(dbIns)
+	// 自动化迁移
+	if err := migrateDatabase(dbIns); err != nil {
+		panic(err)
+	}
+	return pgFactory
+}
+
 func migrateDatabase(db *gorm.DB) error {
 	for _, t := range migrateTables {
 		if err := db.AutoMigrate(t); err != nil {

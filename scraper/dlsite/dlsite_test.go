@@ -18,7 +18,7 @@ func init() {
 	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
 	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
 	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
-	dlSiteScraper = dlsite.NewDlSite(map[string]string{
+	scraper := dlsite.NewDlSite(map[string]string{
 		"User-Agent":         config.DefaultUserAgent,
 		"Accept-Language":    config.ZhLanguage,
 		"Cookie":             dlsite.DefaultHeader_Cookie,
@@ -26,6 +26,7 @@ func init() {
 		"Sec-Ch-Ua-Mobile":   dlsite.DefaultHeader_SecChUaMobile,
 		"Sec-Ch-Ua-Platform": dlsite.DefaultHeader_SecChUaPlatform,
 	})
+	dlSiteScraper = scraper.(*dlsite.DlSite)
 }
 
 func TestSearch(t *testing.T) {

@@ -28,7 +28,6 @@ func Install(r gin.IRouter) {
 		gG.POST("/search", middleware.PreHandle(gH.Search))
 		gG.GET("/ins", middleware.PreHandle(gH.GetIns))
 		gG.PATCH("", middleware.PreHandle(gH.Update))
-		gG.GET("/ver", middleware.PreHandle(gH.GetVer))
 	}
 
 	sH := scraper.NewHandler()

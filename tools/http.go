@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"hermes/config"
 	"io"
 	"mime/multipart"
 	"net"
@@ -15,9 +14,6 @@ import (
 	"strings"
 	"time"
 
-	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	"github.com/dokidokikoi/go-common/tools"
-	"go.uber.org/zap"
 	"golang.org/x/net/proxy"
 	"resty.dev/v3"
 )
@@ -123,57 +119,6 @@ func SetMultipartFormWithOption(params map[string]string) Option {
 		r.SetMultipartFormData(params)
 		return nil
 	}
-}
-
-func MakeRequest(
-	method, uri string,
-	proxy config.ProxyConfig,
-	body io.Reader,
-	header map[string]string,
-	cookies []*http.Cookie,
-	retryCnt int) (data []byte, status int, err error) {
-
-	client := &http.Client{}
-	// 构建请求客户端
-	if proxy.Host != "" && proxy.Port != 0 {
-		p, err := tools.Socks5Proxy(fmt.Sprintf("%s:%d", proxy.Host, proxy.Port), proxy.Username, proxy.Password)
-		if err != nil {
-			zaplog.L().Error("proxy error", zap.Error(err))
-		}
-		client = createHTTPClient(p)
-	}
-
-	// 创建请求对象
-	req, err := createRequest(method, uri, body, header, cookies)
-	// 检查错误
-	if err != nil {
-		return nil, 0, err
-	}
-
-	var retry int = 0
-	var res *http.Response
-	for retry <= retryCnt {
-		// 执行请求
-		res, err = client.Do(req)
-		// 检查错误
-		if err == nil {
-			break
-		}
-		zaplog.L().Warn("request failed", zap.String("url", uri), zap.Error(err), zap.Int("retry", retry))
-		retry++
-	}
-	if err != nil {
-		return nil, 0, fmt.Errorf("%s [Request]: %s", uri, err)
-	}
-
-	// 获取请求状态码
-	status = res.StatusCode
-	// 读取请求内容
-	data, err = io.ReadAll(res.Body)
-	// 关闭请求连接
-	_ = res.Body.Close()
-
-	return data, status, err
 }
 
 // 创建http客户端

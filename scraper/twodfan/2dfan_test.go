@@ -19,12 +19,13 @@ func init() {
 	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
 	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
 	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
-	twoDFanScraper = twodfan.NewTwoDFan(map[string]string{
+	scraper := twodfan.NewTwoDFan(map[string]string{
 		"User-Agent":      config.DefaultUserAgent,
 		"Accept-Language": config.ZhLanguage,
 		"Cookie":          twodfan.DefaultHeader_Cookie,
 		"Referer":         "https://2dfan.com/",
 	})
+	twoDFanScraper = scraper.(*twodfan.TwoDFan)
 }
 
 func TestTwoDFan_GetItem(t *testing.T) {
@@ -37,11 +38,6 @@ func TestTwoDFan_GetItem(t *testing.T) {
 }
 
 func TestTwoDFan_Search(t *testing.T) {
-	config.SetProxyConfig(config.ProxyConfig{
-		Scheme: "socks5",
-		Host:   "127.0.0.1",
-		Port:   7890,
-	})
 	items, err := twoDFanScraper.Search("彼女", 1)
 	if err != nil {
 		panic(err)

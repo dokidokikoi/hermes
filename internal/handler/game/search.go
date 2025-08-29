@@ -10,13 +10,13 @@ import (
 	"github.com/dokidokikoi/go-common/query"
 )
 
-func (h Handler) Search(ctx context.Context, req handler.GameListReq) (*core.ListResponseData[handler.GameVo], *errors.APIError) {
+func (h Handler) Search(ctx context.Context, req *handler.GameListReq) (*core.ListResponseData[handler.GameVo], *errors.APIError) {
 	var q query.PageQuery
 	q.Page = req.Page
 	q.PageSize = req.PageSize
 	q.Order = req.OrderBy
 
-	total, vos, err := h.srv.Game().Search(ctx, req, q.GetListOption(), service.GameBasicSearchNode...)
+	total, vos, err := h.srv.Game().Search(ctx, *req, q.GetListOption(), service.GameBasicSearchNode...)
 	if err != nil {
 		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
 	}

@@ -11,10 +11,10 @@ var configIns *config
 var proxyLock sync.RWMutex
 
 type config struct {
-	PGConfig    c.PGConfig  `mapstructure:"postgresql"`
-	LogConfig   c.LogConfig `mapstructure:"log"`
-	AppConfig   c.AppConfig `mapstructure:"app"`
-	ProxyConfig ProxyConfig `mapstructure:"proxy"`
+	PGConfig     c.PGConfig     `mapstructure:"postgresql"`
+	SqliteConfig c.SqliteConfig `mapstructure:"sqlite"`
+	LogConfig    c.LogConfig    `mapstructure:"log"`
+	AppConfig    c.AppConfig    `mapstructure:"app"`
 }
 
 func SetConfig(path string) {
@@ -23,17 +23,4 @@ func SetConfig(path string) {
 
 func GetConfig() config {
 	return *configIns
-}
-
-func GetProxyConfig() ProxyConfig {
-	proxyLock.RLock()
-	defer proxyLock.RUnlock()
-
-	return configIns.ProxyConfig
-}
-func SetProxyConfig(p ProxyConfig) {
-	proxyLock.Lock()
-	defer proxyLock.Unlock()
-
-	configIns.ProxyConfig = p
 }

@@ -44,7 +44,7 @@ type GGBases struct {
 	Headers   map[string]string
 }
 
-func NewGGBases(header map[string]string) *GGBases {
+func NewGGBases(header map[string]string) scraper.IGameScraper {
 	if header == nil {
 		header = make(map[string]string)
 	}

@@ -16,8 +16,8 @@ const (
 
 type Task struct {
 	ID          uint   `gorm:"primaryKey" json:"id"`
-	RequestID   string `gorm:"index:idx_request_id" json:"request_id"`
-	ScraperName string `json:"scraper_name"`
+	RequestID   string `gorm:"varchar(64);index:idx_request_id" json:"request_id"`
+	ScraperName string `gorm:"type:varchar(32)" json:"scraper_name"`
 	Type        int8
 	Param       string    `json:"param"`
 	Result      string    `json:"result"`

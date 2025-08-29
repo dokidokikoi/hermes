@@ -10,6 +10,7 @@ import (
 	"hermes/tools"
 	"maps"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -47,7 +48,7 @@ type DlSite struct {
 	Headers   map[string]string
 }
 
-func NewDlSite(header map[string]string) *DlSite {
+func NewDlSite(header map[string]string) scraper.IGameScraper {
 	return &DlSite{
 		name:      Name,
 		Domain:    DlSiteDomain,
@@ -172,9 +173,9 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	nameSet := map[string]int{}
 	root.Find("#work_outline tr").Each(func(i int, s *goquery.Selection) {
 		label := s.Find("th").Text()
-		if strings.Contains(label, "贩卖日") {
+		if slices.Contains([]string{"贩卖日", "販売日"}, label) {
 			item.IssueDate = tools.Str2Time(s.Find("td").First().Text())
-		} else if strings.Contains(label, "剧情") {
+		} else if slices.Contains([]string{"剧情", "シナリオ"}, label) {
 			s.Find("td").First().Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
@@ -186,7 +187,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 					})
 				}
 			})
-		} else if strings.Contains(label, "插画") {
+		} else if slices.Contains([]string{"插画", "イラスト"}, label) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
@@ -198,7 +199,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 					})
 				}
 			})
-		} else if strings.Contains(label, "声优") {
+		} else if slices.Contains([]string{"声优", "声優"}, label) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
@@ -210,7 +211,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 					})
 				}
 			})
-		} else if strings.Contains(label, "音乐") {
+		} else if slices.Contains([]string{"音乐", "音楽"}, label) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				name := comm_tools.TrimBlankChar(s.Text())
 				if idx, ok := nameSet[name]; ok {
@@ -338,10 +339,10 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 		}
 		cName := comm_tools.TrimBlankChar(name.String())
 
-		idx = strings.Index(text, "（CV")
+		idx = strings.Index(text, "（CV：")
 		name.Reset()
 		if idx > -1 {
-			idx += 5
+			idx += 8
 			for ; idx < len(text)-3; idx++ {
 				if text[idx:idx+3] == "）" {
 					break
@@ -352,7 +353,7 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 		characters = append(characters, handler.CharacterVo{
 			Name:    cName,
 			Cover:   url,
-			Summary: text,
+			Summary: comm_tools.TrimBlankChar(text),
 			CV: handler.StaffVo{
 				Name: comm_tools.TrimBlankChar(name.String()),
 			},

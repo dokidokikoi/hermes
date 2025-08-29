@@ -51,7 +51,7 @@ type Bangumi struct {
 	Headers   map[string]string
 }
 
-func NewBangumi(header map[string]string) *Bangumi {
+func NewBangumi(header map[string]string) scraper.IGameScraper {
 	return &Bangumi{
 		name:      Name,
 		Domain:    BangumiDomain,

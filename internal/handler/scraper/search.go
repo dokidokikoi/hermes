@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/internal/handler/notice"
@@ -30,6 +31,9 @@ func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (s
 			})
 		}
 	} else {
+		if _, ok := event.GameScraperMap[input.Name]; !ok {
+			return "", errors.Wrap(errors.ApiErrValidation, fmt.Errorf("name error"))
+		}
 		gopool.CtxGo(ctx, func() {
 			DoSearch(ctx, input.RequestID, *input, event.GameScraperMap[input.Name])
 		})
@@ -38,12 +42,24 @@ func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (s
 }
 
 func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearchReq, s scraper.IGameScraper) {
+	var err error
 	defer func() {
-		notice.HubIns.SendMsg([]byte(s.GetName()))
+		msg := map[string]any{
+			"type":       "search",
+			"name":       s.GetName(),
+			"request_id": requestID,
+			"result":     "success",
+		}
+		if err != nil {
+			msg["result"] = "failed"
+		}
+		data, _ := json.Marshal(msg)
+		notice.HubIns.SendMsg(data)
 	}()
 	if s == nil {
 		return
 	}
+
 	param, err := json.Marshal(input)
 	if err != nil {
 		zaplog.L().Error("刮削参数序列化失败", zap.Any("param", input), zap.Error(err))

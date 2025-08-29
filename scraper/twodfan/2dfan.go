@@ -9,7 +9,6 @@ import (
 	"hermes/tools"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -41,7 +40,7 @@ type TwoDFan struct {
 	Headers   map[string]string
 }
 
-func NewTwoDFan(header map[string]string) *TwoDFan {
+func NewTwoDFan(header map[string]string) scraper.IGameScraper {
 	return &TwoDFan{
 		name:      Name,
 		Domain:    twoDFanDomain,
@@ -80,10 +79,6 @@ func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, err
 	if err != nil {
 		return nil, err
 	}
-
-	f, _ := os.Create("index.html")
-	f.Write(data)
-	f.Close()
 
 	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
 	if err != nil {

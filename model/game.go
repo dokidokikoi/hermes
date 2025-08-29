@@ -106,15 +106,15 @@ func (a DownloadInfos) Value() (driver.Value, error) {
 }
 
 type GameInstance struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	GameID    uint      `gorm:"uniqueIndex:uk_game_version"`
-	Version   string    `gorm:"uniqueIndex:uk_game_version" json:"version"`
-	Path      string    `gorm:"index:idx_game_path" json:"path"`
-	Size      int64     `json:"size"`
-	Language  string    `json:"language"`
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	GameID    uint           `gorm:"uniqueIndex:uk_game_version"`
+	Version   string         `gorm:"uniqueIndex:uk_game_version" json:"version"`
+	Path      string         `gorm:"index:idx_game_path" json:"path"`
+	Size      int64          `json:"size"`
+	Language  pq.StringArray `gorm:"type:json" json:"language"`
+	Comment   string         `json:"comment"`
+	CreatedAt time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime:milli"`
 }
 
 func (GameInstance) TableName() string {
@@ -123,23 +123,21 @@ func (GameInstance) TableName() string {
 
 type Game struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
-	JanCode     string         `json:"jan_code"`
-	Code        string         `json:"code"`
-	Name        string         `json:"name"`
-	Alias       pq.StringArray `gorm:"type:text[]" json:"alias"`
-	Cover       string         `json:"cover"`
-	Images      pq.StringArray `gorm:"type:text[]" json:"images"`
+	JanCode     string         `gorm:"type:varchar(32)" json:"jan_code"`
+	Code        string         `gorm:"type:varchar(32)" json:"code"`
+	Name        string         `gorm:"type:varchar(255)" json:"name"`
+	Alias       pq.StringArray `gorm:"type:json" json:"alias"`
+	Cover       string         `gorm:"type:varchar(512)" json:"cover"`
+	Images      pq.StringArray `gorm:"type:json" json:"images"`
 	Category    *Category      `gorm:"foreignKey:CategoryID" json:"category"`
 	CategoryID  uint           `gorm:"default:null" json:"-"`
 	Series      []Series       `gorm:"many2many:game_series;" json:"series"`
 	Developer   *Developer     `gorm:"foreignKey:DeveloperID" json:"developer"`
 	DeveloperID uint           `gorm:"default:null" json:"-"`
-	Publisher   *Publisher     `gorm:"foreignKey:PublisherID" json:"publisher"`
 	PublisherID uint           `gorm:"default:null" json:"-"`
-	Price       string         `json:"price"`
+	Price       string         `gorm:"type:varchar(32)" json:"price"`
 	IssueDate   time.Time      `json:"issue_date"`
 	Story       string         `json:"story"`
-	Platform    string         `json:"platform"`
 	Tags        []Tag          `gorm:"many2many:game_tag;" json:"tags"`
 	Links       Links          `gorm:"type:json" json:"links"`
 	OtherInfo   string         `json:"other_info"`

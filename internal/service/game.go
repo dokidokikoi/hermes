@@ -397,19 +397,17 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		})
 	}
 	return &handler.GameVo{
-		ID:     g.ID,
-		Name:   g.Name,
-		Alias:  g.Alias,
-		Cover:  g.Cover,
-		Images: g.Images,
-		// Versions:   version,
+		ID:         g.ID,
+		Name:       g.Name,
+		Alias:      g.Alias,
+		Cover:      g.Cover,
+		Images:     g.Images,
 		Category:   g.Category,
 		Series:     g.Series,
 		Developer:  g.Developer,
 		Price:      g.Price,
 		IssueDate:  g.IssueDate,
 		Story:      g.Story,
-		Platform:   g.Platform,
 		Tags:       g.Tags,
 		Characters: cVos,
 		Staff:      sVos,
@@ -450,7 +448,6 @@ func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *me
 			Price:     g.Price,
 			IssueDate: g.IssueDate,
 			Story:     g.Story,
-			Platform:  g.Platform,
 			Tags:      g.Tags,
 			Links:     g.Links,
 			OtherInfo: g.OtherInfo,
@@ -509,16 +506,16 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 		gopool.CtxGo(ctx, func() {
 			defer wait.Done()
 
-			data, code, err := tools.MakeRequest(http.MethodGet, url, config.GetConfig().ProxyConfig, nil, nil, nil, config.DefaultRetryCnt)
+			rsp, err := tools.Req(http.MethodGet, url, nil)
 			if err != nil {
 				zaplog.L().Error("fetch file error", zap.String("file url", url), zap.Error(err))
 				return
 			}
-			if code != http.StatusOK {
-				zaplog.L().Error("fetch file status code not 200", zap.Int("status code", code))
+			if rsp.StatusCode() != http.StatusOK {
+				zaplog.L().Error("fetch file status code not 200", zap.Int("status code", rsp.StatusCode()))
 				return
 			}
-			path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(data), config.Dir)
+			path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(rsp.Bytes()), config.Dir)
 			if err != nil {
 				zaplog.L().Error("save file error", zap.Error(err))
 				return
