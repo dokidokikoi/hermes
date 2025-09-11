@@ -7,7 +7,6 @@ import (
 	"hermes/internal/handler/file"
 	"hermes/internal/handler/game"
 	"hermes/internal/handler/library"
-	"hermes/internal/handler/notice"
 	"hermes/internal/handler/person"
 	"hermes/internal/handler/policy"
 	"hermes/internal/handler/scraper"
@@ -15,6 +14,7 @@ import (
 	"hermes/internal/handler/tag"
 
 	"github.com/dokidokikoi/go-common/middleware"
+	"github.com/dokidokikoi/go-common/notice"
 	"github.com/gin-gonic/gin"
 )
 

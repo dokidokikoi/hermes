@@ -10,6 +10,7 @@ import (
 )
 
 func Init() {
+	config.SetConfig()
 	zaplog.SetLogger(config.GetConfig().LogConfig)
 	db := data.GetDataFactory()
 

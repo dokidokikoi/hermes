@@ -9,14 +9,13 @@ import (
 	"hermes/model"
 	"hermes/scraper"
 
-	"github.com/dokidokikoi/go-common/errors"
 	"github.com/tidwall/gjson"
 )
 
-func (h Handler) Get(ctx context.Context, input *handler.ScraperGetReq) (any, *errors.APIError) {
+func (h Handler) Get(ctx context.Context, input *handler.ScraperGetReq) (any, error) {
 	list, err := data.GetDataFactory().Task().List(ctx, &model.Task{RequestID: input.RequestID, Status: model.TaskStatusSucceed}, nil)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	if len(list) > 0 {
@@ -26,7 +25,7 @@ func (h Handler) Get(ctx context.Context, input *handler.ScraperGetReq) (any, *e
 				item := scraper.GameItem{}
 				err := json.Unmarshal([]byte(l.Result), &item)
 				if err != nil {
-					return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+					return nil, err
 				}
 				res = append(res, item)
 			}
@@ -37,7 +36,7 @@ func (h Handler) Get(ctx context.Context, input *handler.ScraperGetReq) (any, *e
 				items := []scraper.SearchItem{}
 				err := json.Unmarshal([]byte(l.Result), &items)
 				if err != nil {
-					return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+					return nil, err
 				}
 
 				res[fmt.Sprintf("%s - %s - %d", l.ScraperName, gjson.Get(l.Param, "keyword").String(), gjson.Get(l.Param, "page").Int())] = items

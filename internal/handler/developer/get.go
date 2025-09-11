@@ -6,18 +6,17 @@ import (
 	"hermes/model"
 	"strconv"
 
-	"github.com/dokidokikoi/go-common/errors"
 	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx context.Context, id uint64) (*model.Developer, *errors.APIError) {
+func (h Handler) Get(ctx context.Context, input struct{}) (*model.Developer, error) {
 	id, err := strconv.ParseUint(ctx.(*gin.Context).Param("id"), 10, 32)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrValidation, err)
+		return nil, err
 	}
 	developer, err := data.GetDataFactory().Developer().Get(ctx, &model.Developer{ID: uint(id)}, nil)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	return developer, nil

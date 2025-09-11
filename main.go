@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"hermes/config"
 	"hermes/db/data"
-	"hermes/inittask"
 	"hermes/internal"
+	"hermes/internal/inittask"
 	"log"
 	"net/http"
 	"time"
@@ -20,15 +19,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	configFile = flag.String("f", "./conf/application.yaml", "the config file")
-)
-
 func main() {
-	flag.Parse()
-
-	config.SetConfig(*configFile)
 	inittask.Init()
+
+	zaplog.L().Debug("config", zap.Any("config", config.GetConfig()))
 
 	e := gin.New()
 	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {

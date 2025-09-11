@@ -3,23 +3,26 @@ package scraper
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"hermes/constant"
 	"hermes/db/data"
 	"hermes/internal/handler"
-	"hermes/internal/handler/notice"
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/scraper/event"
 	"time"
 
-	"github.com/dokidokikoi/go-common/errors"
+	"github.com/dokidokikoi/go-common/notice"
+
+	"github.com/dokidokikoi/go-common/core"
+	comm_errs "github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
-func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (string, *errors.APIError) {
+func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (string, error) {
 	if input.RequestID == "" {
 		input.RequestID = uuid.New().String()
 	}
@@ -32,7 +35,8 @@ func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (s
 		}
 	} else {
 		if _, ok := event.GameScraperMap[input.Name]; !ok {
-			return "", errors.Wrap(errors.ApiErrValidation, fmt.Errorf("name error"))
+			core.WithErr(ctx, comm_errs.ApiErrValidation)
+			return "", errors.New("scraper name not found")
 		}
 		gopool.CtxGo(ctx, func() {
 			DoSearch(ctx, input.RequestID, *input, event.GameScraperMap[input.Name])
@@ -44,17 +48,18 @@ func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (s
 func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearchReq, s scraper.IGameScraper) {
 	var err error
 	defer func() {
-		msg := map[string]any{
-			"type":       "search",
-			"name":       s.GetName(),
-			"request_id": requestID,
-			"result":     "success",
-		}
+		msg := "success"
 		if err != nil {
-			msg["result"] = "failed"
+			msg = "failed"
 		}
-		data, _ := json.Marshal(msg)
-		notice.HubIns.SendMsg(data)
+		notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
+			Rid:     requestID,
+			Event:   constant.EVENT_SCRAPER_SEARCH,
+			Message: msg,
+			Data: map[string]any{
+				"name": s.GetName(),
+			},
+		})
 	}()
 	if s == nil {
 		return

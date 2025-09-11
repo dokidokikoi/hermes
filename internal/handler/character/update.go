@@ -9,12 +9,12 @@ import (
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 )
 
-func (h Handler) Update(ctx context.Context, input *model.Character) (any, *comm_errors.APIError) {
+func (h Handler) Update(ctx context.Context, input *model.Character) (any, error) {
 	tx := data.GetDataFactory().Transaction().Begin()
 	err := tx.CharacterTag().Delete(ctx, &model.CharacterTag{CharacterID: input.ID}, nil)
 	if err != nil {
 		tx.Transaction().Rollback()
-		return nil, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	tags := []*model.CharacterTag{}
@@ -27,13 +27,13 @@ func (h Handler) Update(ctx context.Context, input *model.Character) (any, *comm
 	err = tx.CharacterTag().Creates(ctx, tags, nil)
 	if err != nil {
 		tx.Transaction().Rollback()
-		return nil, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	if err := tx.Character().Update(ctx, input, nil); err != nil {
 		if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
 			tx.Transaction().Rollback()
-			return nil, comm_errors.Wrap(comm_errors.ApiErrSystemErr, err)
+			return nil, err
 		}
 	}
 

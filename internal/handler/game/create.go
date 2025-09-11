@@ -23,7 +23,7 @@ type CreateGameRequest struct {
 	GameIns *model.GameInstance `json:"game_ins"`
 }
 
-func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, *errors.APIError) {
+func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, error) {
 	g := &model.Game{
 		Code:        input.Game.Code,
 		JanCode:     input.Game.JanCode,
@@ -89,7 +89,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, *e
 	}
 	err := h.srv.Game().SaveFiles(ctx, g, cs, ss)
 	if err != nil {
-		return 0, errors.Wrap(errors.ApiErrSystemErr, err)
+		return 0, err
 	}
 
 	// 游戏实体
@@ -106,7 +106,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, *e
 
 	err = h.srv.Game().CreateL(ctx, g, cs, ss, gameIns)
 	if err != nil {
-		return 0, errors.Wrap(errors.ApiErrSystemErr, err)
+		return 0, err
 	}
 	return g.ID, nil
 }

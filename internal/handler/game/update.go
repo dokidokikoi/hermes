@@ -5,11 +5,9 @@ import (
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
-
-	"github.com/dokidokikoi/go-common/errors"
 )
 
-func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, *errors.APIError) {
+func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, error) {
 	g := &model.Game{
 		ID:        input.ID,
 		JanCode:   input.JanCode,
@@ -66,16 +64,16 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, *error
 		})
 	}
 	if err := h.srv.Game().UpdateL(ctx, g, cs, ss); err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	return nil, nil
 }
 
-func (h Handler) UpdateIns(ctx context.Context, input *model.GameInstance) (any, *errors.APIError) {
+func (h Handler) UpdateIns(ctx context.Context, input *model.GameInstance) (any, error) {
 	err := data.GetDataFactory().GameInstance().Update(ctx, input, nil)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 	return nil, nil
 }

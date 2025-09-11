@@ -17,7 +17,8 @@ func (h Handler) Get(ctx *gin.Context) {
 	if err != nil {
 		f, err = os.Open(filepath.Join(config.Dir, fileName))
 		if err != nil {
-			core.WriteResponse(ctx, errors.ApiErrValidation, nil)
+			core.WithErr(ctx, errors.ApiErrValidation)
+			core.WriteResponse(ctx, err, nil)
 			return
 		}
 	}

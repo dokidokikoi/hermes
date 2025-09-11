@@ -3,18 +3,15 @@ package data
 import (
 	"context"
 	"fmt"
-	"hermes/config"
 	"hermes/model"
 	"testing"
 )
 
 func TestConn(t *testing.T) {
-	config.SetConfig("../../conf/application.yaml")
 	GetDataFactory()
 }
 
 func TestTranscation(t *testing.T) {
-	config.SetConfig("../../conf/application.yaml")
 	game := model.Game{
 		Name: "test",
 		Tags: []model.Tag{
@@ -62,7 +59,6 @@ func TestTranscation(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	config.SetConfig("../../conf/application.yaml")
 	g, err := GetDataFactory().Game().Get(context.Background(), &model.Game{}, nil)
 	if err != nil {
 		panic(err)

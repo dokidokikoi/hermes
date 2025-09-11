@@ -1,14 +1,16 @@
 package config
 
 import (
-	"sync"
+	"bytes"
+	_ "embed"
 
 	c "github.com/dokidokikoi/go-common/config"
 )
 
-var configIns *config
+//go:embed application.yaml
+var defaultConfig []byte
 
-var proxyLock sync.RWMutex
+var configIns *config
 
 type config struct {
 	PGConfig     c.PGConfig     `mapstructure:"postgresql"`
@@ -17,8 +19,8 @@ type config struct {
 	AppConfig    c.AppConfig    `mapstructure:"app"`
 }
 
-func SetConfig(path string) {
-	c.Parse(path, &configIns, "HERMES")
+func SetConfig() {
+	c.Parse(bytes.NewBuffer(defaultConfig), &configIns, "HERMES")
 }
 
 func GetConfig() config {

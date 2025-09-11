@@ -56,6 +56,10 @@ type GameVo struct {
 	Staff         []StaffVo           `json:"staff"`
 	CreatedAt     time.Time           `json:"created_at"`
 	DownloadInfos model.DownloadInfos `json:"download_info"`
+
+	Version  string   `json:"version,omitempty"`
+	Language []string `json:"language,omitempty"`
+	Comment  string   `json:"comment,omitempty"`
 }
 
 type StaffVo struct {

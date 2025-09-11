@@ -3,21 +3,22 @@ package scraper
 import (
 	"context"
 	"encoding/json"
+	"hermes/constant"
 	"hermes/db/data"
 	"hermes/internal/handler"
-	"hermes/internal/handler/notice"
 	"hermes/model"
 	"hermes/scraper/event"
 	"time"
 
-	"github.com/dokidokikoi/go-common/errors"
+	"github.com/dokidokikoi/go-common/notice"
+
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq) (string, *errors.APIError) {
+func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq) (string, error) {
 	if input.RequestID == "" {
 		input.RequestID = uuid.New().String()
 	}
@@ -34,17 +35,18 @@ func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq) (s
 		gopool.CtxGo(ctx, func() {
 			var err error
 			defer func() {
-				msg := map[string]any{
-					"type":       "scrape",
-					"name":       s.GetName(),
-					"request_id": requestID,
-					"result":     "success",
-				}
+				msg := "success"
 				if err != nil {
-					msg["result"] = "failed"
+					msg = "failed"
 				}
-				data, _ := json.Marshal(msg)
-				notice.HubIns.SendMsg(data)
+				notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
+					Rid:     requestID,
+					Event:   constant.EVENT_SCRAPER_DETAIL,
+					Message: msg,
+					Data: map[string]any{
+						"name": s.GetName(),
+					},
+				})
 			}()
 
 			task := &model.Task{

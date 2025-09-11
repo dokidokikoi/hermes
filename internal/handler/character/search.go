@@ -5,7 +5,6 @@ import (
 	"hermes/internal/handler"
 	"hermes/internal/service"
 
-	"github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/query"
 )
 
@@ -14,7 +13,7 @@ type SearchResponse struct {
 	Total int64                 `json:"total"`
 }
 
-func (h Handler) Search(ctx context.Context, input *handler.CharacterSearchReq) (*SearchResponse, *errors.APIError) {
+func (h Handler) Search(ctx context.Context, input *handler.CharacterSearchReq) (*SearchResponse, error) {
 	q := &query.PageQuery{
 		Page:     input.Page,
 		PageSize: input.PageSize,
@@ -22,7 +21,7 @@ func (h Handler) Search(ctx context.Context, input *handler.CharacterSearchReq) 
 	}
 	total, list, err := h.srv.Character().Search(ctx, *input, q.GetListOption(), service.CharacterBasicSearchNode...)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 	vos := make([]handler.CharacterVo, len(list))
 	for i := range list {

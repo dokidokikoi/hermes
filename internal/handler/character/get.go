@@ -7,19 +7,18 @@ import (
 	"hermes/model"
 	"strconv"
 
-	"github.com/dokidokikoi/go-common/errors"
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx context.Context, req *struct{}) (*handler.CharacterVo, *errors.APIError) {
+func (h Handler) Get(ctx context.Context, req *struct{}) (*handler.CharacterVo, error) {
 	id, err := strconv.ParseUint(ctx.(*gin.Context).Param("id"), 10, 32)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrValidation, err)
+		return nil, err
 	}
 	c, err := data.GetDataFactory().Character().Get(ctx, &model.Character{ID: uint(id)}, nil)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	gs, err := data.GetDataFactory().Game().List(ctx, &model.Game{}, &meta.ListOption{
@@ -44,7 +43,7 @@ func (h Handler) Get(ctx context.Context, req *struct{}) (*handler.CharacterVo, 
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	cgvos := make([]handler.CharacterGameVo, len(gs))

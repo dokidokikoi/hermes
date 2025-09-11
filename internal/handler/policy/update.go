@@ -7,11 +7,10 @@ import (
 	"hermes/internal/handler"
 	"hermes/model"
 
-	"github.com/dokidokikoi/go-common/errors"
 	meta "github.com/dokidokikoi/go-common/meta/option"
 )
 
-func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any, *errors.APIError) {
+func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any, error) {
 	var policy any
 
 	switch input.Key {
@@ -19,7 +18,7 @@ func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any
 		t := new(model.SystemPolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			return nil, errors.Wrap(errors.ApiErrValidation, err)
+			return nil, err
 		}
 		policy = t
 		h.srv.Policy().SystemPolicyEffect(ctx, t)
@@ -27,7 +26,7 @@ func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any
 		t := new(model.ScraperPolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			return nil, errors.Wrap(errors.ApiErrValidation, err)
+			return nil, err
 		}
 		policy = t
 		h.srv.Policy().ScraperPolicyEffect(ctx, t)
@@ -35,20 +34,20 @@ func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any
 		t := new(model.LanguagePolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			return nil, errors.Wrap(errors.ApiErrValidation, err)
+			return nil, err
 		}
 		policy = t
 	case model.PlatformPolicy{}.Key():
 		t := new(model.PlatformPolicy)
 		err := json.Unmarshal([]byte(input.Policy), t)
 		if err != nil {
-			return nil, errors.Wrap(errors.ApiErrValidation, err)
+			return nil, err
 		}
 		policy = t
 	}
 	d, err := json.Marshal(policy)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrValidation, err)
+		return nil, err
 	}
 
 	err = data.GetDataFactory().Policy().UpdateByWhere(ctx, &meta.WhereNode{
@@ -61,7 +60,7 @@ func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any
 		},
 	}, &model.Policy{Policy: string(d)}, nil)
 	if err != nil {
-		return nil, errors.Wrap(errors.ApiErrSystemErr, err)
+		return nil, err
 	}
 
 	return nil, nil
