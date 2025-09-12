@@ -6,6 +6,7 @@ import (
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/tools"
+	"maps"
 	"net/http"
 	"strconv"
 	"sync"
@@ -49,6 +50,7 @@ type Bangumi struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	logger    *zap.Logger
 }
 
 func NewBangumi(header map[string]string) scraper.IGameScraper {
@@ -57,6 +59,7 @@ func NewBangumi(header map[string]string) scraper.IGameScraper {
 		Domain:    BangumiDomain,
 		SearchUri: BangumiSearchUri,
 		Headers:   header,
+		logger:    zaplog.L().Named(Name),
 	}
 }
 
@@ -66,9 +69,7 @@ func (b *Bangumi) GetName() string {
 
 func (b *Bangumi) SetHeader(header map[string]string) {
 	b.Lock()
-	for k, v := range header {
-		b.Headers[k] = v
-	}
+	maps.Copy(b.Headers, header)
 	b.Unlock()
 }
 
@@ -165,11 +166,11 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 	id := strconv.Itoa(int(gjson.GetBytes(data, "id").Int()))
 	item.Characters, err = b.GetItemCharacters(id)
 	if err != nil {
-		zaplog.L().Error("get characters error", zap.String("scraper", b.name), zap.Error(err))
+		b.logger.Error("get characters error", zap.String("scraper", b.name), zap.Error(err))
 	}
 	item.Staff, err = b.GetItemStaff(id)
 	if err != nil {
-		zaplog.L().Error("get staff error", zap.String("scraper", b.name), zap.Error(err))
+		b.logger.Error("get staff error", zap.String("scraper", b.name), zap.Error(err))
 	}
 
 	return item, nil
@@ -193,7 +194,7 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, err
 			id := c.Get("id").Int()
 			data, err := b.DoReq(http.MethodGet, fmt.Sprintf(BangumiCharactersInfoUri, strconv.Itoa(int(id))), nil, nil)
 			if err != nil {
-				zaplog.L().Error("request error", zap.String("url", fmt.Sprintf(BangumiCharactersInfoUri, strconv.Itoa(int(id)))), zap.Error(err))
+				b.logger.Error("request error", zap.String("url", fmt.Sprintf(BangumiCharactersInfoUri, strconv.Itoa(int(id)))), zap.Error(err))
 				return
 			}
 			cc := gjson.ParseBytes(data)
@@ -268,7 +269,7 @@ func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
 			id := s.Get("id").Int()
 			data, err := b.DoReq(http.MethodGet, fmt.Sprintf(BangumiPersonsInfoUri, strconv.Itoa(int(id))), nil, nil)
 			if err != nil {
-				zaplog.L().Error("request error", zap.String("url", fmt.Sprintf(BangumiPersonsInfoUri, strconv.Itoa(int(id)))), zap.Error(err))
+				b.logger.Error("request error", zap.String("url", fmt.Sprintf(BangumiPersonsInfoUri, strconv.Itoa(int(id)))), zap.Error(err))
 				return
 			}
 			ss := gjson.ParseBytes(data)

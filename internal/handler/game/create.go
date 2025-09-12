@@ -7,6 +7,7 @@ import (
 	"hermes/model"
 
 	"github.com/dokidokikoi/go-common/errors"
+	"github.com/google/uuid"
 )
 
 type CreateGameInstanceRequst struct {
@@ -25,6 +26,7 @@ type CreateGameRequest struct {
 
 func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, error) {
 	g := &model.Game{
+		UUID:        uuid.NewString(),
 		Code:        input.Game.Code,
 		JanCode:     input.Game.JanCode,
 		Name:        input.Game.Name,

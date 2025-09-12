@@ -123,6 +123,7 @@ func (GameInstance) TableName() string {
 
 type Game struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
+	UUID        string         `gorm:"type:varchar(255);unique" json:"uuid"`
 	JanCode     string         `gorm:"type:varchar(32)" json:"jan_code"`
 	Code        string         `gorm:"type:varchar(32)" json:"code"`
 	Name        string         `gorm:"type:varchar(255)" json:"name"`

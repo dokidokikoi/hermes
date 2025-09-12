@@ -42,6 +42,7 @@ type GetChu struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	logger    *zap.Logger
 }
 
 func NewGetChu(headers map[string]string) scraper.IGameScraper {
@@ -50,6 +51,7 @@ func NewGetChu(headers map[string]string) scraper.IGameScraper {
 		Domain:    GetChuDomain,
 		SearchUri: "",
 		Headers:   headers,
+		logger:    zaplog.L().Named(Name),
 	}
 }
 
@@ -89,7 +91,7 @@ func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error
 		s = s.Find("div.content_block")
 		name, err := tools.Jp2Utf8([]byte(s.Find("#detail_block td").Eq(0).Find("a").Eq(0).Text()))
 		if err != nil {
-			zaplog.L().Error("jp encode err", zap.Error(err))
+			gc.logger.Error("jp encode err", zap.Error(err))
 		}
 		url := s.Find("#package_block a img").AttrOr("data-original", "")
 		urls = append(urls, url)
@@ -167,24 +169,24 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 
 	item.Cover, item.Images, err = gc.GetItemCover(root, id)
 	if err != nil {
-		zaplog.L().Error("获取封面失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
+		gc.logger.Error("获取封面失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Name, err = gc.GetItemName(root)
 	if err != nil {
-		zaplog.L().Error("获取名称失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
+		gc.logger.Error("获取名称失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
 	}
 
 	root.Find("#soft_table tr:nth-child(2) table tr").Each(func(i int, s *goquery.Selection) {
 		title, err := tools.Jp2Utf8([]byte(s.Find("td").First().Text()))
 		if err != nil {
-			zaplog.L().Error("jp 解码错误", zap.Error(err))
+			gc.logger.Error("jp 解码错误", zap.Error(err))
 			return
 		}
 
 		content := s.Find("td").Eq(1).Text()
 		content, err = tools.Jp2Utf8([]byte(content))
 		if err != nil {
-			zaplog.L().Error("jp 解码错误", zap.Error(err))
+			gc.logger.Error("jp 解码错误", zap.Error(err))
 			return
 		}
 
@@ -207,7 +209,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 			s.Find("td").Eq(1).Find("a").Each(func(i int, s *goquery.Selection) {
 				name, err := tools.Jp2Utf8([]byte(s.Text()))
 				if err != nil {
-					zaplog.L().Error("jp 解码错误", zap.Error(err))
+					gc.logger.Error("jp 解码错误", zap.Error(err))
 					return
 				}
 				name = comm_tools.TrimBlankChar(name)
@@ -226,7 +228,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 			s.Find("td").Eq(1).Find("a").Each(func(i int, s *goquery.Selection) {
 				name, err := tools.Jp2Utf8([]byte(s.Text()))
 				if err != nil {
-					zaplog.L().Error("jp 解码错误", zap.Error(err))
+					gc.logger.Error("jp 解码错误", zap.Error(err))
 					return
 				}
 				name = comm_tools.TrimBlankChar(name)
@@ -246,11 +248,11 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 
 	item.Characters, err = gc.GetItemCharacter(root)
 	if err != nil {
-		zaplog.L().Error("获取角色失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
+		gc.logger.Error("获取角色失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Story, err = gc.GetItemStory(root)
 	if err != nil {
-		zaplog.L().Error("获取故事失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
+		gc.logger.Error("获取故事失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
 	}
 
 	return item, nil
@@ -337,12 +339,12 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				avatar, _ := selection.Find("td:nth-child(1) img").Attr("src")
 				name, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name").Text()))
 				if err != nil {
-					zaplog.L().With(zap.Error(err)).Error("tools.Jp2Utf8")
+					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
 				name = comm_tools.TrimBlankChar(name)
 				introduction, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) dd").Text()))
 				if err != nil {
-					zaplog.L().With(zap.Error(err)).Error("tools.Jp2Utf8")
+					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
 				introduction = comm_tools.TrimBlankChar(introduction)
 				image, _ := selection.Find("td:nth-child(3) a").Attr("href")

@@ -46,6 +46,7 @@ type DlSite struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	logger    *zap.Logger
 }
 
 func NewDlSite(header map[string]string) scraper.IGameScraper {
@@ -54,6 +55,7 @@ func NewDlSite(header map[string]string) scraper.IGameScraper {
 		Domain:    DlSiteDomain,
 		SearchUri: "",
 		Headers:   header,
+		logger:    zaplog.L().Named(Name),
 	}
 }
 
@@ -150,23 +152,23 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	item.Code = id
 	item.Cover, item.Images, err = ds.GetItemCover(root)
 	if err != nil {
-		zaplog.L().Error("获取封面失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
+		ds.logger.Error("获取封面失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Developer, err = ds.GetItemDeveloper(root)
 	if err != nil {
-		zaplog.L().Error("获取开发商失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
+		ds.logger.Error("获取开发商失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Characters, err = ds.GetItemCharacter(root)
 	if err != nil {
-		zaplog.L().Error("获取角色失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
+		ds.logger.Error("获取角色失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Story, err = ds.GetItemStory(root)
 	if err != nil {
-		zaplog.L().Error("获取故事失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
+		ds.logger.Error("获取故事失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	links, err := ds.GetItemlink(root, id)
 	if err != nil {
-		zaplog.L().Error("获取链接失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
+		ds.logger.Error("获取链接失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links = append(item.Links, links...)
 

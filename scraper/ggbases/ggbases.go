@@ -42,6 +42,7 @@ type GGBases struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	logger    *zap.Logger
 }
 
 func NewGGBases(header map[string]string) scraper.IGameScraper {
@@ -54,6 +55,7 @@ func NewGGBases(header map[string]string) scraper.IGameScraper {
 		Domain:    GGBasesDomain,
 		SearchUri: GGBasesSearchUri,
 		Headers:   header,
+		logger:    zaplog.L().Named(Name),
 	}
 }
 
@@ -99,7 +101,7 @@ func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, erro
 
 			item.Cover, err = gg.GetListItemCover(s, item.URl)
 			if err != nil {
-				zaplog.L().Error("获取封面失败", zap.String("scraper", gg.name), zap.Error(err))
+				gg.logger.Error("获取封面失败", zap.String("scraper", gg.name), zap.Error(err))
 			}
 
 			lock.Lock()
@@ -155,28 +157,28 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 
 	item.Name, err = gg.GetItemName(root)
 	if err != nil {
-		zaplog.L().Warn("获取名称失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		gg.logger.Warn("获取名称失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Cover, err = gg.GetItemCover(root.Selection)
 	if err != nil {
-		zaplog.L().Warn("获取封面失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		gg.logger.Warn("获取封面失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.IssueDate, err = gg.GetItemIssueeDate(root)
 	if err != nil {
-		zaplog.L().Warn("获取发布时间失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		gg.logger.Warn("获取发布时间失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	links, err := gg.GetItemLink(root, id)
 	if err != nil {
-		zaplog.L().Warn("获取相关链接失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		gg.logger.Warn("获取相关链接失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links = append(item.Links, links...)
 	item.OtherInfo, err = gg.GetItemOtherInfo(root)
 	if err != nil {
-		zaplog.L().Warn("获取其它信息失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		gg.logger.Warn("获取其它信息失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	}
 	magnet, err := gg.GetMagnet(id)
 	if err != nil {
-		zaplog.L().Warn("获取磁力失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
+		gg.logger.Warn("获取磁力失败", zap.String("scraper", gg.name), zap.String("uri", uri), zap.Error(err))
 	} else {
 		item.DownloadInfos = append(item.DownloadInfos, model.DownloadInfo{
 			Content: magnet,

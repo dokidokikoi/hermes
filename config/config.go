@@ -3,6 +3,8 @@ package config
 import (
 	"bytes"
 	_ "embed"
+	"hermes/constant"
+	"strings"
 
 	c "github.com/dokidokikoi/go-common/config"
 )
@@ -20,7 +22,7 @@ type config struct {
 }
 
 func SetConfig() {
-	c.Parse(bytes.NewBuffer(defaultConfig), &configIns, "HERMES")
+	c.Parse(bytes.NewBuffer(defaultConfig), &configIns, strings.ToUpper(constant.PROJECT_NAME))
 }
 
 func GetConfig() config {

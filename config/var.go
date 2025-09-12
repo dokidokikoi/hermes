@@ -2,18 +2,19 @@ package config
 
 import (
 	"errors"
+	"hermes/constant"
 	"os"
 	"path/filepath"
 )
 
 const (
-	DIR_ENV = "HERMES_DATA_DIR"
+	DIR_ENV = "IZUMI_DATA_DIR"
 )
 
 var (
 	DefaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 	ZhLanguage       = "zh-CN;q=0.8,zh;q=0.7"
-	TmpDir           = filepath.Join(os.TempDir(), "izumi")
+	TmpDir           = filepath.Join(os.TempDir(), constant.PROJECT_NAME)
 	Dir              = ""
 	DefaultRetryCnt  = 5
 )
@@ -31,7 +32,7 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		dir = filepath.Join(dir, "hermes")
+		dir = filepath.Join(dir, constant.PROJECT_NAME)
 	}
 	Dir = dir
 

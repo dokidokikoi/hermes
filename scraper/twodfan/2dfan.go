@@ -38,6 +38,7 @@ type TwoDFan struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	logger    *zap.Logger
 }
 
 func NewTwoDFan(header map[string]string) scraper.IGameScraper {
@@ -46,6 +47,7 @@ func NewTwoDFan(header map[string]string) scraper.IGameScraper {
 		Domain:    twoDFanDomain,
 		SearchUri: twoDFanSearchUri,
 		Headers:   header,
+		logger:    zaplog.L().Named(Name),
 	}
 }
 
@@ -146,44 +148,44 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	// 获取名称
 	item.Name, item.Alias, err = tdf.GetItemName(root)
 	if err != nil {
-		zaplog.L().Error("获取名称失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取名称失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	// 获取
 	item.Category, err = tdf.GetItemCategory(root)
 	if err != nil {
-		zaplog.L().Error("获取分类失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取分类失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Cover, item.Images, err = tdf.GetItemCover(root)
 	if err != nil {
-		zaplog.L().Error("获取封面失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取封面失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.IssueDate, err = tdf.GetItemIssueDate(root)
 	if err != nil {
-		zaplog.L().Error("获取发布日期失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取发布日期失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Characters, err = tdf.GetItemCharacters(root)
 	if err != nil {
-		zaplog.L().Error("获取角色失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取角色失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Developer, err = tdf.GetItemDeveloper(root)
 	if err != nil {
-		zaplog.L().Error("获取开发厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取开发厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Developer, err = tdf.GetItemDeveloper(root)
 	if err != nil {
-		zaplog.L().Error("获取发布厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取发布厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Tags, err = tdf.GetItemTags(root)
 	if err != nil {
-		zaplog.L().Error("获取tag失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取tag失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.OtherInfo, err = tdf.GetItemOtherInfo(root)
 	if err != nil {
-		zaplog.L().Error("获取其它信息失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取其它信息失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links, err = tdf.GetItemLinks(root)
 	if err != nil {
-		zaplog.L().Error("获取链接失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取链接失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Links = append(item.Links, model.Link{
 		Name: Name,
@@ -191,11 +193,11 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	})
 	item.Story, item.AllImages, err = tdf.GetItemStory(root)
 	if err != nil {
-		zaplog.L().Error("获取故事失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取故事失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 	item.Staff, err = tdf.GetItemStaff(root)
 	if err != nil {
-		zaplog.L().Error("获取staff失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
+		tdf.logger.Error("获取staff失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
 
 	return item, nil
@@ -217,11 +219,11 @@ func (tdf *TwoDFan) GetItemCover(node *goquery.Document) (string, []string, erro
 	if url != "" {
 		data, err := tdf.DoReq(http.MethodGet, url, map[string]string{"Referer": tdf.Domain}, nil)
 		if err != nil {
-			zaplog.L().Error("fetch iamge error", zap.String("url", url), zap.Error(err))
+			tdf.logger.Error("fetch iamge error", zap.String("url", url), zap.Error(err))
 		} else {
 			path, err := tools.SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
 			if err != nil {
-				zaplog.L().Error("fetch iamge error", zap.String("url", url), zap.Error(err))
+				tdf.logger.Error("fetch iamge error", zap.String("url", url), zap.Error(err))
 			} else {
 				images = append(images, path)
 			}

@@ -50,6 +50,8 @@ func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq) (any,
 					continue
 				}
 			}
+			defer f.Close()
+
 			gVo.Version = i.Version
 			gVo.Language = i.Language
 			gVo.Comment = i.Comment

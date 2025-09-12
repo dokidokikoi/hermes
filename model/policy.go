@@ -27,6 +27,7 @@ func Parse[T SystemPolicy | PlatformPolicy | LanguagePolicy | ScraperPolicy](str
 }
 
 type SystemPolicy struct {
+	GameLibrary string `json:"game_library"`
 }
 
 func (SystemPolicy) Key() string {
