@@ -5,6 +5,7 @@ import (
 	"errors"
 	"hermes/db/data"
 	"hermes/model"
+	"strings"
 
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 )
@@ -30,6 +31,7 @@ func (h Handler) Update(ctx context.Context, input *model.Character) (any, error
 		return nil, err
 	}
 
+	input.Name = strings.TrimSpace(input.Name)
 	if err := tx.Character().Update(ctx, input, nil); err != nil {
 		if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
 			tx.Transaction().Rollback()

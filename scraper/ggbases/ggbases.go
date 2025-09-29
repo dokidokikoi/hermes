@@ -210,7 +210,7 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 							Name: content,
 						}
 					default:
-						item.Tags = append(item.Tags, model.Tag{
+						item.Tags = append(item.Tags, &model.Tag{
 							Name: content,
 						})
 					}

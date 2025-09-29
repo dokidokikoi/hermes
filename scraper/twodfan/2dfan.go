@@ -378,12 +378,12 @@ func (tdf *TwoDFan) GetItemIssueDate(node *goquery.Document) (time.Time, error) 
 	return t, nil
 }
 
-func (tdf *TwoDFan) GetItemTags(node *goquery.Document) ([]model.Tag, error) {
-	var tags []model.Tag
+func (tdf *TwoDFan) GetItemTags(node *goquery.Document) ([]*model.Tag, error) {
+	var tags []*model.Tag
 	node.Find("#sidebar div.row-fluid").Each(func(i int, s *goquery.Selection) {
 		if strings.Contains(s.Find("div.title").Text(), "常用标签") {
 			s.Find("div.block-content a").Each(func(i int, s *goquery.Selection) {
-				tags = append(tags, model.Tag{
+				tags = append(tags, &model.Tag{
 					Name: s.Text(),
 				})
 			})

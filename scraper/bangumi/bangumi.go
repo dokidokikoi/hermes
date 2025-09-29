@@ -138,7 +138,7 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 	item.Cover = cover
 	item.Story = gjson.GetBytes(data, "summary").String()
 	for _, tag := range gjson.GetBytes(data, "tags").Array() {
-		item.Tags = append(item.Tags, model.Tag{
+		item.Tags = append(item.Tags, &model.Tag{
 			Name: tag.Get("name").String(),
 		})
 	}

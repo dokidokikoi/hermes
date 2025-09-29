@@ -15,12 +15,12 @@ func (d *transaction) Begin() db.IStore {
 	return &data{pg: d.pg.TransactionBegin()}
 }
 
-func (d *transaction) Rollback() {
-	d.pg.TransactionRollback()
+func (d *transaction) Rollback() error {
+	return d.pg.TransactionRollback()
 }
 
-func (d *transaction) Commit() {
-	d.pg.TransactionCommit()
+func (d *transaction) Commit() error {
+	return d.pg.TransactionCommit()
 }
 
 func newTransaction(d *data) *transaction {

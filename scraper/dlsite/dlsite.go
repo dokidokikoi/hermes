@@ -227,7 +227,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 			})
 		} else {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
-				item.Tags = append(item.Tags, model.Tag{
+				item.Tags = append(item.Tags, &model.Tag{
 					Name: comm_tools.TrimBlankChar(s.Text()),
 				})
 			})

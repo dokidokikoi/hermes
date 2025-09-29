@@ -5,6 +5,7 @@ import (
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
+	"strings"
 
 	"github.com/dokidokikoi/go-common/errors"
 	"github.com/google/uuid"
@@ -27,9 +28,9 @@ type CreateGameRequest struct {
 func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, error) {
 	g := &model.Game{
 		UUID:        uuid.NewString(),
-		Code:        input.Game.Code,
-		JanCode:     input.Game.JanCode,
-		Name:        input.Game.Name,
+		Code:        strings.TrimSpace(input.Game.Code),
+		JanCode:     strings.TrimSpace(input.Game.JanCode),
+		Name:        strings.TrimSpace(input.Game.Name),
 		Cover:       input.Game.Cover,
 		Alias:       input.Game.Alias,
 		Images:      input.Game.Images,
@@ -38,7 +39,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, er
 		DeveloperID: input.Game.Developer.ID,
 		Price:       input.Game.Price,
 		IssueDate:   input.Game.IssueDate,
-		Story:       input.Game.Story,
+		Story:       strings.TrimSpace(input.Game.Story),
 		Tags:        input.Game.Tags,
 		Links:       input.Game.Links,
 		OtherInfo:   input.Game.OtherInfo,

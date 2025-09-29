@@ -2,6 +2,6 @@ package db
 
 type ITransaction interface {
 	Begin() IStore
-	Rollback()
-	Commit()
+	Rollback() error
+	Commit() error
 }
