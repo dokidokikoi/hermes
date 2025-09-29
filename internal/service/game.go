@@ -506,17 +506,67 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 
 func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e error) {
 	db := data.GetDataFactory()
-	err := db.Category().Create(ctx, gVo.Category, &meta.CreateOption{Omit: []string{"ID"}})
+	cate, err := db.Category().Get(ctx, &model.Category{Name: gVo.Category.Name}, &meta.GetOption{Select: []string{"ID"}})
 	if err != nil {
-		return fmt.Errorf("create category error: %w", err)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("create category error: %w", err)
+		}
 	}
-	err = db.Series().Creates(ctx, gVo.Series, &meta.CreateCollectionOption{Omit: []string{"ID"}})
-	if err != nil {
-		return fmt.Errorf("create series error: %w", err)
+	if cate == nil {
+		err = db.Category().Create(ctx, gVo.Category, nil)
+		if err != nil {
+			return fmt.Errorf("create category error: %w", err)
+		}
+	} else {
+		gVo.Category.ID = cate.ID
 	}
-	err = db.Tag().Creates(ctx, gVo.Tags, &meta.CreateCollectionOption{Omit: []string{"ID"}})
+
+	dev, err := db.Developer().Get(ctx, &model.Developer{Name: gVo.Developer.Name}, &meta.GetOption{Select: []string{"ID"}})
 	if err != nil {
-		return fmt.Errorf("create tag error: %w", err)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("create developer error: %w", err)
+		}
+	}
+	if dev == nil {
+		err = db.Developer().Create(ctx, gVo.Developer, nil)
+		if err != nil {
+			return fmt.Errorf("create developer error: %w", err)
+		}
+	} else {
+		gVo.Developer.ID = dev.ID
+	}
+
+	for _, series := range gVo.Series {
+		s, err := db.Series().Get(ctx, &model.Series{Name: series.Name}, &meta.GetOption{Select: []string{"ID"}})
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("create series error: %w", err)
+			}
+		}
+		if s == nil {
+			err = db.Series().Create(ctx, series, nil)
+			if err != nil {
+				return fmt.Errorf("create category error: %w", err)
+			}
+		} else {
+			series.ID = s.ID
+		}
+	}
+	for _, tag := range gVo.Tags {
+		t, err := db.Tag().Get(ctx, &model.Tag{Name: tag.Name}, &meta.GetOption{Select: []string{"ID"}})
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("create tag error: %w", err)
+			}
+		}
+		if t == nil {
+			err = db.Tag().Create(ctx, tag, nil)
+			if err != nil {
+				return fmt.Errorf("create tag error: %w", err)
+			}
+		} else {
+			tag.ID = t.ID
+		}
 	}
 
 	var cs []*model.GameCharacter
