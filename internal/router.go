@@ -27,6 +27,7 @@ func Install(r gin.IRouter) {
 		gG.PUT("", middleware.PreHandle(gH.Create))
 		gG.POST("/search", middleware.PreHandle(gH.Search))
 		gG.GET("/ins", middleware.PreHandle(gH.GetIns))
+		gG.GET("", middleware.PreHandle(gH.Get))
 		gG.PATCH("", middleware.PreHandle(gH.Update))
 	}
 
@@ -42,6 +43,7 @@ func Install(r gin.IRouter) {
 	fG := r.Group("/file")
 	{
 		fG.GET("/:name", fH.Get)
+		fG.POST("/upload", fH.Upload)
 	}
 
 	tH := tag.NewHandler()
@@ -87,13 +89,17 @@ func Install(r gin.IRouter) {
 		characterG.GET("/:id", middleware.PreHandle(characterH.Get))
 		characterG.DELETE("", middleware.PreHandle(characterH.Del))
 		characterG.PATCH("", middleware.PreHandle(characterH.Update))
+		characterG.POST("", middleware.PreHandle(characterH.Create))
 	}
 
 	personH := person.NewHandler()
 	personG := r.Group("/person")
 	{
+		personG.GET("/:id", middleware.PreHandle(personH.Get))
 		personG.POST("/search", middleware.PreHandle(personH.Search))
 		personG.POST("", middleware.PreHandle(personH.Upsert))
+		personG.DELETE("", middleware.PreHandle(personH.Del))
+
 	}
 
 	policyH := policy.NewHandler()
@@ -105,7 +111,7 @@ func Install(r gin.IRouter) {
 
 	notifyG := r.Group("/notify")
 	{
-		notifyG.GET("scrap", notice.ServeWs)
+		notifyG.GET("", notice.ServeWs)
 	}
 
 	libraryH := library.NewHandler()

@@ -13,7 +13,6 @@ type GameListReq struct {
 	Staff          uint        `json:"staff"`
 	Character      uint        `json:"character"`
 	Developer      uint        `json:"developer"`
-	Publisher      uint        `json:"publisher"`
 	SizeRange      []int64     `json:"size_range"`
 	IssueDateRange []time.Time `json:"issue_date_range"`
 	CreatedAtRange []time.Time `json:"created_at_range"`
@@ -88,6 +87,7 @@ type CharacterVo struct {
 	Tags      []model.Tag             `json:"tags"`
 	CreatedAt time.Time               `json:"created_at"`
 	Games     []CharacterGameVo       `json:"games,omitempty"`
+	Weight    int8                    `json:"weight"`
 }
 
 type CharacterGameVo struct {

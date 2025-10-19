@@ -7,7 +7,6 @@ import (
 	"hermes/model"
 
 	"github.com/dokidokikoi/go-common/errors"
-	"github.com/google/uuid"
 )
 
 type CreateGameInstanceRequst struct {
@@ -26,22 +25,31 @@ type CreateGameRequest struct {
 
 func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, error) {
 	g := &model.Game{
-		UUID:        uuid.NewString(),
-		Code:        input.Game.Code,
-		JanCode:     input.Game.JanCode,
-		Name:        input.Game.Name,
-		Cover:       input.Game.Cover,
-		Alias:       input.Game.Alias,
-		Images:      input.Game.Images,
-		CategoryID:  input.Game.Category.ID,
-		Series:      input.Game.Series,
-		DeveloperID: input.Game.Developer.ID,
-		Price:       input.Game.Price,
-		IssueDate:   input.Game.IssueDate,
-		Story:       input.Game.Story,
-		Tags:        input.Game.Tags,
-		Links:       input.Game.Links,
-		OtherInfo:   input.Game.OtherInfo,
+		Code:    input.Game.Code,
+		JanCode: input.Game.JanCode,
+		Name:    input.Game.Name,
+		Cover:   input.Game.Cover,
+		Alias:   input.Game.Alias,
+		Images:  input.Game.Images,
+		CategoryID: func() uint {
+			if input.Game.Category != nil {
+				return input.Game.Category.ID
+			}
+			return 0
+		}(),
+		Series: input.Game.Series,
+		DeveloperID: func() uint {
+			if input.Game.Developer != nil {
+				return input.Game.Developer.ID
+			}
+			return 0
+		}(),
+		Price:     input.Game.Price,
+		IssueDate: input.Game.IssueDate,
+		Story:     input.Game.Story,
+		Tags:      input.Game.Tags,
+		Links:     input.Game.Links,
+		OtherInfo: input.Game.OtherInfo,
 	}
 	if g.Developer != nil && g.Developer.Name == "" && g.Developer.ID == 0 {
 		g.Developer = nil
@@ -96,7 +104,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, er
 
 	// 游戏实体
 	var gameIns *model.GameInstance
-	if input.GameIns != nil {
+	if input.GameIns != nil && input.GameIns.Path != "" {
 		gameIns = &model.GameInstance{
 			Path:     input.GameIns.Path,
 			Version:  input.GameIns.Version,

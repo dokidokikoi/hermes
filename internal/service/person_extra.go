@@ -29,7 +29,7 @@ func PersonWhereNodeKeyword(ctx context.Context, param handler.PersonListReq, no
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
 				{
-					Field:    "alias::text",
+					Field:    "alias",
 					Operator: meta.LIKE,
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
@@ -105,7 +105,7 @@ func PersonWhereNodeCreatedAtRange(ctx context.Context, param handler.PersonList
 	return node, opt
 }
 func PersonWhereNodeGender(ctx context.Context, param handler.PersonListReq, node *meta.WhereNode, opt *meta.ListOption) (*meta.WhereNode, *meta.ListOption) {
-	if param.Gender == model.UnKnown {
+	if param.Gender == model.UnKnown || param.Gender == "" {
 		return node, opt
 	}
 	node.Next = &meta.WhereNode{

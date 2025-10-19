@@ -31,7 +31,7 @@ func CharacterWhereNodeKeyword(ctx context.Context, param handler.CharacterSearc
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
 				{
-					Field:    "alias::text",
+					Field:    "alias",
 					Operator: meta.LIKE,
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},

@@ -229,22 +229,22 @@ func (gg *GGBases) GetItemName(node *goquery.Document) (string, error) {
 }
 
 func (gg *GGBases) GetListItemCover(node *goquery.Selection, detailUrl string) (string, error) {
-	c := node.Find("a[name='title']").Eq(0).AttrOr("c", "")
+	c := node.Find("a[name='title']").AttrOr("c", "")
 	cover := GetCover(c)
-	if cover == "" {
-		itemData, err := gg.DoReq(http.MethodGet, detailUrl, nil, nil)
-		if err != nil {
-			return "", err
-		}
-		root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(itemData))
-		if err != nil {
-			return "", err
-		}
-		cover, err = gg.GetItemCover(root.Selection)
-		if err != nil {
-			return "", err
-		}
-	}
+	// if cover == "" {
+	// 	itemData, err := gg.DoReq(http.MethodGet, detailUrl, nil, nil)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(itemData))
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	cover, err = gg.GetItemCover(root.Selection)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// }
 	return cover, nil
 }
 

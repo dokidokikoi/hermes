@@ -10,6 +10,7 @@ import (
 	"hermes/tools"
 	"maps"
 	"net/http"
+	"net/url"
 	"slices"
 	"strconv"
 	"strings"
@@ -35,7 +36,7 @@ const (
 
 var (
 	DlSiteDomain    = "https://www.dlsite.com/"
-	DlSiteSearchUrl = []string{"https://www.dlsite.com/pro/fsr/=/language/jp/sex_category%5B0%5D/male/keyword/", "keyword", "/work_category%5B0%5D/pc/order%5B0%5D/trend/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/ENG/options%5B2%5D/CHI/options%5B3%5D/OTL/options%5B4%5D/NM/options_name%5B0%5D/%E6%97%A5%E8%AF%AD%E4%BD%9C%E5%93%81/options_name%5B1%5D/%E8%8B%B1%E8%AF%AD%E4%BD%9C%E5%93%81/options_name%5B2%5D/%E4%B8%AD%E6%96%87%E4%BD%9C%E5%93%81/options_name%5B3%5D/%E4%B8%8D%E9%99%90%E8%AF%AD%E8%A8%80/per_page/30/page/", "page", "/show_type/3/lang_options%5B0%5D/%E6%97%A5%E6%96%87/lang_options%5B1%5D/%E8%8B%B1%E6%96%87/lang_options%5B2%5D/%E4%B8%AD%E6%96%87/lang_options%5B3%5D/%E5%85%B6%E4%BB%96%E8%AF%AD%E8%A8%80/lang_options%5B4%5D/%E4%B8%8D%E9%99%90%E8%AF%AD%E7%A7%8D"}
+	DlSiteSearchUrl = []string{"https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/keyword/", "keyword", "/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/order%5B0%5D/trend/options_and_or/and/per_page/30/page/", "page", "/from/fs.header"}
 	DlSitePriceUrl  = "https://www.dlsite.com/pro/product/info/ajax?product_id=%s&cdn_cache_min=1"
 	DlSiteVedioApi  = "https://chobit.cc/api/v1/dlsite/embed?workno=%s&_=%d"
 )
@@ -76,6 +77,7 @@ func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error
 	DlSiteSearchUrl[3] = strconv.Itoa(page)
 	url := strings.Join(DlSiteSearchUrl, "")
 
+	// url = "https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/keyword/%E6%81%A5%E7%8D%84%E9%9A%B7%E5%A5%B4%E3%82%BB%E3%83%AC%E3%83%B3/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/order%5B0%5D/trend/options_and_or/and/per_page/30/page/1/from/fs.header"
 	data, err := ds.DoReq(http.MethodGet, url, nil, nil)
 	if err != nil {
 		return nil, err
@@ -128,7 +130,14 @@ func (ds *DlSite) DoReq(method, uri string, header map[string]string, body inter
 }
 
 func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
-	data, err := ds.DoReq(http.MethodGet, uri, nil, nil)
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, err
+	}
+	query := u.Query()
+	query.Add("locale", "zh_CN")
+	u.RawQuery = query.Encode()
+	data, err := ds.DoReq(http.MethodGet, u.String(), nil, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hermes/config"
 	"hermes/scraper/ggbases"
 	"mime/multipart"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
@@ -19,15 +17,16 @@ var ggBasesScraper *ggbases.GGBases
 
 func init() {
 	scraper := ggbases.NewGGBases(map[string]string{
-		"User-Agent":      config.DefaultUserAgent,
-		"Accept-Language": config.ZhLanguage,
+		"User-Agent":      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+		"Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+		"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
 		// "Cookie":          ggbases.DefaultHeader_Cookie,
 	})
 	ggBasesScraper = scraper.(*ggbases.GGBases)
 }
 
 func TestSearch(t *testing.T) {
-	items, err := ggBasesScraper.Search("白濁のレッスン", 1)
+	items, err := ggBasesScraper.Search("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -37,22 +36,11 @@ func TestSearch(t *testing.T) {
 }
 
 func TestReq(t *testing.T) {
-	data, err := ggBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/view.so?id=124340", nil, nil)
+
+	data, err := ggBasesScraper.DoReq(http.MethodGet, "https://ggbases.dlgal.com/", nil, nil)
 	if err != nil {
 		panic(err)
 	}
-	str := string(data)
-	idx := strings.Index(str, `$("#showCoverBtn").attr("href", "`)
-	idx += len(`$("#showCoverBtn").attr("href", "`)
-
-	buf := bytes.Buffer{}
-	for ; idx < len(str); idx++ {
-		if str[idx] == '"' {
-			break
-		}
-		buf.WriteByte(str[idx])
-	}
-	fmt.Println(buf.String())
 
 	f, err := os.Create("index.html")
 	if err != nil {

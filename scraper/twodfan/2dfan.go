@@ -3,6 +3,7 @@ package twodfan
 import (
 	"bytes"
 	"fmt"
+	"hermes/config"
 	"hermes/internal/handler"
 	"hermes/model"
 	"hermes/scraper"
@@ -290,7 +291,7 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 				return
 			}
 
-			images = append(images, imgUrl)
+			images = append(images, "/api/file/"+strings.TrimPrefix(imgUrl, config.TmpDir))
 		})
 
 		html, _ := root.Find("#topic-content").Html()

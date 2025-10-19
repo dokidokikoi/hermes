@@ -19,7 +19,7 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, error)
 		Category:  input.Category,
 		Developer: input.Developer,
 		Price:     input.Price,
-		Story:     input.Platform,
+		Story:     input.Story,
 		Series:    input.Series,
 		IssueDate: input.IssueDate,
 		Links:     input.Links,
@@ -43,6 +43,7 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, error)
 				Cover:    c.Cover,
 				Tags:     c.Tags,
 				PersonID: c.CV.ID,
+				Weight:   c.Weight,
 			},
 		})
 	}

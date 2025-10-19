@@ -113,6 +113,7 @@ type GameInstance struct {
 	Size      int64          `json:"size"`
 	Language  pq.StringArray `gorm:"type:json" json:"language"`
 	Comment   string         `json:"comment"`
+	Platform  pq.StringArray `gorm:"type:json" json:"platform"`
 	CreatedAt time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime:milli"`
 }
@@ -123,7 +124,6 @@ func (GameInstance) TableName() string {
 
 type Game struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
-	UUID        string         `gorm:"type:varchar(255);unique" json:"uuid"`
 	JanCode     string         `gorm:"type:varchar(32)" json:"jan_code"`
 	Code        string         `gorm:"type:varchar(32)" json:"code"`
 	Name        string         `gorm:"type:varchar(255)" json:"name"`
@@ -135,7 +135,6 @@ type Game struct {
 	Series      []Series       `gorm:"many2many:game_series;" json:"series"`
 	Developer   *Developer     `gorm:"foreignKey:DeveloperID" json:"developer"`
 	DeveloperID uint           `gorm:"default:null" json:"-"`
-	PublisherID uint           `gorm:"default:null" json:"-"`
 	Price       string         `gorm:"type:varchar(32)" json:"price"`
 	IssueDate   time.Time      `json:"issue_date"`
 	Story       string         `json:"story"`
@@ -200,7 +199,7 @@ const (
 type GameStaff struct {
 	GameID    uint             `gorm:"primaryKey"`
 	PersonID  uint             `gorm:"primaryKey"`
-	Relation  PersonRelation   `json:"relation"`
+	Relation  PersonRelation   `gorm:"primaryKey" json:"relation"`
 	Relations []PersonRelation `gorm:"-" json:"-"`
 	Person    *Person          `gorm:"-" json:"-"`
 }

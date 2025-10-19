@@ -8,7 +8,6 @@ import (
 
 type Character struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
-	UUID      string         `gorm:"type:varchar(255);unique" json:"uuid"`
 	Name      string         `gorm:"type:varchar(255)" json:"name"`
 	Alias     pq.StringArray `gorm:"type:json" json:"alias"`
 	Gender    Gender         `gorm:"type:varchar(10)" json:"gender"`
@@ -16,8 +15,9 @@ type Character struct {
 	Cover     string         `gorm:"type:varchar(512)" json:"cover"`
 	Images    pq.StringArray `gorm:"type:json" json:"images"`
 	CV        Person         `gorm:"foreignKey:PersonID" json:"cv"`
-	PersonID  uint           `gorm:"default:null" json:"-"`
+	PersonID  uint           `gorm:"default:0" json:"-"`
 	Tags      []Tag          `gorm:"many2many:character_tag;" json:"tags"`
+	Weight    int8           `gorm:"default:0;type:tinyint" json:"weight"`
 	CreatedAt time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime:milli"`
 }

@@ -52,7 +52,7 @@ type game struct {
 
 func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error {
 	tx := gsrv.store.Transaction().Begin()
-	err := tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Developer", "Category", "Publisher"}})
+	err := tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Developer", "Category"}})
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
@@ -291,14 +291,18 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 }
 
 func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error) {
-	g, err := gsrv.store.Game().Get(ctx, &model.Game{ID: uint(id)}, &meta.GetOption{Preload: []string{"Tags", "Category", "Series", "Developer", "Publisher"}})
+	g, err := gsrv.store.Game().Get(ctx, &model.Game{ID: uint(id)}, &meta.GetOption{Preload: []string{"Tags", "Category", "Series", "Developer"}})
 	if err != nil {
 		return nil, err
 	}
 
 	// character
 	var cVos []handler.CharacterVo
-	gcs, err := gsrv.store.GameCharacter().List(ctx, &model.GameCharacter{GameID: g.ID}, nil)
+	gcs, err := gsrv.store.GameCharacter().List(
+		ctx,
+		&model.GameCharacter{GameID: g.ID},
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +321,16 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 			},
 		},
 	}
-	cs, err := gsrv.store.Character().ListComplex(ctx, &model.Character{}, node, &meta.ListOption{Page: 1, PageSize: 100, GetOption: meta.GetOption{Preload: []string{"CV", "Tags"}}})
+	cs, err := gsrv.store.Character().ListComplex(
+		ctx,
+		&model.Character{},
+		node,
+		&meta.ListOption{
+			Page:      1,
+			PageSize:  100,
+			GetOption: meta.GetOption{Preload: []string{"CV", "Tags"}},
+			Order:     "weight desc",
+		})
 	if err != nil {
 		return nil, err
 	}
