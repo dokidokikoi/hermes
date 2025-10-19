@@ -124,6 +124,7 @@ func (GameInstance) TableName() string {
 
 type Game struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
+	UUID        string         `gorm:"uniqueIndex;" json:"uuid"`
 	JanCode     string         `gorm:"type:varchar(32)" json:"jan_code"`
 	Code        string         `gorm:"type:varchar(32)" json:"code"`
 	Name        string         `gorm:"type:varchar(255)" json:"name"`
@@ -232,10 +233,10 @@ const (
 )
 
 type GameStaff struct {
-	GameID    uint             `gorm:"primaryKey"`
-	PersonID  uint             `gorm:"primaryKey"`
-	Relations []PersonRelation `gorm:"type:json"`
-	Person    *Person          `gorm:"-" json:"-"`
+	GameID    uint            `gorm:"primaryKey"`
+	PersonID  uint            `gorm:"primaryKey"`
+	Relations PersonRelations `gorm:"primaryKey;type:json"`
+	Person    *Person         `gorm:"-" json:"-"`
 }
 
 func (GameStaff) TableName() string {

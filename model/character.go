@@ -8,6 +8,7 @@ import (
 
 type Character struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
+	UUID      string         `gorm:"uniqueIndex;type:varchar(255)" json:"uuid"`
 	Name      string         `gorm:"type:varchar(255)" json:"name"`
 	Alias     pq.StringArray `gorm:"type:json" json:"alias"`
 	Gender    Gender         `gorm:"type:varchar(10)" json:"gender"`
