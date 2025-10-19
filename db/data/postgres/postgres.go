@@ -21,12 +21,12 @@ func (t *Store) TransactionBegin() *Store {
 	}
 }
 
-func (t *Store) TransactionRollback() {
-	t.DB.Rollback()
+func (t *Store) TransactionRollback() error {
+	return t.DB.Rollback().Error
 }
 
-func (t *Store) TransactionCommit() {
-	t.DB.Commit()
+func (t *Store) TransactionCommit() error {
+	return t.DB.Commit().Error
 }
 
 func (t *Store) Close() error {

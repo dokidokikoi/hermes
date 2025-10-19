@@ -5,12 +5,16 @@ import (
 	"hermes/db/data"
 	"hermes/internal/handler"
 	"hermes/model"
+	"strings"
+
+	"github.com/google/uuid"
 )
 
 func (h Handler) Upsert(ctx context.Context, input *handler.StaffVo) (uint, error) {
 	p := &model.Person{
 		ID:      input.ID,
-		Name:    input.Name,
+		UUID:    uuid.NewString(),
+		Name:    strings.TrimSpace(input.Name),
 		Alias:   input.Alias,
 		Cover:   input.Cover,
 		Images:  input.Images,

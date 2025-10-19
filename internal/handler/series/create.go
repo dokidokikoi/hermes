@@ -5,22 +5,20 @@ import (
 	"errors"
 	"hermes/db/data"
 	"hermes/model"
+	"strings"
 
-	comm_errors "github.com/dokidokikoi/go-common/errors"
-	meta "github.com/dokidokikoi/go-common/meta/option"
+	"gorm.io/gorm"
 )
 
 func (h Handler) Create(ctx context.Context, input *model.Series) (uint, error) {
-	if err := data.GetDataFactory().Series().Create(ctx, input, &meta.CreateOption{}); err != nil {
-		if errors.Is(err, comm_errors.ErrNameDuplicate) {
-			series, err := data.GetDataFactory().Series().Get(ctx, &model.Series{Name: input.Name}, &meta.GetOption{})
+	input.Name = strings.TrimSpace(input.Name)
+	if err := data.GetDataFactory().Series().Create(ctx, input, nil); err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			c, err := data.GetDataFactory().Series().Get(ctx, &model.Series{Name: input.Name}, nil)
 			if err != nil {
 				return 0, err
 			}
-			if series == nil {
-				return 0, nil
-			}
-			return series.ID, nil
+			return c.ID, nil
 		}
 		return 0, err
 	}

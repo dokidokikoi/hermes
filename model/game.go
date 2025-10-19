@@ -132,13 +132,13 @@ type Game struct {
 	Images      pq.StringArray `gorm:"type:json" json:"images"`
 	Category    *Category      `gorm:"foreignKey:CategoryID" json:"category"`
 	CategoryID  uint           `gorm:"default:null" json:"-"`
-	Series      []Series       `gorm:"many2many:game_series;" json:"series"`
+	Series      []*Series      `gorm:"many2many:game_series;" json:"series"`
 	Developer   *Developer     `gorm:"foreignKey:DeveloperID" json:"developer"`
 	DeveloperID uint           `gorm:"default:null" json:"-"`
 	Price       string         `gorm:"type:varchar(32)" json:"price"`
 	IssueDate   time.Time      `json:"issue_date"`
 	Story       string         `json:"story"`
-	Tags        []Tag          `gorm:"many2many:game_tag;" json:"tags"`
+	Tags        []*Tag         `gorm:"many2many:game_tag;" json:"tags"`
 	Links       Links          `gorm:"type:json" json:"links"`
 	OtherInfo   string         `json:"other_info"`
 	CreatedAt   time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
@@ -188,6 +188,41 @@ func (GameTag) TableName() string {
 
 type PersonRelation string
 
+type PersonRelations []PersonRelation
+
+func (a *PersonRelations) scanBytes(src []byte) error {
+	return json.Unmarshal(src, a)
+}
+
+// Scan implements the sql.Scanner interface.
+func (a *PersonRelations) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case []byte:
+		return a.scanBytes(src)
+	case string:
+		return a.scanBytes([]byte(src))
+	case nil:
+		*a = nil
+		return nil
+	}
+
+	return fmt.Errorf("cannot convert %T to Link", src)
+}
+
+// Value implements the driver.Valuer interface.
+func (a PersonRelations) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+
+	data, err := json.Marshal(a)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 const (
 	PRelationUnknown PersonRelation = "unknown"
 	PRelationPainter PersonRelation = "painter"
@@ -199,8 +234,7 @@ const (
 type GameStaff struct {
 	GameID    uint             `gorm:"primaryKey"`
 	PersonID  uint             `gorm:"primaryKey"`
-	Relation  PersonRelation   `gorm:"primaryKey" json:"relation"`
-	Relations []PersonRelation `gorm:"-" json:"-"`
+	Relations []PersonRelation `gorm:"type:json"`
 	Person    *Person          `gorm:"-" json:"-"`
 }
 

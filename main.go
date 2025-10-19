@@ -10,6 +10,7 @@ import (
 	"hermes/internal/inittask"
 	"log"
 	"net/http"
+	"syscall"
 	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -45,10 +46,12 @@ func main() {
 		}
 	}()
 
+	shutdown.WithSignals(syscall.SIGINT, syscall.SIGTERM)
 	shutdown.Close(
 		// 关闭服务器
 		func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			zaplog.L().Debug("shutdown server")
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
 
 			if err := srv.Shutdown(ctx); err != nil {
@@ -57,6 +60,7 @@ func main() {
 		},
 		// 关闭数据库连接
 		func() {
+			zaplog.L().Debug("close database")
 			if err := data.Close(); err != nil {
 				zaplog.L().Error("db close error", zap.Error(err))
 			}

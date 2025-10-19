@@ -14,7 +14,7 @@ func TestConn(t *testing.T) {
 func TestTranscation(t *testing.T) {
 	game := model.Game{
 		Name: "test",
-		Tags: []model.Tag{
+		Tags: []*model.Tag{
 			{
 				Name: "喜剧",
 			},
@@ -22,7 +22,7 @@ func TestTranscation(t *testing.T) {
 				Name: "哲学",
 			},
 		},
-		Series: []model.Series{
+		Series: []*model.Series{
 			{
 				Name: "喜剧",
 			},

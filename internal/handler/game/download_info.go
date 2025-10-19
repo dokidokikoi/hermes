@@ -55,6 +55,7 @@ func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq) (any,
 			gVo.Version = i.Version
 			gVo.Language = i.Language
 			gVo.Comment = i.Comment
+			gVo.Size = i.Size
 			err = downloadInfo(gVo, f)
 			if err != nil {
 				logger.Error("downloadInfo", zap.Error(err))
