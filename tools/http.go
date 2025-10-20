@@ -30,6 +30,19 @@ func Req(method, url string, body any, options ...Option) (*resty.Response, erro
 	return req.Execute(method, url)
 }
 
+func ReqWithProxy(method, url string, body any, proxy string, options ...Option) (*resty.Response, error) {
+	proxy = strings.TrimSpace(proxy)
+	if proxy == "" {
+		return Req(method, url, body, options...)
+	}
+	client := resty.New().SetRetryCount(3).SetProxy(proxy)
+	req := client.R().SetBody(body)
+	for _, o := range options {
+		o(req)
+	}
+	return req.Execute(method, url)
+}
+
 func SetHeadersWithOption(headers map[string]string) Option {
 	return func(r *resty.Request) error {
 		r.SetHeaders(headers)

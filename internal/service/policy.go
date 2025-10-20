@@ -33,13 +33,14 @@ func (p *policy) ScraperPolicyEffect(ctx context.Context, sp *model.ScraperPolic
 	if len(event.GameScraperMap) == 0 {
 		for name, c := range event.GameScraperConstructors {
 			if s, ok := (*sp)[name]; ok {
-				event.RegisterScraper(c(s.Header))
+				event.RegisterScraper(c(s.Header, s.Proxy))
 			}
 		}
 	} else {
 		for name, scraper := range event.GameScraperMap {
 			if s, ok := (*sp)[name]; ok {
 				scraper.SetHeader(s.Header)
+				scraper.SetProxy(s.Proxy)
 			}
 		}
 	}

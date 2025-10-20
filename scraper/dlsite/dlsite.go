@@ -47,15 +47,17 @@ type DlSite struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	Proxy     string
 	logger    *zap.Logger
 }
 
-func NewDlSite(header map[string]string) scraper.IGameScraper {
+func NewDlSite(header map[string]string, proxy string) scraper.IGameScraper {
 	return &DlSite{
 		name:      Name,
 		Domain:    DlSiteDomain,
 		SearchUri: "",
 		Headers:   header,
+		Proxy:     proxy,
 		logger:    zaplog.L().Named(Name),
 	}
 }
@@ -69,6 +71,12 @@ func (ds *DlSite) SetHeader(header map[string]string) {
 	for k, v := range header {
 		ds.Headers[k] = v
 	}
+	ds.Unlock()
+}
+
+func (ds *DlSite) SetProxy(proxy string) {
+	ds.Lock()
+	ds.Proxy = proxy
 	ds.Unlock()
 }
 
@@ -118,7 +126,7 @@ func (ds *DlSite) DoReq(method, uri string, header map[string]string, body inter
 		uri += "?" + query
 	}
 
-	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	rsp, err := tools.ReqWithProxy(method, uri, body, ds.Proxy, tools.SetHeadersWithOption(h))
 	if err != nil {
 		return nil, err
 	}

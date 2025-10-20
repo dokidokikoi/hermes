@@ -15,7 +15,7 @@ func init() {
 	bangumiScraper = bangumi.NewBangumi(map[string]string{
 		"Authorization": "Bearer a3mi4euoJlUYRjoedVNd55Dqj4tHVpIbgTMEoiHp",
 		"User-Agent":    bangumi.DefaultHeader_UserAgent,
-	})
+	}, "")
 }
 
 func TestSearch(t *testing.T) {

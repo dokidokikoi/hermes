@@ -42,15 +42,17 @@ type GetChu struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	Proxy     string
 	logger    *zap.Logger
 }
 
-func NewGetChu(headers map[string]string) scraper.IGameScraper {
+func NewGetChu(headers map[string]string, proxy string) scraper.IGameScraper {
 	return &GetChu{
 		name:      "getchu",
 		Domain:    GetChuDomain,
 		SearchUri: "",
 		Headers:   headers,
+		Proxy:     proxy,
 		logger:    zaplog.L().Named(Name),
 	}
 }
@@ -64,6 +66,12 @@ func (gc *GetChu) SetHeader(header map[string]string) {
 	for k, v := range header {
 		gc.Headers[k] = v
 	}
+	gc.RUnlock()
+}
+
+func (gc *GetChu) SetProxy(proxy string) {
+	gc.RLock()
+	gc.Proxy = proxy
 	gc.RUnlock()
 }
 
@@ -125,7 +133,7 @@ func (gc *GetChu) DoReq(method, uri string, header map[string]string, body inter
 		uri += "?" + query
 	}
 
-	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	rsp, err := tools.ReqWithProxy(method, uri, body, gc.Proxy, tools.SetHeadersWithOption(h))
 	if err != nil {
 		return nil, err
 	}

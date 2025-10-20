@@ -50,15 +50,17 @@ type Bangumi struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	Proxy     string
 	logger    *zap.Logger
 }
 
-func NewBangumi(header map[string]string) scraper.IGameScraper {
+func NewBangumi(header map[string]string, proxy string) scraper.IGameScraper {
 	return &Bangumi{
 		name:      Name,
 		Domain:    BangumiDomain,
 		SearchUri: BangumiSearchUri,
 		Headers:   header,
+		Proxy:     proxy,
 		logger:    zaplog.L().Named(Name),
 	}
 }
@@ -70,6 +72,12 @@ func (b *Bangumi) GetName() string {
 func (b *Bangumi) SetHeader(header map[string]string) {
 	b.Lock()
 	maps.Copy(b.Headers, header)
+	b.Unlock()
+}
+
+func (b *Bangumi) SetProxy(proxy string) {
+	b.Lock()
+	b.Proxy = proxy
 	b.Unlock()
 }
 

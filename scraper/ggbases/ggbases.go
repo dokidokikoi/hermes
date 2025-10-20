@@ -42,10 +42,11 @@ type GGBases struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	Proxy     string
 	logger    *zap.Logger
 }
 
-func NewGGBases(header map[string]string) scraper.IGameScraper {
+func NewGGBases(header map[string]string, proxy string) scraper.IGameScraper {
 	if header == nil {
 		header = make(map[string]string)
 	}
@@ -55,6 +56,7 @@ func NewGGBases(header map[string]string) scraper.IGameScraper {
 		Domain:    GGBasesDomain,
 		SearchUri: GGBasesSearchUri,
 		Headers:   header,
+		Proxy:     proxy,
 		logger:    zaplog.L().Named(Name),
 	}
 }
@@ -68,6 +70,12 @@ func (gg *GGBases) SetHeader(header map[string]string) {
 	for k, v := range header {
 		gg.Headers[k] = v
 	}
+	gg.Unlock()
+}
+
+func (gg *GGBases) SetProxy(proxy string) {
+	gg.Lock()
+	gg.Proxy = proxy
 	gg.Unlock()
 }
 
@@ -121,7 +129,7 @@ func (gg *GGBases) DoReq(method, uri string, header map[string]string, body inte
 	gg.RUnlock()
 	maps.Copy(h, header)
 
-	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	rsp, err := tools.ReqWithProxy(method, uri, body, gg.Proxy, tools.SetHeadersWithOption(h))
 	if err != nil {
 		return nil, err
 	}

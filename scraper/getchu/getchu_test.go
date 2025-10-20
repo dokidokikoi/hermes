@@ -27,7 +27,7 @@ func init() {
 		"Sec-Ch-Ua-Mobile":   getchu.DefaultHeader_SecChUaMobile,
 		"Sec-Ch-Ua-Platform": getchu.DefaultHeader_SecChUaPlatform,
 		"Referer":            getchu.DefaultHeader_Referer,
-	})
+	}, "")
 	getChuScraper = scraper.(*getchu.GetChu)
 }
 

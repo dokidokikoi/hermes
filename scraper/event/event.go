@@ -11,7 +11,7 @@ import (
 	"hermes/scraper/twodfan"
 )
 
-var GameScraperConstructors = map[string]func(header map[string]string) scraper.IGameScraper{
+var GameScraperConstructors = map[string]func(header map[string]string, proxy string) scraper.IGameScraper{
 	bangumi.Name: bangumi.NewBangumi,
 	dlsite.Name:  dlsite.NewDlSite,
 	getchu.Name:  getchu.NewGetChu,

@@ -28,7 +28,7 @@ func init() {
 		"Sec-Ch-Ua":          dlsite.DefaultHeader_SecChUa,
 		"Sec-Ch-Ua-Mobile":   dlsite.DefaultHeader_SecChUaMobile,
 		"Sec-Ch-Ua-Platform": dlsite.DefaultHeader_SecChUaPlatform,
-	})
+	}, "")
 	dlSiteScraper = scraper.(*dlsite.DlSite)
 }
 

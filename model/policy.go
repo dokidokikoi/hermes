@@ -49,6 +49,7 @@ func (LanguagePolicy) Key() string {
 type ScraperPolicy map[string]ScraperSubPolicy
 type ScraperSubPolicy struct {
 	Header map[string]string `json:"header"`
+	Proxy  string            `json:"proxy"`
 }
 
 func (ScraperPolicy) Key() string {

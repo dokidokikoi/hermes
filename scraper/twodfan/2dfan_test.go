@@ -24,7 +24,7 @@ func init() {
 		"Accept-Language": config.ZhLanguage,
 		"Cookie":          twodfan.DefaultHeader_Cookie,
 		"Referer":         "https://2dfan.com/",
-	})
+	}, "")
 	twoDFanScraper = scraper.(*twodfan.TwoDFan)
 }
 

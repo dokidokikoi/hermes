@@ -7,7 +7,6 @@ import (
 	"hermes/model"
 	"strings"
 
-	"github.com/dokidokikoi/go-common/errors"
 	"github.com/google/uuid"
 )
 
@@ -124,7 +123,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, er
 	return g.ID, nil
 }
 
-func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst) (uint, *errors.APIError) {
+func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst) (uint, error) {
 	gameIns := &model.GameInstance{
 		GameID:   input.GameID,
 		Version:  input.Version,
@@ -134,7 +133,7 @@ func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst)
 		Comment:  input.Comment,
 	}
 	if err := data.GetDataFactory().GameInstance().Create(ctx, gameIns, nil); err != nil {
-		return 0, errors.Wrap(errors.ApiErrSystemErr, err)
+		return 0, err
 	}
 
 	return gameIns.ID, nil

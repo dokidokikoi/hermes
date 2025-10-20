@@ -39,15 +39,17 @@ type TwoDFan struct {
 	Domain    string
 	SearchUri string
 	Headers   map[string]string
+	Proxy     string
 	logger    *zap.Logger
 }
 
-func NewTwoDFan(header map[string]string) scraper.IGameScraper {
+func NewTwoDFan(header map[string]string, proxy string) scraper.IGameScraper {
 	return &TwoDFan{
 		name:      Name,
 		Domain:    twoDFanDomain,
 		SearchUri: twoDFanSearchUri,
 		Headers:   header,
+		Proxy:     proxy,
 		logger:    zaplog.L().Named(Name),
 	}
 }
@@ -61,6 +63,12 @@ func (tdf *TwoDFan) SetHeader(header map[string]string) {
 	for k, v := range header {
 		tdf.Headers[k] = v
 	}
+	tdf.Unlock()
+}
+
+func (tdf *TwoDFan) SetProxy(proxy string) {
+	tdf.Lock()
+	tdf.Proxy = proxy
 	tdf.Unlock()
 }
 
@@ -124,7 +132,7 @@ func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body int
 		h[k] = v
 	}
 
-	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	rsp, err := tools.ReqWithProxy(method, uri, body, tdf.Proxy, tools.SetHeadersWithOption(h))
 	if err != nil {
 		return nil, err
 	}

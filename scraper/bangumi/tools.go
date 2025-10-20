@@ -22,7 +22,7 @@ func (b *Bangumi) DoReq(method, uri string, header map[string]string, body any) 
 		uri += "?" + query
 	}
 
-	rsp, err := tools.Req(method, uri, body, tools.SetHeadersWithOption(h))
+	rsp, err := tools.ReqWithProxy(method, uri, body, b.Proxy, tools.SetHeadersWithOption(h))
 	if err != nil {
 		return nil, err
 	}

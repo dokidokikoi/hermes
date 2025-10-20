@@ -25,4 +25,5 @@ type IGameScraper interface {
 	Search(keyword string, page int) ([]*SearchItem, error)
 	GetName() string
 	SetHeader(header map[string]string)
+	SetProxy(proxy string)
 }
