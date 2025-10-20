@@ -123,3 +123,27 @@ func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[st
 
 	return res
 }
+
+func Cp(src, dst string) error {
+	_, err := os.Stat(dst)
+	if err == nil {
+		return os.ErrExist
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+	dstF, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstF.Close()
+
+	srcF, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcF.Close()
+
+	_, err = io.Copy(dstF, srcF)
+	return err
+}

@@ -669,6 +669,8 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	defer func() {
 		if e != nil {
 			tx.Transaction().Rollback()
+		} else {
+			loadGameAllImages(zaplog.From(ctx), path, gVo)
 		}
 	}()
 
@@ -827,4 +829,54 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 
 func NewGame(store db.IStore) *game {
 	return &game{store: store}
+}
+
+func loadGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error {
+	if gVo.Cover != "" {
+		err := tools.Cp(filepath.Join(path, gVo.Cover), filepath.Join(config.Dir, gVo.Cover))
+		if err != nil {
+			logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, gVo.Cover))
+		}
+	}
+	for _, image := range gVo.Images {
+		if image != "" {
+			err := tools.Cp(filepath.Join(path, image), filepath.Join(config.Dir, image))
+			if err != nil {
+				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
+			}
+		}
+	}
+	for _, c := range gVo.Characters {
+		if c.Cover != "" {
+			err := tools.Cp(filepath.Join(path, c.Cover), filepath.Join(config.Dir, c.Cover))
+			if err != nil {
+				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, c.Cover))
+			}
+		}
+		for _, image := range c.Images {
+			if image != "" {
+				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.Dir, image))
+				if err != nil {
+					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
+				}
+			}
+		}
+	}
+	for _, s := range gVo.Staff {
+		if s.Cover != "" {
+			err := tools.Cp(filepath.Join(path, s.Cover), filepath.Join(config.Dir, s.Cover))
+			if err != nil {
+				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, s.Cover))
+			}
+		}
+		for _, image := range s.Images {
+			if image != "" {
+				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.Dir, image))
+				if err != nil {
+					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
+				}
+			}
+		}
+	}
+	return nil
 }

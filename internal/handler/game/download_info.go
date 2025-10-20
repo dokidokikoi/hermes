@@ -3,8 +3,11 @@ package game
 import (
 	"context"
 	"encoding/json"
+	"hermes/config"
 	"hermes/db/data"
+	"hermes/internal/handler"
 	"hermes/model"
+	"hermes/tools"
 	"io"
 	"os"
 	"path/filepath"
@@ -37,6 +40,11 @@ func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq) (any,
 				continue
 			}
 			if !info.IsDir() {
+				continue
+			}
+			err = cpGameAllImages(logger, i.Path, gVo)
+			if err != nil {
+				logger.Error("cpGameAllImages", zap.Error(err))
 				continue
 			}
 			f, err := os.OpenFile(filepath.Join(i.Path, "info.json"), os.O_WRONLY, 0666)
@@ -87,4 +95,54 @@ func downloadInfo(obj any, w io.Writer) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "\t")
 	return enc.Encode(obj)
+}
+
+func cpGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error {
+	if gVo.Cover != "" {
+		err := tools.Cp(filepath.Join(config.Dir, gVo.Cover), filepath.Join(path, gVo.Cover))
+		if err != nil {
+			logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, gVo.Cover))
+		}
+	}
+	for _, image := range gVo.Images {
+		if image != "" {
+			err := tools.Cp(filepath.Join(config.Dir, image), filepath.Join(path, image))
+			if err != nil {
+				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
+			}
+		}
+	}
+	for _, c := range gVo.Characters {
+		if c.Cover != "" {
+			err := tools.Cp(filepath.Join(config.Dir, c.Cover), filepath.Join(path, c.Cover))
+			if err != nil {
+				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, c.Cover))
+			}
+		}
+		for _, image := range c.Images {
+			if image != "" {
+				err := tools.Cp(filepath.Join(config.Dir, image), filepath.Join(path, image))
+				if err != nil {
+					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
+				}
+			}
+		}
+	}
+	for _, s := range gVo.Staff {
+		if s.Cover != "" {
+			err := tools.Cp(filepath.Join(config.Dir, s.Cover), filepath.Join(path, s.Cover))
+			if err != nil {
+				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, s.Cover))
+			}
+		}
+		for _, image := range s.Images {
+			if image != "" {
+				err := tools.Cp(filepath.Join(config.Dir, image), filepath.Join(path, image))
+				if err != nil {
+					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
+				}
+			}
+		}
+	}
+	return nil
 }
