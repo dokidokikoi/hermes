@@ -6,14 +6,14 @@ import (
 	"github.com/dokidokikoi/go-common/db/base"
 )
 
-type Developers struct {
-	base.PgModel[model.Developer]
+type Brands struct {
+	base.PgModel[model.Brand]
 }
 
-func NewDevelopers(db *Store) *Developers {
-	return &Developers{PgModel: base.PgModel[model.Developer]{DB: db.DB}}
+func NewBrands(db *Store) *Brands {
+	return &Brands{PgModel: base.PgModel[model.Brand]{DB: db.DB}}
 }
 
 func init() {
-	migrateTables = append(migrateTables, &model.Developer{})
+	migrateTables = append(migrateTables, &model.Brand{})
 }

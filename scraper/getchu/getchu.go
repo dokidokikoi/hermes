@@ -194,7 +194,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 
 		title = comm_tools.TrimBlankChar(title)
 		if strings.Contains(title, "ブランド") {
-			item.Developer = &model.Developer{
+			item.Brand = &model.Brand{
 				Name: content,
 			}
 		} else if strings.Contains(title, "定価") {

@@ -41,9 +41,9 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, er
 			return 0
 		}(),
 		Series: input.Game.Series,
-		DeveloperID: func() uint {
-			if input.Game.Developer != nil {
-				return input.Game.Developer.ID
+		BrandID: func() uint {
+			if input.Game.Brand != nil {
+				return input.Game.Brand.ID
 			}
 			return 0
 		}(),
@@ -54,8 +54,8 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, er
 		Links:     input.Game.Links,
 		OtherInfo: input.Game.OtherInfo,
 	}
-	if g.Developer != nil && g.Developer.Name == "" && g.Developer.ID == 0 {
-		g.Developer = nil
+	if g.Brand != nil && g.Brand.Name == "" && g.Brand.ID == 0 {
+		g.Brand = nil
 	}
 
 	// 角色

@@ -206,7 +206,7 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 							Relation: []model.PersonRelation{model.PRelationPainter},
 						})
 					case "group":
-						item.Developer = &model.Developer{
+						item.Brand = &model.Brand{
 							Name: content,
 						}
 					default:

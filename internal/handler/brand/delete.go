@@ -1,4 +1,4 @@
-package developer
+package brand
 
 import (
 	"context"
@@ -12,13 +12,13 @@ type DelRequest struct {
 }
 
 func (h Handler) Del(ctx context.Context, req *DelRequest) (any, error) {
-	developerIDs := []*model.Developer{}
+	brandIDs := []*model.Brand{}
 	for _, id := range req.IDs {
-		developerIDs = append(developerIDs, &model.Developer{
+		brandIDs = append(brandIDs, &model.Brand{
 			ID: id,
 		})
 	}
-	errs := data.GetDataFactory().Developer().DeleteCollection(ctx, developerIDs, nil)
+	errs := data.GetDataFactory().Brand().DeleteCollection(ctx, brandIDs, nil)
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}

@@ -1,9 +1,9 @@
 package internal
 
 import (
+	"hermes/internal/handler/brand"
 	"hermes/internal/handler/category"
 	"hermes/internal/handler/character"
-	"hermes/internal/handler/developer"
 	"hermes/internal/handler/file"
 	"hermes/internal/handler/game"
 	"hermes/internal/handler/library"
@@ -73,13 +73,13 @@ func Install(r gin.IRouter) {
 		seriesG.PATCH("", middleware.PreHandle(seriesH.Update))
 	}
 
-	devH := developer.NewHandler()
-	devG := r.Group("/developer")
+	brandH := brand.NewHandler()
+	brandG := r.Group("/brand")
 	{
-		devG.GET("", middleware.PreHandle(devH.List))
-		devG.POST("", middleware.PreHandle(devH.Create))
-		devG.DELETE("", middleware.PreHandle(devH.Del))
-		devG.PATCH("", middleware.PreHandle(devH.Update))
+		brandG.GET("", middleware.PreHandle(brandH.List))
+		brandG.POST("", middleware.PreHandle(brandH.Create))
+		brandG.DELETE("", middleware.PreHandle(brandH.Del))
+		brandG.PATCH("", middleware.PreHandle(brandH.Update))
 	}
 
 	characterH := character.NewHandler()

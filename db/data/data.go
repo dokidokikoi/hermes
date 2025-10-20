@@ -27,8 +27,8 @@ func (d *data) Character() db.ICharacter {
 func (d *data) CharacterTag() db.ICharacterTag {
 	return newCharacterTag(d)
 }
-func (d *data) Developer() db.IDeveloper {
-	return newDeveloper(d)
+func (d *data) Brand() db.IBrand {
+	return newBrand(d)
 }
 func (d *data) Series() db.ISeries {
 	return newSeries(d)

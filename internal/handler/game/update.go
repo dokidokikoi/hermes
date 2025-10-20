@@ -17,7 +17,7 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, error)
 		Images:    input.Images,
 		Alias:     input.Alias,
 		Category:  input.Category,
-		Developer: input.Developer,
+		Brand:     input.Brand,
 		Price:     input.Price,
 		Story:     input.Story,
 		Series:    input.Series,

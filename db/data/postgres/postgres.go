@@ -87,7 +87,7 @@ func migrateDatabase(db *gorm.DB) error {
 	// if err := db.AutoMigrate(&model.Publisher{}); err != nil {
 	// 	return errors.Wrap(err, "migrate model failed")
 	// }
-	// if err := db.AutoMigrate(&model.Developer{}); err != nil {
+	// if err := db.AutoMigrate(&model.Brand{}); err != nil {
 	// 	return errors.Wrap(err, "migrate model failed")
 	// }
 	// if err := db.AutoMigrate(&model.Character{}); err != nil {

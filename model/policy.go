@@ -6,7 +6,7 @@ import (
 )
 
 type Policy struct {
-	ID        uint      `gorm:"primaryKey"`
+	ID        uint      `gorm:"primaryKey;type:bigint"`
 	Key       string    `gorm:"type:varchar(32)"`
 	Policy    string    `gorm:"type:json"`
 	CreatedAt time.Time `gorm:"autoCreateTime:milli"`

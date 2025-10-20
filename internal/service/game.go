@@ -48,7 +48,7 @@ type game struct {
 
 func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error {
 	tx := gsrv.store.Transaction().Begin()
-	err := tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Developer", "Category"}})
+	err := tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Brand", "Category"}})
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
@@ -276,7 +276,7 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 }
 
 func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error) {
-	g, err := gsrv.store.Game().Get(ctx, &model.Game{ID: uint(id)}, &meta.GetOption{Preload: []string{"Tags", "Category", "Series", "Developer"}})
+	g, err := gsrv.store.Game().Get(ctx, &model.Game{ID: uint(id)}, &meta.GetOption{Preload: []string{"Tags", "Category", "Series", "Brand"}})
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +392,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		Images:     g.Images,
 		Category:   g.Category,
 		Series:     g.Series,
-		Developer:  g.Developer,
+		Brand:      g.Brand,
 		Price:      g.Price,
 		IssueDate:  g.IssueDate,
 		Story:      g.Story,
@@ -544,19 +544,19 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 		gVo.Category.ID = cate.ID
 	}
 
-	dev, err := db.Developer().Get(ctx, &model.Developer{Name: gVo.Developer.Name}, &meta.GetOption{Select: []string{"ID"}})
+	dev, err := db.Brand().Get(ctx, &model.Brand{Name: gVo.Brand.Name}, &meta.GetOption{Select: []string{"ID"}})
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("create developer error: %w", err)
+			return fmt.Errorf("create brand error: %w", err)
 		}
 	}
 	if dev == nil {
-		err = db.Developer().Create(ctx, gVo.Developer, nil)
+		err = db.Brand().Create(ctx, gVo.Brand, nil)
 		if err != nil {
-			return fmt.Errorf("create developer error: %w", err)
+			return fmt.Errorf("create brand error: %w", err)
 		}
 	} else {
-		gVo.Developer.ID = dev.ID
+		gVo.Brand.ID = dev.ID
 	}
 
 	for _, series := range gVo.Series {
@@ -708,20 +708,20 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	}
 
 	g := &model.Game{
-		Name:        gVo.Name,
-		UUID:        gVo.UUID,
-		Alias:       gVo.Alias,
-		JanCode:     gVo.JanCode,
-		Code:        gVo.Code,
-		Cover:       gVo.Cover,
-		Images:      gVo.Images,
-		Tags:        gVo.Tags,
-		CategoryID:  gVo.Category.ID,
-		DeveloperID: gVo.Developer.ID,
-		OtherInfo:   gVo.OtherInfo,
-		Story:       gVo.Story,
-		Price:       gVo.Price,
-		IssueDate:   gVo.IssueDate,
+		Name:       gVo.Name,
+		UUID:       gVo.UUID,
+		Alias:      gVo.Alias,
+		JanCode:    gVo.JanCode,
+		Code:       gVo.Code,
+		Cover:      gVo.Cover,
+		Images:     gVo.Images,
+		Tags:       gVo.Tags,
+		CategoryID: gVo.Category.ID,
+		BrandID:    gVo.Brand.ID,
+		OtherInfo:  gVo.OtherInfo,
+		Story:      gVo.Story,
+		Price:      gVo.Price,
+		IssueDate:  gVo.IssueDate,
 	}
 	gRsp, err := tx.Game().Get(ctx, &model.Game{ID: gVo.ID}, &meta.GetOption{Select: []string{"ID", "UUID"}})
 	if err != nil {

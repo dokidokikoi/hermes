@@ -245,7 +245,7 @@ func TestTwoDFan_GetItemStory(t *testing.T) {
 	}
 }
 
-func TestTwoDFan_GetItemDeveloper(t *testing.T) {
+func TestTwoDFan_GetItemBrand(t *testing.T) {
 	url := "https://2dfan.com/subjects/4566"
 	data, err := twoDFanScraper.DoReq(http.MethodGet, url, nil, nil)
 	if err != nil {
@@ -257,11 +257,11 @@ func TestTwoDFan_GetItemDeveloper(t *testing.T) {
 		panic(err)
 	}
 
-	developer, err := twoDFanScraper.GetItemDeveloper(root)
+	brand, err := twoDFanScraper.GetItemBrand(root)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%+v\n", developer)
+	fmt.Printf("%+v\n", brand)
 }
 
 func TestReq(t *testing.T) {

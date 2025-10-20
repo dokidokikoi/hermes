@@ -5,12 +5,12 @@ import (
 	"hermes/db/data/postgres"
 )
 
-var _ db.IDeveloper = (*developer)(nil)
+var _ db.IBrand = (*brand)(nil)
 
-type developer struct {
-	postgres.Developers
+type brand struct {
+	postgres.Brands
 }
 
-func newDeveloper(d *data) *developer {
-	return &developer{Developers: *postgres.NewDevelopers(d.pg)}
+func newBrand(d *data) *brand {
+	return &brand{Brands: *postgres.NewBrands(d.pg)}
 }

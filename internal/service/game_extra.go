@@ -19,7 +19,7 @@ var GameBasicSearchNode = []GameWhereNodeFunc{
 	GameWhereNodeStaff,
 	GameWhereNodeSeries,
 	GameWhereNodeCategory,
-	GameWhereNodeDeveloper,
+	GameWhereNodeBrand,
 	GameWhereNodeSizeRange,
 	GameWhereNodeIssueDateRange,
 	GameWhereNodeCreatedAtRange,
@@ -171,8 +171,8 @@ func GameWhereNodeCategory(ctx context.Context, param handler.GameListReq, node 
 	}
 	return
 }
-func GameWhereNodeDeveloper(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
-	if param.Developer == 0 {
+func GameWhereNodeBrand(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
+	if param.Brand == 0 {
 		return node, opt
 	}
 	defer func() {
@@ -183,9 +183,9 @@ func GameWhereNodeDeveloper(ctx context.Context, param handler.GameListReq, node
 	node.Next = &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
-				Field:    "developer_id",
+				Field:    "brand_id",
 				Operator: meta.EQUAL,
-				Value:    param.Developer,
+				Value:    param.Brand,
 			},
 		},
 	}

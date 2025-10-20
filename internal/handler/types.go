@@ -14,7 +14,7 @@ type GameListReq struct {
 	Category       uint        `json:"category"`
 	Staff          uint        `json:"staff"`
 	Character      uint        `json:"character"`
-	Developer      uint        `json:"developer"`
+	Brand          uint        `json:"brand"`
 	SizeRange      []int64     `json:"size_range"`
 	IssueDateRange []time.Time `json:"issue_date_range"`
 	CreatedAtRange []time.Time `json:"created_at_range"`
@@ -46,7 +46,7 @@ type GameVo struct {
 	Images        []string            `json:"images"`
 	Category      *model.Category     `json:"category"`
 	Series        []*model.Series     `json:"series"`
-	Developer     *model.Developer    `json:"developer"`
+	Brand         *model.Brand        `json:"brand"`
 	Price         string              `json:"price"`
 	IssueDate     time.Time           `json:"issue_date"`
 	Story         string              `json:"story"`

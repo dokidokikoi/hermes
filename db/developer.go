@@ -6,6 +6,6 @@ import (
 	"github.com/dokidokikoi/go-common/db/base"
 )
 
-type IDeveloper interface {
-	base.BasicCURD[model.Developer]
+type IBrand interface {
+	base.BasicCURD[model.Brand]
 }

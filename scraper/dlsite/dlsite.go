@@ -163,7 +163,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		ds.logger.Error("获取封面失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Developer, err = ds.GetItemDeveloper(root)
+	item.Brand, err = ds.GetItemBrand(root)
 	if err != nil {
 		ds.logger.Error("获取开发商失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
@@ -279,8 +279,8 @@ func (ds *DlSite) GetItemCover(node *goquery.Document) (string, []string, error)
 	return images[0], images[1:], nil
 }
 
-func (ds *DlSite) GetItemDeveloper(node *goquery.Document) (*model.Developer, error) {
-	return &model.Developer{
+func (ds *DlSite) GetItemBrand(node *goquery.Document) (*model.Brand, error) {
+	return &model.Brand{
 		Name: comm_tools.TrimBlankChar(node.Find("#work_maker span.maker_name").Text()),
 	}, nil
 }

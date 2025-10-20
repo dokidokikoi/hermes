@@ -106,8 +106,8 @@ func (a DownloadInfos) Value() (driver.Value, error) {
 }
 
 type GameInstance struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	GameID    uint           `gorm:"uniqueIndex:uk_game_version"`
+	ID        uint           `gorm:"primaryKey;type:bigint" json:"id"`
+	GameID    uint           `gorm:"uniqueIndex:uk_game_version;type:bigint"`
 	Version   string         `gorm:"uniqueIndex:uk_game_version" json:"version"`
 	Path      string         `gorm:"index:idx_game_path" json:"path"`
 	Size      int64          `json:"size"`
@@ -123,27 +123,27 @@ func (GameInstance) TableName() string {
 }
 
 type Game struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
-	UUID        string         `gorm:"uniqueIndex;" json:"uuid"`
-	JanCode     string         `gorm:"type:varchar(32)" json:"jan_code"`
-	Code        string         `gorm:"type:varchar(32)" json:"code"`
-	Name        string         `gorm:"type:varchar(255)" json:"name"`
-	Alias       pq.StringArray `gorm:"type:json" json:"alias"`
-	Cover       string         `gorm:"type:varchar(512)" json:"cover"`
-	Images      pq.StringArray `gorm:"type:json" json:"images"`
-	Category    *Category      `gorm:"foreignKey:CategoryID" json:"category"`
-	CategoryID  uint           `gorm:"default:null" json:"-"`
-	Series      []*Series      `gorm:"many2many:game_series;" json:"series"`
-	Developer   *Developer     `gorm:"foreignKey:DeveloperID" json:"developer"`
-	DeveloperID uint           `gorm:"default:null" json:"-"`
-	Price       string         `gorm:"type:varchar(32)" json:"price"`
-	IssueDate   time.Time      `json:"issue_date"`
-	Story       string         `json:"story"`
-	Tags        []*Tag         `gorm:"many2many:game_tag;" json:"tags"`
-	Links       Links          `gorm:"type:json" json:"links"`
-	OtherInfo   string         `json:"other_info"`
-	CreatedAt   time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt   time.Time      `gorm:"autoUpdateTime:milli"`
+	ID         uint           `gorm:"primaryKey;type:bigint" json:"id"`
+	UUID       string         `gorm:"uniqueIndex;" json:"uuid"`
+	JanCode    string         `gorm:"type:varchar(32)" json:"jan_code"`
+	Code       string         `gorm:"type:varchar(32)" json:"code"`
+	Name       string         `gorm:"type:varchar(255)" json:"name"`
+	Alias      pq.StringArray `gorm:"type:json" json:"alias"`
+	Cover      string         `gorm:"type:varchar(512)" json:"cover"`
+	Images     pq.StringArray `gorm:"type:json" json:"images"`
+	Category   *Category      `gorm:"foreignKey:CategoryID" json:"category"`
+	CategoryID uint           `gorm:"default:null" json:"-"`
+	Series     []*Series      `gorm:"many2many:game_series;" json:"series"`
+	Brand      *Brand         `gorm:"foreignKey:BrandID" json:"brand"`
+	BrandID    uint           `gorm:"default:null" json:"-"`
+	Price      string         `gorm:"type:varchar(32)" json:"price"`
+	IssueDate  time.Time      `json:"issue_date"`
+	Story      string         `json:"story"`
+	Tags       []*Tag         `gorm:"many2many:game_tag;" json:"tags"`
+	Links      Links          `gorm:"type:json" json:"links"`
+	OtherInfo  string         `json:"other_info"`
+	CreatedAt  time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt  time.Time      `gorm:"autoUpdateTime:milli"`
 }
 
 func (Game) TableName() string {
@@ -151,8 +151,8 @@ func (Game) TableName() string {
 }
 
 type GameSeries struct {
-	GameID   uint `gorm:"primaryKey"`
-	SeriesID uint `gorm:"primaryKey"`
+	GameID   uint `gorm:"primaryKey;type:bigint"`
+	SeriesID uint `gorm:"primaryKey;type:bigint"`
 }
 
 func (GameSeries) TableName() string {
@@ -168,8 +168,8 @@ const (
 )
 
 type GameCharacter struct {
-	GameID      uint              `gorm:"primaryKey"`
-	CharacterID uint              `gorm:"primaryKey"`
+	GameID      uint              `gorm:"primaryKey;type:bigint"`
+	CharacterID uint              `gorm:"primaryKey;type:bigint"`
 	Relation    CharacterRelation `json:"relation"`
 	Character   *Character        `gorm:"-" json:"-"`
 }
@@ -179,8 +179,8 @@ func (GameCharacter) TableName() string {
 }
 
 type GameTag struct {
-	GameID uint `gorm:"primaryKey"`
-	TagID  uint `gorm:"primaryKey"`
+	GameID uint `gorm:"primaryKey;type:bigint"`
+	TagID  uint `gorm:"primaryKey;type:bigint"`
 }
 
 func (GameTag) TableName() string {
@@ -233,9 +233,9 @@ const (
 )
 
 type GameStaff struct {
-	GameID    uint            `gorm:"primaryKey"`
-	PersonID  uint            `gorm:"primaryKey"`
-	Relations PersonRelations `gorm:"primaryKey;type:json"`
+	GameID    uint            `gorm:"primaryKey;type:bigint"`
+	PersonID  uint            `gorm:"primaryKey;type:bigint"`
+	Relations PersonRelations `gorm:"type:json"`
 	Person    *Person         `gorm:"-" json:"-"`
 }
 

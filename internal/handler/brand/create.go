@@ -1,4 +1,4 @@
-package developer
+package brand
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func (h Handler) Create(ctx context.Context, input *model.Developer) (uint, error) {
+func (h Handler) Create(ctx context.Context, input *model.Brand) (uint, error) {
 	input.Name = strings.TrimSpace(input.Name)
-	if err := data.GetDataFactory().Developer().Create(ctx, input, nil); err != nil {
+	if err := data.GetDataFactory().Brand().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			c, err := data.GetDataFactory().Developer().Get(ctx, &model.Developer{Name: input.Name}, nil)
+			c, err := data.GetDataFactory().Brand().Get(ctx, &model.Brand{Name: input.Name}, nil)
 			if err != nil {
 				return 0, err
 			}

@@ -1,4 +1,4 @@
-package developer
+package brand
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 )
 
 type ListResponse struct {
-	List  []*model.Developer `json:"list"`
-	Total int64              `json:"total"`
+	List  []*model.Brand `json:"list"`
+	Total int64          `json:"total"`
 }
 
 func (h Handler) List(ctx context.Context, req *struct{}) (any, error) {
-	list, err := data.GetDataFactory().Developer().List(ctx, &model.Developer{}, &meta.ListOption{Order: "created_at desc"})
+	list, err := data.GetDataFactory().Brand().List(ctx, &model.Brand{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
 		return nil, err
 	}

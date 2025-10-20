@@ -1,4 +1,4 @@
-package developer
+package brand
 
 import (
 	"hermes/db/data"
