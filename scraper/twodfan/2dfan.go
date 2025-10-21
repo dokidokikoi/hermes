@@ -8,6 +8,7 @@ import (
 	"hermes/model"
 	"hermes/scraper"
 	"hermes/tools"
+	"maps"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -60,9 +61,7 @@ func (tdf *TwoDFan) GetName() string {
 
 func (tdf *TwoDFan) SetHeader(header map[string]string) {
 	tdf.Lock()
-	for k, v := range header {
-		tdf.Headers[k] = v
-	}
+	maps.Copy(tdf.Headers, header)
 	tdf.Unlock()
 }
 
@@ -121,16 +120,12 @@ func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, err
 	return items, nil
 }
 
-func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body interface{}) ([]byte, error) {
+func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body any) ([]byte, error) {
 	h := map[string]string{}
 	tdf.RLock()
-	for k, v := range tdf.Headers {
-		h[k] = v
-	}
+	maps.Copy(h, tdf.Headers)
 	tdf.RUnlock()
-	for k, v := range header {
-		h[k] = v
-	}
+	maps.Copy(h, header)
 
 	rsp, err := tools.ReqWithProxy(method, uri, body, tdf.Proxy, tools.SetHeadersWithOption(h))
 	if err != nil {
@@ -299,7 +294,7 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 				return
 			}
 
-			images = append(images, "/api/file/"+strings.TrimPrefix(imgUrl, config.TmpDir))
+			images = append(images, imgUrl)
 		})
 
 		html, _ := root.Find("#topic-content").Html()
@@ -329,7 +324,7 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 	s := story.String()
 	for k, v := range res {
 		images = append(images, v)
-		s = strings.ReplaceAll(s, k, fmt.Sprintf("{{%s}}", v))
+		s = strings.ReplaceAll(s, k, filepath.Join("/api/file", strings.TrimPrefix(v, config.TmpDir)))
 	}
 	s = comm_tools.TrimBlankChar(s)
 

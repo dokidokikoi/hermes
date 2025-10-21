@@ -16,6 +16,7 @@ var (
 	ZhLanguage       = "zh-CN;q=0.8,zh;q=0.7"
 	TmpDir           = filepath.Join(os.TempDir(), constant.PROJECT_NAME)
 	Dir              = ""
+	DataDir          = ""
 	DefaultRetryCnt  = 5
 )
 
@@ -38,9 +39,12 @@ func init() {
 
 	err = os.MkdirAll(Dir, os.ModePerm)
 	if err != nil {
-		if errors.Is(err, os.ErrExist) {
-			return
-		}
+		panic(err)
+	}
+
+	DataDir = filepath.Join(Dir, "data")
+	err = os.MkdirAll(DataDir, os.ModePerm)
+	if err != nil {
 		panic(err)
 	}
 }

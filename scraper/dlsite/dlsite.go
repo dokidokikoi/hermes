@@ -68,9 +68,7 @@ func (ds *DlSite) GetName() string {
 
 func (ds *DlSite) SetHeader(header map[string]string) {
 	ds.Lock()
-	for k, v := range header {
-		ds.Headers[k] = v
-	}
+	maps.Copy(ds.Headers, header)
 	ds.Unlock()
 }
 
@@ -85,7 +83,6 @@ func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error
 	DlSiteSearchUrl[3] = strconv.Itoa(page)
 	url := strings.Join(DlSiteSearchUrl, "")
 
-	// url = "https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/keyword/%E6%81%A5%E7%8D%84%E9%9A%B7%E5%A5%B4%E3%82%BB%E3%83%AC%E3%83%B3/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/order%5B0%5D/trend/options_and_or/and/per_page/30/page/1/from/fs.header"
 	data, err := ds.DoReq(http.MethodGet, url, nil, nil)
 	if err != nil {
 		return nil, err
@@ -99,7 +96,7 @@ func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error
 	var items []*scraper.SearchItem
 	root.Find("#search_result_img_box li.search_result_img_box_inner").Each(func(i int, s *goquery.Selection) {
 		url := s.Find("dl dt a img").First().AttrOr("src", "")
-		if len(url) > 6 && url[:6] != "https:" {
+		if !strings.HasPrefix(url, "https:") {
 			url = "https:" + url
 		}
 		items = append(items, &scraper.SearchItem{
@@ -276,7 +273,7 @@ func (ds *DlSite) GetItemCover(node *goquery.Document) (string, []string, error)
 	images := []string{}
 	node.Find("div.product-slider div.product-slider-data div").Each(func(i int, s *goquery.Selection) {
 		url := s.AttrOr("data-src", "")
-		if len(url) > 6 && url[:6] != "https:" {
+		if !strings.HasPrefix(url, "https:") {
 			url = "https:" + url
 		}
 		images = append(images, url)
@@ -341,7 +338,7 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 	characters := []handler.CharacterVo{}
 	node.Find("div.work_parts_container div.work_parts.type_multiimages .work_parts_area .work_parts_multiimage li.work_parts_multiimage_item").Each(func(i int, s *goquery.Selection) {
 		url := s.Find(".image a").AttrOr("href", "")
-		if len(url) > 6 && url[:6] != "https:" {
+		if !strings.HasPrefix(url, "https:") {
 			url = "https:" + url
 		}
 		text, _ := s.Find(".text").Html()

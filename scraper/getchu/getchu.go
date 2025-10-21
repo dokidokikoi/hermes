@@ -9,6 +9,7 @@ import (
 	"hermes/tools"
 	"maps"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -63,9 +64,7 @@ func (gc *GetChu) GetName() string {
 
 func (gc *GetChu) SetHeader(header map[string]string) {
 	gc.RLock()
-	for k, v := range header {
-		gc.Headers[k] = v
-	}
+	maps.Copy(gc.Headers, header)
 	gc.RUnlock()
 }
 
@@ -159,20 +158,14 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 		return nil, err
 	}
 
-	arr := strings.Split(uri, "?")
-	if len(arr) < 2 {
-		return nil, errors.New("uri error")
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, errors.Wrapf(err, "url.Parse(%s)", uri)
 	}
-	id := ""
-	arr = strings.Split(arr[1], "&")
-	for _, a := range arr {
-		if a[:3] == "id=" {
-			id = a[3:]
-			break
-		}
-	}
+	kv := u.Query()
+	id := kv.Get("id")
 	if id == "" {
-		return nil, errors.New("uri error")
+		return nil, errors.Errorf("id not found, uri: %s", uri)
 	}
 
 	item.Cover, item.Images, err = gc.GetItemCover(root, id)

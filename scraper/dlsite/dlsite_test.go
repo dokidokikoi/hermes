@@ -15,12 +15,12 @@ import (
 var dlSiteScraper *dlsite.DlSite
 
 func init() {
-	// os.Setenv("https_proxy", "socks://127.0.0.1:7890")
-	// os.Setenv("http_proxy", "socks://127.0.0.1:7890")
-	// os.Setenv("all_proxy", "socks://127.0.0.1:7890")
-	os.Setenv("https_proxy", "socks5://127.0.0.1:20170")
-	os.Setenv("http_proxy", "socks5://127.0.0.1:20170")
-	os.Setenv("all_proxy", "socks5://127.0.0.1:20170")
+	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
+	// os.Setenv("https_proxy", "socks5://127.0.0.1:20170")
+	// os.Setenv("http_proxy", "socks5://127.0.0.1:20170")
+	// os.Setenv("all_proxy", "socks5://127.0.0.1:20170")
 	scraper := dlsite.NewDlSite(map[string]string{
 		"User-Agent":         config.DefaultUserAgent,
 		"Accept-Language":    config.ZhLanguage,

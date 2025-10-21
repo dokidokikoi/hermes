@@ -503,7 +503,7 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 				zaplog.L().Error("fetch file status code not 200", zap.Int("status code", rsp.StatusCode()))
 				return
 			}
-			path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(rsp.Bytes()), config.Dir)
+			path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(rsp.Bytes()), config.DataDir)
 			if err != nil {
 				zaplog.L().Error("save file error", zap.Error(err))
 				return
@@ -515,9 +515,9 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 		})
 	}
 	zaplog.L().Info("images", zap.Any("data", images))
-	zaplog.L().Info("dir", zap.Any("name", config.Dir))
+	zaplog.L().Info("dir", zap.Any("name", config.DataDir))
 	for _, image := range images {
-		err := os.Rename(image, filepath.Join(config.Dir, tools.GetFileName(image)))
+		err := os.Rename(image, filepath.Join(config.DataDir, tools.GetFileName(image)))
 		if err != nil {
 			zaplog.L().Error("rename file error", zap.String("file path", image), zap.Error(err))
 		}
@@ -833,14 +833,14 @@ func NewGame(store db.IStore) *game {
 
 func loadGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error {
 	if gVo.Cover != "" {
-		err := tools.Cp(filepath.Join(path, gVo.Cover), filepath.Join(config.Dir, gVo.Cover))
+		err := tools.Cp(filepath.Join(path, gVo.Cover), filepath.Join(config.DataDir, gVo.Cover))
 		if err != nil {
 			logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, gVo.Cover))
 		}
 	}
 	for _, image := range gVo.Images {
 		if image != "" {
-			err := tools.Cp(filepath.Join(path, image), filepath.Join(config.Dir, image))
+			err := tools.Cp(filepath.Join(path, image), filepath.Join(config.DataDir, image))
 			if err != nil {
 				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
 			}
@@ -848,14 +848,14 @@ func loadGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) err
 	}
 	for _, c := range gVo.Characters {
 		if c.Cover != "" {
-			err := tools.Cp(filepath.Join(path, c.Cover), filepath.Join(config.Dir, c.Cover))
+			err := tools.Cp(filepath.Join(path, c.Cover), filepath.Join(config.DataDir, c.Cover))
 			if err != nil {
 				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, c.Cover))
 			}
 		}
 		for _, image := range c.Images {
 			if image != "" {
-				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.Dir, image))
+				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.DataDir, image))
 				if err != nil {
 					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
 				}
@@ -864,14 +864,14 @@ func loadGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) err
 	}
 	for _, s := range gVo.Staff {
 		if s.Cover != "" {
-			err := tools.Cp(filepath.Join(path, s.Cover), filepath.Join(config.Dir, s.Cover))
+			err := tools.Cp(filepath.Join(path, s.Cover), filepath.Join(config.DataDir, s.Cover))
 			if err != nil {
 				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, s.Cover))
 			}
 		}
 		for _, image := range s.Images {
 			if image != "" {
-				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.Dir, image))
+				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.DataDir, image))
 				if err != nil {
 					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
 				}

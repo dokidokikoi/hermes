@@ -3,7 +3,6 @@ package ggbases
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"hermes/internal/handler"
 	"hermes/model"
@@ -12,6 +11,7 @@ import (
 	"maps"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,6 +21,7 @@ import (
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -67,9 +68,7 @@ func (gg *GGBases) GetName() string {
 
 func (gg *GGBases) SetHeader(header map[string]string) {
 	gg.Lock()
-	for k, v := range header {
-		gg.Headers[k] = v
-	}
+	maps.Copy(gg.Headers, header)
 	gg.Unlock()
 }
 
@@ -147,18 +146,11 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 		return nil, err
 	}
 
-	arr := strings.Split(uri, "?")
-	if len(arr) < 2 {
-		return nil, errors.New("uri error")
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, errors.Wrapf(err, "uri error")
 	}
-	id := ""
-	arr = strings.Split(arr[1], "&")
-	for _, a := range arr {
-		if a[:3] == "id=" {
-			id = a[3:]
-			break
-		}
-	}
+	id := u.Query().Get("id")
 	if id == "" {
 		return nil, errors.New("uri error")
 	}
@@ -305,7 +297,7 @@ func (gg *GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link,
 		if s.Is("a") {
 			url := s.AttrOr("href", "")
 			if url != "" {
-				if url[:6] != "https:" {
+				if !strings.HasPrefix(url, "https:") {
 					url = "https:" + url
 				}
 				links = append(links, model.Link{
@@ -317,7 +309,7 @@ func (gg *GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link,
 			s.Find("a").Each(func(i int, s *goquery.Selection) {
 				url := s.AttrOr("href", "")
 				if url != "" {
-					if url[:6] != "https:" {
+					if !strings.HasPrefix(url, "https:") {
 						url = "https:" + url
 					}
 					links = append(links, model.Link{

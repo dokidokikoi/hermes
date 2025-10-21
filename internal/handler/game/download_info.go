@@ -99,14 +99,14 @@ func downloadInfo(obj any, w io.Writer) error {
 
 func cpGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error {
 	if gVo.Cover != "" {
-		err := tools.Cp(filepath.Join(config.Dir, gVo.Cover), filepath.Join(path, gVo.Cover))
+		err := tools.Cp(filepath.Join(config.DataDir, gVo.Cover), filepath.Join(path, gVo.Cover))
 		if err != nil {
 			logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, gVo.Cover))
 		}
 	}
 	for _, image := range gVo.Images {
 		if image != "" {
-			err := tools.Cp(filepath.Join(config.Dir, image), filepath.Join(path, image))
+			err := tools.Cp(filepath.Join(config.DataDir, image), filepath.Join(path, image))
 			if err != nil {
 				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
 			}
@@ -114,14 +114,14 @@ func cpGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error
 	}
 	for _, c := range gVo.Characters {
 		if c.Cover != "" {
-			err := tools.Cp(filepath.Join(config.Dir, c.Cover), filepath.Join(path, c.Cover))
+			err := tools.Cp(filepath.Join(config.DataDir, c.Cover), filepath.Join(path, c.Cover))
 			if err != nil {
 				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, c.Cover))
 			}
 		}
 		for _, image := range c.Images {
 			if image != "" {
-				err := tools.Cp(filepath.Join(config.Dir, image), filepath.Join(path, image))
+				err := tools.Cp(filepath.Join(config.DataDir, image), filepath.Join(path, image))
 				if err != nil {
 					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
 				}
@@ -130,14 +130,14 @@ func cpGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error
 	}
 	for _, s := range gVo.Staff {
 		if s.Cover != "" {
-			err := tools.Cp(filepath.Join(config.Dir, s.Cover), filepath.Join(path, s.Cover))
+			err := tools.Cp(filepath.Join(config.DataDir, s.Cover), filepath.Join(path, s.Cover))
 			if err != nil {
 				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, s.Cover))
 			}
 		}
 		for _, image := range s.Images {
 			if image != "" {
-				err := tools.Cp(filepath.Join(config.Dir, image), filepath.Join(path, image))
+				err := tools.Cp(filepath.Join(config.DataDir, image), filepath.Join(path, image))
 				if err != nil {
 					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
 				}

@@ -37,7 +37,7 @@ func (h Handler) Upload(ctx *gin.Context) {
 	}
 	defer f.Close()
 
-	fi, err := os.CreateTemp(config.Dir, "image_*"+filepath.Ext(file.Filename))
+	fi, err := os.CreateTemp(config.DataDir, "image_*"+filepath.Ext(file.Filename))
 	if err != nil {
 		return
 	}
@@ -50,10 +50,10 @@ func (h Handler) Upload(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	fileName = filepath.Join(config.Dir, fmt.Sprintf("%X", hash.Sum(nil))+filepath.Ext(file.Filename))
+	fileName = filepath.Join(config.DataDir, fmt.Sprintf("%X", hash.Sum(nil))+filepath.Ext(file.Filename))
 	err = os.Rename(fi.Name(), fileName)
 	if err != nil {
 		return
 	}
-	fileName = strings.TrimPrefix(fileName, config.Dir)
+	fileName = strings.TrimPrefix(fileName, config.DataDir)
 }
