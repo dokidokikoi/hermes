@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"hermes/db"
-	"hermes/internal/handler"
-	"hermes/model"
+	"izumi/db"
+	"izumi/internal/handler"
+	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
 )

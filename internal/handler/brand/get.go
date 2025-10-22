@@ -2,8 +2,8 @@ package brand
 
 import (
 	"context"
-	"hermes/db/data"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/model"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

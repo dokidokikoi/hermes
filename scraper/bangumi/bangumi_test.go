@@ -3,8 +3,8 @@ package bangumi_test
 import (
 	"encoding/json"
 	"fmt"
-	"hermes/scraper"
-	"hermes/scraper/bangumi"
+	"izumi/scraper"
+	"izumi/scraper/bangumi"
 	"testing"
 )
 

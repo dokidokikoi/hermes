@@ -2,7 +2,7 @@ package qbitorrent
 
 import (
 	"encoding/json"
-	"hermes/tools"
+	"izumi/tools"
 	"net/http"
 	"strings"
 

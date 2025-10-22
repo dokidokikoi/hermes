@@ -1,7 +1,7 @@
 package db
 
 import (
-	"hermes/model"
+	"izumi/model"
 
 	"github.com/dokidokikoi/go-common/db/base"
 )

@@ -2,7 +2,7 @@ package config
 
 import (
 	"errors"
-	"hermes/constant"
+	"izumi/constant"
 	"os"
 	"path/filepath"
 )
@@ -15,7 +15,6 @@ var (
 	DefaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 	ZhLanguage       = "zh-CN;q=0.8,zh;q=0.7"
 	TmpDir           = filepath.Join(os.TempDir(), constant.PROJECT_NAME)
-	Dir              = ""
 	DataDir          = ""
 	DefaultRetryCnt  = 5
 )
@@ -33,16 +32,10 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		dir = filepath.Join(dir, constant.PROJECT_NAME)
+		dir = filepath.Join(dir, constant.PROJECT_NAME, "data")
 	}
-	Dir = dir
+	DataDir = dir
 
-	err = os.MkdirAll(Dir, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
-	DataDir = filepath.Join(Dir, "data")
 	err = os.MkdirAll(DataDir, os.ModePerm)
 	if err != nil {
 		panic(err)

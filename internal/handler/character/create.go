@@ -2,8 +2,8 @@ package character
 
 import (
 	"context"
-	"hermes/db/data"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/model"
 	"strings"
 
 	"github.com/google/uuid"

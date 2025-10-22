@@ -1,8 +1,8 @@
 package person
 
 import (
-	"hermes/db/data"
-	"hermes/internal/service"
+	"izumi/db/data"
+	"izumi/internal/service"
 )
 
 type Handler struct {

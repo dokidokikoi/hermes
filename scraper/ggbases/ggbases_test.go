@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hermes/scraper/ggbases"
+	"izumi/scraper/ggbases"
 	"mime/multipart"
 	"net/http"
 	"os"

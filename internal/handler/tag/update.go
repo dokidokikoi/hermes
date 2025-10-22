@@ -3,8 +3,8 @@ package tag
 import (
 	"context"
 	"errors"
-	"hermes/db/data"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/model"
 
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 )

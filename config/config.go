@@ -3,7 +3,7 @@ package config
 import (
 	"bytes"
 	_ "embed"
-	"hermes/constant"
+	"izumi/constant"
 	"strings"
 
 	c "github.com/dokidokikoi/go-common/config"

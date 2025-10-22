@@ -3,8 +3,8 @@ package dlsite_test
 import (
 	"bytes"
 	"fmt"
-	"hermes/config"
-	"hermes/scraper/dlsite"
+	"izumi/config"
+	"izumi/scraper/dlsite"
 	"net/http"
 	"os"
 	"testing"

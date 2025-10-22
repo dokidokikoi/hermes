@@ -1,7 +1,7 @@
 package qbitorrent
 
 import (
-	"hermes/tools"
+	"izumi/tools"
 	"net/http"
 	"strings"
 

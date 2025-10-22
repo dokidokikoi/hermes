@@ -3,8 +3,8 @@ package file
 import (
 	"crypto/sha256"
 	"fmt"
-	"hermes/config"
 	"io"
+	"izumi/config"
 	"os"
 	"path/filepath"
 	"strings"

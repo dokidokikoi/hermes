@@ -3,8 +3,8 @@ package category
 import (
 	"context"
 	"errors"
-	"hermes/db/data"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/model"
 	"strings"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"

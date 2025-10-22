@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
 	"strings"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"

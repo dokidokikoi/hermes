@@ -3,9 +3,9 @@ package getchu_test
 import (
 	"bytes"
 	"fmt"
-	"hermes/config"
-	"hermes/scraper/getchu"
-	"hermes/tools"
+	"izumi/config"
+	"izumi/scraper/getchu"
+	"izumi/tools"
 	"net/http"
 	"os"
 	"testing"

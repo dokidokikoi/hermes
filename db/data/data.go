@@ -1,9 +1,9 @@
 package data
 
 import (
-	"hermes/config"
-	"hermes/db"
-	"hermes/db/data/postgres"
+	"izumi/config"
+	"izumi/db"
+	"izumi/db/data/postgres"
 	"sync"
 )
 

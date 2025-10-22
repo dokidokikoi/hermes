@@ -3,9 +3,9 @@ package policy
 import (
 	"context"
 	"encoding/json"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
 )

@@ -3,11 +3,11 @@ package scraper
 import (
 	"context"
 	"encoding/json"
-	"hermes/constant"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
-	"hermes/scraper/event"
+	"izumi/constant"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
+	"izumi/scraper/event"
 	"time"
 
 	"github.com/dokidokikoi/go-common/notice"

@@ -1,8 +1,8 @@
 package file
 
 import (
-	"hermes/config"
 	"io"
+	"izumi/config"
 	"os"
 	"path/filepath"
 

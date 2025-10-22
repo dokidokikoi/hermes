@@ -1,14 +1,14 @@
 package event
 
 import (
-	"hermes/config"
-	"hermes/model"
-	"hermes/scraper"
-	"hermes/scraper/bangumi"
-	"hermes/scraper/dlsite"
-	"hermes/scraper/getchu"
-	"hermes/scraper/ggbases"
-	"hermes/scraper/twodfan"
+	"izumi/config"
+	"izumi/model"
+	"izumi/scraper"
+	"izumi/scraper/bangumi"
+	"izumi/scraper/dlsite"
+	"izumi/scraper/getchu"
+	"izumi/scraper/ggbases"
+	"izumi/scraper/twodfan"
 )
 
 var GameScraperConstructors = map[string]func(header map[string]string, proxy string) scraper.IGameScraper{

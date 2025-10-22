@@ -1,17 +1,17 @@
 package internal
 
 import (
-	"hermes/internal/handler/brand"
-	"hermes/internal/handler/category"
-	"hermes/internal/handler/character"
-	"hermes/internal/handler/file"
-	"hermes/internal/handler/game"
-	"hermes/internal/handler/library"
-	"hermes/internal/handler/person"
-	"hermes/internal/handler/policy"
-	"hermes/internal/handler/scraper"
-	"hermes/internal/handler/series"
-	"hermes/internal/handler/tag"
+	"izumi/internal/handler/brand"
+	"izumi/internal/handler/category"
+	"izumi/internal/handler/character"
+	"izumi/internal/handler/file"
+	"izumi/internal/handler/game"
+	"izumi/internal/handler/library"
+	"izumi/internal/handler/person"
+	"izumi/internal/handler/policy"
+	"izumi/internal/handler/scraper"
+	"izumi/internal/handler/series"
+	"izumi/internal/handler/tag"
 
 	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/notice"

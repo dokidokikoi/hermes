@@ -2,9 +2,9 @@ package character
 
 import (
 	"context"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
 	"strconv"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"

@@ -1,4 +1,4 @@
-module hermes
+module izumi
 
 go 1.23.0
 

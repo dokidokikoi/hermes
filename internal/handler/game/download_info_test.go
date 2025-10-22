@@ -1,7 +1,7 @@
 package game
 
 import (
-	"hermes/internal/handler"
+	"izumi/internal/handler"
 	"os"
 	"testing"
 )

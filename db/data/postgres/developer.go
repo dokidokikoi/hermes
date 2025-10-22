@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"hermes/model"
+	"izumi/model"
 
 	"github.com/dokidokikoi/go-common/db/base"
 )

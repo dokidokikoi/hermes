@@ -1,8 +1,8 @@
 package data
 
 import (
-	"hermes/db"
-	"hermes/db/data/postgres"
+	"izumi/db"
+	"izumi/db/data/postgres"
 )
 
 var _ db.IPerson = (*person)(nil)

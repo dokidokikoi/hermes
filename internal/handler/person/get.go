@@ -2,9 +2,9 @@ package person
 
 import (
 	"context"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

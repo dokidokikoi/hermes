@@ -1,7 +1,7 @@
 package scraper
 
 import (
-	"hermes/internal/handler"
+	"izumi/internal/handler"
 )
 
 type GameItem struct {

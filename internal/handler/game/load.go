@@ -3,10 +3,10 @@ package game
 import (
 	"context"
 	"encoding/json"
-	"hermes/constant"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
+	"izumi/constant"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
 	"os"
 	"path/filepath"
 

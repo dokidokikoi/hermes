@@ -1,8 +1,8 @@
 package bangumi
 
 import (
-	"hermes/model"
-	"hermes/tools"
+	"izumi/model"
+	"izumi/tools"
 	"maps"
 
 	"github.com/pkg/errors"

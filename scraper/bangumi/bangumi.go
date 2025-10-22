@@ -2,10 +2,10 @@ package bangumi
 
 import (
 	"fmt"
-	"hermes/internal/handler"
-	"hermes/model"
-	"hermes/scraper"
-	"hermes/tools"
+	"izumi/internal/handler"
+	"izumi/model"
+	"izumi/scraper"
+	"izumi/tools"
 	"maps"
 	"net/http"
 	"strconv"

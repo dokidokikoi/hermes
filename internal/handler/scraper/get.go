@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
-	"hermes/scraper"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
+	"izumi/scraper"
 
 	"github.com/tidwall/gjson"
 )

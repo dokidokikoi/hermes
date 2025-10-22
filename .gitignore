@@ -7,3 +7,4 @@ go.work.sum
 /data
 *.db
 izumi-front/
+./data/

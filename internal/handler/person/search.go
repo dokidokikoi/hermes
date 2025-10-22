@@ -2,8 +2,8 @@ package person
 
 import (
 	"context"
-	"hermes/internal/handler"
-	"hermes/internal/service"
+	"izumi/internal/handler"
+	"izumi/internal/service"
 
 	"github.com/dokidokikoi/go-common/query"
 )

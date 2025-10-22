@@ -2,9 +2,9 @@ package inittask
 
 import (
 	"context"
-	"hermes/config"
-	"hermes/db/data"
-	"hermes/internal/service"
+	"izumi/config"
+	"izumi/db/data"
+	"izumi/internal/service"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 )

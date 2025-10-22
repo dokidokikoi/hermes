@@ -3,8 +3,8 @@ package twodfan_test
 import (
 	"bytes"
 	"fmt"
-	"hermes/config"
-	"hermes/scraper/twodfan"
+	"izumi/config"
+	"izumi/scraper/twodfan"
 	"net/http"
 	"os"
 	"testing"

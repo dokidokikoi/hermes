@@ -2,9 +2,9 @@ package game
 
 import (
 	"context"
-	"hermes/db/data"
-	"hermes/internal/handler"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/internal/handler"
+	"izumi/model"
 )
 
 func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, error) {

@@ -3,7 +3,7 @@ package data
 import (
 	"context"
 	"fmt"
-	"hermes/model"
+	"izumi/model"
 	"testing"
 )
 

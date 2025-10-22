@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"hermes/model"
+	"izumi/model"
 	"time"
 
 	"github.com/lib/pq"

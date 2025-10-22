@@ -1,6 +1,6 @@
 package service
 
-import "hermes/db"
+import "izumi/db"
 
 type Iservice interface {
 	Game() IGame

@@ -2,8 +2,8 @@ package series
 
 import (
 	"context"
-	"hermes/db/data"
-	"hermes/model"
+	"izumi/db/data"
+	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
 )

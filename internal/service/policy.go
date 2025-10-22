@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"hermes/db"
-	"hermes/model"
-	"hermes/scraper/event"
+	"izumi/db"
+	"izumi/model"
+	"izumi/scraper/event"
 
 	"gorm.io/gorm"
 )
