@@ -12,7 +12,6 @@ import (
 	"izumi/model"
 	"izumi/tools"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -517,7 +516,7 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 	zaplog.L().Info("images", zap.Any("data", images))
 	zaplog.L().Info("dir", zap.Any("name", config.DataDir))
 	for _, image := range images {
-		err := os.Rename(image, filepath.Join(config.DataDir, tools.GetFileName(image)))
+		err := tools.Move(image, filepath.Join(config.DataDir, tools.GetFileName(image)))
 		if err != nil {
 			zaplog.L().Error("rename file error", zap.String("file path", image), zap.Error(err))
 		}
