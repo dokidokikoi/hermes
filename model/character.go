@@ -7,7 +7,7 @@ import (
 )
 
 type Character struct {
-	ID        uint           `gorm:"primaryKey;type:bigint" json:"id"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
 	UUID      string         `gorm:"uniqueIndex;type:varchar(255)" json:"uuid"`
 	Name      string         `gorm:"type:varchar(255)" json:"name"`
 	Alias     pq.StringArray `gorm:"type:json" json:"alias"`
@@ -28,8 +28,8 @@ func (Character) TableName() string {
 }
 
 type CharacterTag struct {
-	CharacterID uint `gorm:"primaryKey;type:bigint"`
-	TagID       uint `gorm:"primaryKey;type:bigint"`
+	CharacterID uint `gorm:"primaryKey"`
+	TagID       uint `gorm:"primaryKey"`
 }
 
 func (CharacterTag) TableName() string {

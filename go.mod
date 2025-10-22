@@ -6,13 +6,11 @@ toolchain go1.24.4
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
-	github.com/dokidokikoi/go-common v0.0.0-20250912113011-9d1045f23534
+	github.com/dokidokikoi/go-common v0.0.0-20250929104310-8332e0f21b2b
 	github.com/gin-gonic/gin v1.8.2
 	github.com/google/uuid v1.6.0
-	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
-	github.com/yuin/gopher-lua v1.1.1
 	golang.org/x/text v0.22.0
 	gorm.io/gorm v1.30.0
 	resty.dev/v3 v3.0.0-beta.3

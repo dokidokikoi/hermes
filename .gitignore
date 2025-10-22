@@ -6,3 +6,4 @@ go.work.sum
 /pg
 /data
 *.db
+izumi-front/

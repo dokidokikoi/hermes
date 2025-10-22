@@ -16,7 +16,7 @@ const (
 )
 
 type Person struct {
-	ID        uint           `gorm:"primaryKey;type:bigint" json:"id"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
 	UUID      string         `gorm:"uniqueIndex;type:varchar(255)" json:"uuid"`
 	Name      string         `gorm:"type:varchar(255)" json:"name"`
 	Alias     pq.StringArray `gorm:"type:json" json:"alias"`
@@ -34,7 +34,7 @@ func (Person) TableName() string {
 }
 
 type PersonTag struct {
-	PersonID uint `gorm:"primaryKey;type:bigint"`
+	PersonID uint `gorm:"primaryKey"`
 	TagID    uint `gorm:"primaryKey"`
 }
 

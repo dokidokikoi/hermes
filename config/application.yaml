@@ -5,7 +5,7 @@
 #   database: izumi
 #   password: 1234567
 sqlite:
-  database: ./izumi.db
+  database: ./data/izumi.db
 app: 
   port: 19876
 log:

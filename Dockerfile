@@ -1,39 +1,39 @@
-# 使用一个基础的 Golang 镜像
-FROM amd64/golang:1.22 as build
+FROM node:20-alpine AS frontend-builder
 
-# 为我们的镜像设置必要的环境变量
-ENV GO111MODULE=on \
-    CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64 
-    # GOPROXY=https://goproxy.cn
+WORKDIR /app/frontend
+COPY izumi-front/ ./
+RUN npm install -g pnpm
+RUN pnpm install
+RUN pnpm run build
 
-# 设置工作目录
+FROM golang:1.24-alpine AS backend-builder
+
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories && \ 
+    apk update
+RUN apk add --no-cache build-base sqlite-dev
+WORKDIR /app/backend
+COPY ./ ./
+RUN go env -w GOPROXY='https://goproxy.cn,direct' && go mod tidy && CGO_ENABLED=1 go build -ldflags="-linkmode external -extldflags '-static'" -o server .
+
+FROM nginx:1.27-alpine
+
+# 拷贝前端静态资源
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+
+# 拷贝 Nginx 配置
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
 WORKDIR /app
 
-# 复制 Golang 项目的源代码到容器中
-COPY . /app
+# 拷贝 Go 后端可执行文件
+COPY --from=backend-builder /app/backend/server ./
 
-# 在容器中编译 Golang 项目
-RUN go build -o hermes main.go
+RUN mkdir -p /app/data
 
-# 创建最终的生产镜像
-FROM alpine:latest as prod
-
-# 设置工作目录
-WORKDIR /app
-
-# 从之前的阶段复制二进制文件
-COPY --from=build /app/conf/* /app/conf/
-COPY --from=build /app/hermes /app/
-
-# 设置环境变量等
-ENV PORT=19876
+# 设置环境变量
 ENV GIN_MODE=release
-ENV HERMES_DATA_DIR=/app/data/hermes
+ENV HERMES_DATA_DIR=/data/izimu
 
-# 暴露端口
-EXPOSE 19876
+EXPOSE 80
 
-# 启动应用
-CMD ["./hermes"]
+CMD ["/bin/sh", "-c", "./server & nginx -g 'daemon off;'"]

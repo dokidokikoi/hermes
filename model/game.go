@@ -106,8 +106,8 @@ func (a DownloadInfos) Value() (driver.Value, error) {
 }
 
 type GameInstance struct {
-	ID        uint           `gorm:"primaryKey;type:bigint" json:"id"`
-	GameID    uint           `gorm:"uniqueIndex:uk_game_version;type:bigint"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	GameID    uint           `gorm:"uniqueIndex:uk_game_version"`
 	Version   string         `gorm:"uniqueIndex:uk_game_version" json:"version"`
 	Path      string         `gorm:"index:idx_game_path" json:"path"`
 	Size      int64          `json:"size"`
@@ -123,7 +123,7 @@ func (GameInstance) TableName() string {
 }
 
 type Game struct {
-	ID         uint           `gorm:"primaryKey;type:bigint" json:"id"`
+	ID         uint           `gorm:"primaryKey" json:"id"`
 	UUID       string         `gorm:"uniqueIndex;" json:"uuid"`
 	JanCode    string         `gorm:"type:varchar(32)" json:"jan_code"`
 	Code       string         `gorm:"type:varchar(32)" json:"code"`
@@ -151,8 +151,8 @@ func (Game) TableName() string {
 }
 
 type GameSeries struct {
-	GameID   uint `gorm:"primaryKey;type:bigint"`
-	SeriesID uint `gorm:"primaryKey;type:bigint"`
+	GameID   uint `gorm:"primaryKey"`
+	SeriesID uint `gorm:"primaryKey"`
 }
 
 func (GameSeries) TableName() string {
@@ -168,8 +168,8 @@ const (
 )
 
 type GameCharacter struct {
-	GameID      uint              `gorm:"primaryKey;type:bigint"`
-	CharacterID uint              `gorm:"primaryKey;type:bigint"`
+	GameID      uint              `gorm:"primaryKey"`
+	CharacterID uint              `gorm:"primaryKey"`
 	Relation    CharacterRelation `json:"relation"`
 	Character   *Character        `gorm:"-" json:"-"`
 }
@@ -179,8 +179,8 @@ func (GameCharacter) TableName() string {
 }
 
 type GameTag struct {
-	GameID uint `gorm:"primaryKey;type:bigint"`
-	TagID  uint `gorm:"primaryKey;type:bigint"`
+	GameID uint `gorm:"primaryKey"`
+	TagID  uint `gorm:"primaryKey"`
 }
 
 func (GameTag) TableName() string {
@@ -233,8 +233,8 @@ const (
 )
 
 type GameStaff struct {
-	GameID    uint            `gorm:"primaryKey;type:bigint"`
-	PersonID  uint            `gorm:"primaryKey;type:bigint"`
+	GameID    uint            `gorm:"primaryKey"`
+	PersonID  uint            `gorm:"primaryKey"`
 	Relations PersonRelations `gorm:"type:json"`
 	Person    *Person         `gorm:"-" json:"-"`
 }
