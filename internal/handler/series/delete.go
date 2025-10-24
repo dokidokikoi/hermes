@@ -5,13 +5,15 @@ import (
 	"errors"
 	"izumi/db/data"
 	"izumi/model"
+
+	"github.com/dokidokikoi/go-common/middleware"
 )
 
 type DelRequest struct {
 	Ids []uint `json:"ids"`
 }
 
-func (h Handler) Del(ctx context.Context, req *DelRequest) (any, error) {
+func (h Handler) Del(ctx context.Context, req *DelRequest, op *middleware.PreHandleOptions) (any, error) {
 	seriesIDs := []*model.Series{}
 	for _, id := range req.Ids {
 		seriesIDs = append(seriesIDs, &model.Series{

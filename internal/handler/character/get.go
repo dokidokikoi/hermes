@@ -8,10 +8,11 @@ import (
 	"strconv"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx context.Context, req *struct{}) (*handler.CharacterVo, error) {
+func (h Handler) Get(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (*handler.CharacterVo, error) {
 	id, err := strconv.ParseUint(ctx.(*gin.Context).Param("id"), 10, 32)
 	if err != nil {
 		return nil, err

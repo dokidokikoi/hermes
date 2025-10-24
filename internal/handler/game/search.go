@@ -6,10 +6,11 @@ import (
 	"izumi/internal/service"
 
 	"github.com/dokidokikoi/go-common/core"
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/query"
 )
 
-func (h Handler) Search(ctx context.Context, req *handler.GameListReq) (*core.ListResponseData[handler.GameVo], error) {
+func (h Handler) Search(ctx context.Context, req *handler.GameListReq, op *middleware.PreHandleOptions) (*core.ListResponseData[handler.GameVo], error) {
 	var q query.PageQuery
 	q.Page = req.Page
 	q.PageSize = req.PageSize

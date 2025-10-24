@@ -5,9 +5,11 @@ import (
 	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/model"
+
+	"github.com/dokidokikoi/go-common/middleware"
 )
 
-func (h Handler) Update(ctx context.Context, input *handler.GameVo) (any, error) {
+func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middleware.PreHandleOptions) (any, error) {
 	g := &model.Game{
 		ID:        input.ID,
 		JanCode:   input.JanCode,

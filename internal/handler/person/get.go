@@ -7,10 +7,11 @@ import (
 	"izumi/model"
 	"strconv"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func (h Handler) Get(ctx context.Context, req *struct{}) (*handler.StaffVo, error) {
+func (h Handler) Get(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (*handler.StaffVo, error) {
 	id, err := strconv.ParseUint(ctx.(*gin.Context).Param("id"), 10, 32)
 	if err != nil {
 		return nil, err

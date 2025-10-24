@@ -7,10 +7,11 @@ import (
 	"izumi/model"
 	"strings"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/google/uuid"
 )
 
-func (h Handler) Upsert(ctx context.Context, input *handler.StaffVo) (uint, error) {
+func (h Handler) Upsert(ctx context.Context, input *handler.StaffVo, op *middleware.PreHandleOptions) (uint, error) {
 	p := &model.Person{
 		ID:      input.ID,
 		UUID:    uuid.NewString(),

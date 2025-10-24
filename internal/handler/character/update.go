@@ -8,9 +8,10 @@ import (
 	"strings"
 
 	comm_errors "github.com/dokidokikoi/go-common/errors"
+	"github.com/dokidokikoi/go-common/middleware"
 )
 
-func (h Handler) Update(ctx context.Context, input *model.Character) (any, error) {
+func (h Handler) Update(ctx context.Context, input *model.Character, op *middleware.PreHandleOptions) (any, error) {
 	tx := data.GetDataFactory().Transaction().Begin()
 	err := tx.CharacterTag().Delete(ctx, &model.CharacterTag{CharacterID: input.ID}, nil)
 	if err != nil {

@@ -36,7 +36,7 @@ func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
 				{
-					Field:    "alias::text",
+					Field:    "text",
 					Operator: meta.LIKE,
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},

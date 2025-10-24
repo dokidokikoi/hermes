@@ -5,6 +5,7 @@ import (
 	"izumi/internal/handler"
 	"izumi/internal/service"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/query"
 )
 
@@ -13,7 +14,7 @@ type SearchResponse struct {
 	Total int64                 `json:"total"`
 }
 
-func (h Handler) Search(ctx context.Context, input *handler.CharacterSearchReq) (*SearchResponse, error) {
+func (h Handler) Search(ctx context.Context, input *handler.CharacterSearchReq, op *middleware.PreHandleOptions) (*SearchResponse, error) {
 	q := &query.PageQuery{
 		Page:     input.Page,
 		PageSize: input.PageSize,

@@ -8,10 +8,11 @@ import (
 	"strings"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	"github.com/dokidokikoi/go-common/middleware"
 	"gorm.io/gorm"
 )
 
-func (h Handler) Create(ctx context.Context, input *model.Category) (uint, error) {
+func (h Handler) Create(ctx context.Context, input *model.Category, op *middleware.PreHandleOptions) (uint, error) {
 	input.Name = strings.ToUpper(input.Name)
 	if err := data.GetDataFactory().Category().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {

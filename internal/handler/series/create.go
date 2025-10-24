@@ -7,10 +7,11 @@ import (
 	"izumi/model"
 	"strings"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"gorm.io/gorm"
 )
 
-func (h Handler) Create(ctx context.Context, input *model.Series) (uint, error) {
+func (h Handler) Create(ctx context.Context, input *model.Series, op *middleware.PreHandleOptions) (uint, error) {
 	input.Name = strings.TrimSpace(input.Name)
 	if err := data.GetDataFactory().Series().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {

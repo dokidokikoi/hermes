@@ -11,9 +11,9 @@ import (
 	"izumi/scraper/event"
 	"time"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/notice"
 
-	"github.com/dokidokikoi/go-common/core"
 	comm_errs "github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (string, error) {
+func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq, op *middleware.PreHandleOptions) (string, error) {
 	if input.RequestID == "" {
 		input.RequestID = uuid.New().String()
 	}
@@ -35,7 +35,7 @@ func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq) (s
 		}
 	} else {
 		if _, ok := event.GameScraperMap[input.Name]; !ok {
-			core.WithErr(ctx, comm_errs.ApiErrValidation)
+			op.SetErr(comm_errs.ApiErrValidation)
 			return "", errors.New("scraper name not found")
 		}
 		gopool.CtxGo(ctx, func() {

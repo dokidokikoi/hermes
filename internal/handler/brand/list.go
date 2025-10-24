@@ -6,6 +6,7 @@ import (
 	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	"github.com/dokidokikoi/go-common/middleware"
 )
 
 type ListResponse struct {
@@ -13,7 +14,7 @@ type ListResponse struct {
 	Total int64          `json:"total"`
 }
 
-func (h Handler) List(ctx context.Context, req *struct{}) (any, error) {
+func (h Handler) List(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (any, error) {
 	list, err := data.GetDataFactory().Brand().List(ctx, &model.Brand{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
 		return nil, err

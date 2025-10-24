@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"izumi/config"
 	"izumi/db/data"
@@ -14,14 +15,15 @@ import (
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	"github.com/dokidokikoi/go-common/middleware"
 	"go.uber.org/zap"
 )
 
 type DownloadInfoReq struct {
-	GameId uint
+	GameId uint `json:"game_id"`
 }
 
-func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq) (any, error) {
+func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq, op *middleware.PreHandleOptions) (any, error) {
 	logger := zaplog.From(ctx)
 	if input.GameId > 0 {
 		gVo, err := h.srv.Game().GetVOByID(ctx, input.GameId)
@@ -33,7 +35,15 @@ func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq) (any,
 		if err != nil {
 			return nil, err
 		}
+		if len(ins) == 0 {
+			op.SetMsg("no game instance")
+			return nil, errors.New("no game instance")
+		}
 		for _, i := range ins {
+			if !filepath.IsAbs(i.Path) {
+				op.SetMsg("game path need absoulte path")
+				return nil, errors.New("game path need absoulte path")
+			}
 			info, err := os.Stat(i.Path)
 			if err != nil {
 				logger.Error("os.Stat", zap.Error(err))
@@ -73,7 +83,7 @@ func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq) (any,
 	return nil, nil
 }
 
-func (h Handler) DownloadAllInfo(ctx context.Context, input struct{}) (any, error) {
+func (h Handler) DownloadAllInfo(ctx context.Context, input *struct{}, op *middleware.PreHandleOptions) (any, error) {
 	logger := zaplog.From(ctx)
 	gs, err := data.GetDataFactory().Game().List(ctx, &model.Game{}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
 	if err != nil {
@@ -81,7 +91,7 @@ func (h Handler) DownloadAllInfo(ctx context.Context, input struct{}) (any, erro
 	}
 	go func() {
 		for _, g := range gs {
-			_, e := h.DownloadInfo(ctx, &DownloadInfoReq{GameId: g.ID})
+			_, e := h.DownloadInfo(ctx, &DownloadInfoReq{GameId: g.ID}, op)
 			if e != nil {
 				logger.Error("downloadInfo", zap.Any("error", e))
 			}

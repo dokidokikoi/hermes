@@ -10,6 +10,7 @@ import (
 	"izumi/scraper/event"
 	"time"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/notice"
 
 	"github.com/dokidokikoi/go-common/gopool"
@@ -18,7 +19,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq) (string, error) {
+func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq, op *middleware.PreHandleOptions) (string, error) {
 	if input.RequestID == "" {
 		input.RequestID = uuid.New().String()
 	}

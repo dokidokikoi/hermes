@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 type LinkType string
@@ -106,16 +104,16 @@ func (a DownloadInfos) Value() (driver.Value, error) {
 }
 
 type GameInstance struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	GameID    uint           `gorm:"uniqueIndex:uk_game_version"`
-	Version   string         `gorm:"uniqueIndex:uk_game_version" json:"version"`
-	Path      string         `gorm:"index:idx_game_path" json:"path"`
-	Size      int64          `json:"size"`
-	Language  pq.StringArray `gorm:"type:json" json:"language"`
-	Comment   string         `json:"comment"`
-	Platform  pq.StringArray `gorm:"type:json" json:"platform"`
-	CreatedAt time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime:milli"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	GameID    uint      `gorm:"uniqueIndex:uk_game_version"`
+	Version   string    `gorm:"uniqueIndex:uk_game_version;type:verchar(100)" json:"version"`
+	Path      string    `gorm:"index:idx_game_path;type:verchar(255)" json:"path"`
+	Size      int64     `json:"size"`
+	Language  Array     `gorm:"type:json" json:"language"`
+	Comment   string    `json:"comment"`
+	Platform  Array     `gorm:"type:json" json:"platform"`
+	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
 
 func (GameInstance) TableName() string {
@@ -123,27 +121,27 @@ func (GameInstance) TableName() string {
 }
 
 type Game struct {
-	ID         uint           `gorm:"primaryKey" json:"id"`
-	UUID       string         `gorm:"uniqueIndex;" json:"uuid"`
-	JanCode    string         `gorm:"type:varchar(32)" json:"jan_code"`
-	Code       string         `gorm:"type:varchar(32)" json:"code"`
-	Name       string         `gorm:"type:varchar(255)" json:"name"`
-	Alias      pq.StringArray `gorm:"type:json" json:"alias"`
-	Cover      string         `gorm:"type:varchar(512)" json:"cover"`
-	Images     pq.StringArray `gorm:"type:json" json:"images"`
-	Category   *Category      `gorm:"foreignKey:CategoryID" json:"category"`
-	CategoryID uint           `gorm:"default:null" json:"-"`
-	Series     []*Series      `gorm:"many2many:game_series;" json:"series"`
-	Brand      *Brand         `gorm:"foreignKey:BrandID" json:"brand"`
-	BrandID    uint           `gorm:"default:null" json:"-"`
-	Price      string         `gorm:"type:varchar(32)" json:"price"`
-	IssueDate  time.Time      `json:"issue_date"`
-	Story      string         `json:"story"`
-	Tags       []*Tag         `gorm:"many2many:game_tag;" json:"tags"`
-	Links      Links          `gorm:"type:json" json:"links"`
-	OtherInfo  string         `json:"other_info"`
-	CreatedAt  time.Time      `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt  time.Time      `gorm:"autoUpdateTime:milli"`
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	UUID       string    `gorm:"uniqueIndex;type:varchar(100)" json:"uuid"`
+	JanCode    string    `gorm:"type:varchar(32)" json:"jan_code"`
+	Code       string    `gorm:"type:varchar(32)" json:"code"`
+	Name       string    `gorm:"type:varchar(255);index:game_name_idx" json:"name"`
+	Alias      Array     `gorm:"type:json" json:"alias"`
+	Cover      string    `gorm:"type:varchar(512)" json:"cover"`
+	Images     Array     `gorm:"type:json" json:"images"`
+	Category   *Category `gorm:"foreignKey:CategoryID" json:"category"`
+	CategoryID uint      `gorm:"default:null" json:"-"`
+	Series     []*Series `gorm:"many2many:game_series;" json:"series"`
+	Brand      *Brand    `gorm:"foreignKey:BrandID" json:"brand"`
+	BrandID    uint      `gorm:"default:null" json:"-"`
+	Price      string    `gorm:"type:varchar(32)" json:"price"`
+	IssueDate  time.Time `json:"issue_date"`
+	Story      string    `json:"story"`
+	Tags       []*Tag    `gorm:"many2many:game_tag;" json:"tags"`
+	Links      Links     `gorm:"type:json" json:"links"`
+	OtherInfo  string    `json:"other_info"`
+	CreatedAt  time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"autoUpdateTime:milli"`
 }
 
 func (Game) TableName() string {
@@ -170,7 +168,7 @@ const (
 type GameCharacter struct {
 	GameID      uint              `gorm:"primaryKey"`
 	CharacterID uint              `gorm:"primaryKey"`
-	Relation    CharacterRelation `json:"relation"`
+	Relation    CharacterRelation `gorm:"type:varchar(32)" json:"relation"`
 	Character   *Character        `gorm:"-" json:"-"`
 }
 

@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dokidokikoi/go-common/core"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/notice"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -21,7 +21,7 @@ type LoadInfoResponse struct {
 	Rid string `json:"rid"`
 }
 
-func (h Handler) LoadInfo(ctx context.Context, req *struct{}) (any, error) {
+func (h Handler) LoadInfo(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (any, error) {
 	logger := zaplog.From(ctx)
 	p, err := data.GetDataFactory().Policy().Get(ctx, &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
 	if err != nil {
@@ -34,7 +34,7 @@ func (h Handler) LoadInfo(ctx context.Context, req *struct{}) (any, error) {
 	infos, err := h.srv.Library().Ls(ctx, sp.GameLibrary)
 	if err != nil {
 		if os.IsNotExist(err) {
-			core.WithMsg(ctx, "game library not exist")
+			op.SetMsg("game library not exist")
 		}
 		return nil, err
 	}

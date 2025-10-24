@@ -15,10 +15,10 @@ const (
 )
 
 type Task struct {
-	ID          uint   `gorm:"primaryKey;" json:"id"`
-	RequestID   string `gorm:"varchar(64);index:idx_request_id" json:"request_id"`
-	ScraperName string `gorm:"type:varchar(32)" json:"scraper_name"`
-	Type        int8
+	ID          uint      `gorm:"primaryKey;" json:"id"`
+	RequestID   string    `gorm:"type:varchar(64);index:idx_request_id" json:"request_id"`
+	ScraperName string    `gorm:"type:varchar(32)" json:"scraper_name"`
+	Type        int8      `gorm:"type:tinyint"`
 	Param       string    `json:"param"`
 	Result      string    `json:"result"`
 	Status      int8      `json:"status"`
@@ -27,7 +27,6 @@ type Task struct {
 	Duration    int64     `json:"duration"`
 	CreatedAt   time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime:milli"`
-	DeletedAt   *time.Time
 }
 
 func (Task) TableName() string {

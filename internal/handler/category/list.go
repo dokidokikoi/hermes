@@ -6,9 +6,10 @@ import (
 	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	"github.com/dokidokikoi/go-common/middleware"
 )
 
-func (h Handler) List(ctx context.Context, req *struct{}) ([]*model.Category, error) {
+func (h Handler) List(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) ([]*model.Category, error) {
 	list, err := data.GetDataFactory().Category().List(ctx, &model.Category{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
 		return nil, err

@@ -7,6 +7,7 @@ import (
 	"izumi/model"
 	"strings"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/google/uuid"
 )
 
@@ -24,7 +25,7 @@ type CreateGameRequest struct {
 	GameIns *model.GameInstance `json:"game_ins"`
 }
 
-func (h Handler) Create(ctx context.Context, input *CreateGameRequest) (uint, error) {
+func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middleware.PreHandleOptions) (uint, error) {
 	g := &model.Game{
 		UUID:    uuid.NewString(),
 		Code:    strings.TrimSpace(input.Game.Code),

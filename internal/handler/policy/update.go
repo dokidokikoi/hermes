@@ -8,9 +8,10 @@ import (
 	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	"github.com/dokidokikoi/go-common/middleware"
 )
 
-func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq) (any, error) {
+func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq, op *middleware.PreHandleOptions) (any, error) {
 	var policy any
 
 	switch input.Key {

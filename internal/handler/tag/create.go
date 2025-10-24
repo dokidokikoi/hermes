@@ -6,10 +6,11 @@ import (
 	"izumi/db/data"
 	"izumi/model"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"gorm.io/gorm"
 )
 
-func (h Handler) Create(ctx context.Context, input *model.Tag) (uint, error) {
+func (h Handler) Create(ctx context.Context, input *model.Tag, op *middleware.PreHandleOptions) (uint, error) {
 	if err := data.GetDataFactory().Tag().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			c, err := data.GetDataFactory().Tag().Get(ctx, &model.Tag{Name: input.Name}, nil)

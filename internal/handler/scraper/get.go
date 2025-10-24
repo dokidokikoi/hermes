@@ -9,10 +9,11 @@ import (
 	"izumi/model"
 	"izumi/scraper"
 
+	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/tidwall/gjson"
 )
 
-func (h Handler) Get(ctx context.Context, input *handler.ScraperGetReq) (any, error) {
+func (h Handler) Get(ctx context.Context, input *handler.ScraperGetReq, op *middleware.PreHandleOptions) (any, error) {
 	list, err := data.GetDataFactory().Task().List(ctx, &model.Task{RequestID: input.RequestID, Status: model.TaskStatusSucceed}, nil)
 	if err != nil {
 		return nil, err

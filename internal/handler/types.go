@@ -3,8 +3,6 @@ package handler
 import (
 	"izumi/model"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 type GameListReq struct {
@@ -60,10 +58,10 @@ type GameVo struct {
 	DownloadInfos model.DownloadInfos `json:"download_info"`
 
 	// 仅用于 info 文件
-	Version  string         `json:"version,omitempty"`
-	Size     int64          `json:"size,omitempty"`
-	Language pq.StringArray `json:"language,omitempty"`
-	Comment  string         `json:"comment,omitempty"`
+	Version  string      `json:"version,omitempty"`
+	Size     int64       `json:"size,omitempty"`
+	Language model.Array `json:"language,omitempty"`
+	Comment  string      `json:"comment,omitempty"`
 }
 
 type StaffVo struct {
