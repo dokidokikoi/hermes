@@ -3,7 +3,9 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories && \ 
     apk update && apk add --no-cache git
-RUN git clone https://github.com/dokidokikoi/izumi-front.git ./
+RUN git config set --g proxy.http 'socks5://192.168.102.202:7890' && \
+    git config set --g proxy.https 'socks5://192.168.102.202:7890' && \
+    git clone https://github.com/dokidokikoi/izumi-front.git ./
 RUN npm install -g pnpm
 RUN pnpm install
 RUN pnpm run build

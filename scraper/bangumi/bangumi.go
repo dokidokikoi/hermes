@@ -128,7 +128,7 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 		return nil, err
 	}
 
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "bangumi", Url: uri}}}, ScraperName: b.name}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: b.name, Url: uri, Type: model.LinkTypeInfo}}}, ScraperName: b.name}
 	// 获取名称
 	item.Name = gjson.GetBytes(data, "name").String()
 	nameCN := gjson.GetBytes(data, "name_cn").String()
@@ -168,6 +168,7 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 			item.Links = append(item.Links, model.Link{
 				Name: "官网",
 				Url:  info.Get("value").String(),
+				Type: model.LinkTypeOfficial,
 			})
 		}
 	}

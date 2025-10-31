@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"izumi/config"
 	"izumi/db"
 	"izumi/db/data"
@@ -12,8 +13,10 @@ import (
 	"izumi/model"
 	"izumi/tools"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
@@ -37,6 +40,7 @@ type IGame interface {
 	SaveFiles(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error
 
 	Load(ctx context.Context, gVo *handler.GameVo, path string) error
+	DownloadInfo(ctx context.Context, gameID uint, t time.Time) error
 }
 
 var _ IGame = (*game)(nil)
@@ -46,8 +50,13 @@ type game struct {
 }
 
 func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error {
+	var err error
+	g.Story, err = SaveHtmlImg(ctx, g.Story)
+	if err != nil {
+		zaplog.From(ctx).With(zap.Error(err)).Error("SaveHtmlImg")
+	}
 	tx := gsrv.store.Transaction().Begin()
-	err := tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Brand", "Category"}})
+	err = tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Brand", "Category"}})
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
@@ -165,8 +174,13 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 }
 
 func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error {
+	var err error
+	g.Story, err = SaveHtmlImg(ctx, g.Story)
+	if err != nil {
+		zaplog.From(ctx).With(zap.Error(err)).Error("SaveHtmlImg")
+	}
 	tx := gsrv.store.Transaction().Begin()
-	err := tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil)
+	err = tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil)
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
@@ -669,7 +683,7 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 		if e != nil {
 			tx.Transaction().Rollback()
 		} else {
-			loadGameAllImages(zaplog.From(ctx), path, gVo)
+			loadGameAllImages(zaplog.From(ctx), path)
 		}
 	}()
 
@@ -826,55 +840,107 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	return tx.Transaction().Commit()
 }
 
+func (gsrv *game) DownloadInfo(ctx context.Context, gameID uint, t time.Time) error {
+	gVo, err := gsrv.GetVOByID(ctx, gameID)
+	if err != nil {
+		return err
+	}
+	ins, err := data.GetDataFactory().
+		GameInstance().List(ctx, &model.GameInstance{GameID: gameID}, nil)
+	if err != nil {
+		return err
+	}
+	if len(ins) == 0 {
+		return errors.New("no game instance")
+	}
+	for _, i := range ins {
+		if !filepath.IsAbs(i.Path) {
+			return errors.New("game path need absoulte path")
+		}
+		info, err := os.Stat(i.Path)
+		if err != nil {
+			zaplog.From(ctx).Error("os.Stat", zap.Error(err))
+			continue
+		}
+		if !info.IsDir() {
+			continue
+		}
+		if t.Before(info.ModTime()) {
+			continue
+		}
+		err = cpGameAllImages(zaplog.From(ctx), i.Path, gVo)
+		if err != nil {
+			zaplog.From(ctx).Error("cpGameAllImages", zap.Error(err))
+			continue
+		}
+		f, err := os.OpenFile(filepath.Join(i.Path, "info.json"), os.O_WRONLY, 0666)
+		if err != nil {
+			if os.IsNotExist(err) {
+				err = nil
+				f, err = os.Create(filepath.Join(i.Path, "info.json"))
+			}
+			if err != nil {
+				zaplog.From(ctx).Error("Open", zap.Error(err))
+				continue
+			}
+		}
+		defer f.Close()
+
+		gVo.Version = i.Version
+		gVo.Language = i.Language
+		gVo.Comment = i.Comment
+		gVo.Size = i.Size
+		err = downloadInfo(gVo, f)
+		if err != nil {
+			zaplog.From(ctx).Error("downloadInfo", zap.Error(err))
+		}
+	}
+
+	return nil
+}
+
 func NewGame(store db.IStore) *game {
 	return &game{store: store}
 }
 
-func loadGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error {
-	if gVo.Cover != "" {
-		err := tools.Cp(filepath.Join(path, gVo.Cover), filepath.Join(config.DataDir, gVo.Cover))
+func loadGameAllImages(logger *zap.Logger, path string) error {
+	path = filepath.Join(path, "images")
+	files, err := os.ReadDir(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		_, fileName := filepath.Split(file.Name())
+		dstPath := filepath.Join(config.DataDir, fileName)
+		_, err := os.Stat(dstPath)
 		if err != nil {
-			logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, gVo.Cover))
-		}
-	}
-	for _, image := range gVo.Images {
-		if image != "" {
-			err := tools.Cp(filepath.Join(path, image), filepath.Join(config.DataDir, image))
-			if err != nil {
-				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
+			if os.IsExist(err) {
+				continue
 			}
+			logger.With(zap.Error(err)).Error("", zap.String("path", dstPath))
+			continue
 		}
-	}
-	for _, c := range gVo.Characters {
-		if c.Cover != "" {
-			err := tools.Cp(filepath.Join(path, c.Cover), filepath.Join(config.DataDir, c.Cover))
-			if err != nil {
-				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, c.Cover))
-			}
+
+		dstF, err := os.Create(dstPath)
+		if err != nil {
+			logger.With(zap.Error(err)).Error("", zap.String("path", dstPath))
+			continue
 		}
-		for _, image := range c.Images {
-			if image != "" {
-				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.DataDir, image))
-				if err != nil {
-					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
-				}
-			}
+		srcF, err := os.Open(file.Name())
+		if err != nil {
+			logger.With(zap.Error(err)).Error("", zap.String("path", file.Name()))
+			continue
 		}
-	}
-	for _, s := range gVo.Staff {
-		if s.Cover != "" {
-			err := tools.Cp(filepath.Join(path, s.Cover), filepath.Join(config.DataDir, s.Cover))
-			if err != nil {
-				logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, s.Cover))
-			}
-		}
-		for _, image := range s.Images {
-			if image != "" {
-				err := tools.Cp(filepath.Join(path, image), filepath.Join(config.DataDir, image))
-				if err != nil {
-					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, image))
-				}
-			}
+		_, err = io.Copy(dstF, srcF)
+		if err != nil {
+			logger.With(zap.Error(err)).Error("", zap.String("path", file.Name()))
+			continue
 		}
 	}
 	return nil

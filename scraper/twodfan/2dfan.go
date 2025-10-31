@@ -148,7 +148,7 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "2dfan", Url: uri}}}, ScraperName: tdf.name}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: tdf.name, Url: uri, Type: model.LinkTypeInfo}}}, ScraperName: tdf.name}
 	// 获取名称
 	item.Name, item.Alias, err = tdf.GetItemName(root)
 	if err != nil {
@@ -187,14 +187,11 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		tdf.logger.Error("获取其它信息失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Links, err = tdf.GetItemLinks(root)
+	links, err := tdf.GetItemLinks(root)
 	if err != nil {
 		tdf.logger.Error("获取链接失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Links = append(item.Links, model.Link{
-		Name: Name,
-		Url:  uri,
-	})
+	item.Links = append(item.Links, links...)
 	item.Story, item.AllImages, err = tdf.GetItemStory(root)
 	if err != nil {
 		tdf.logger.Error("获取故事失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
@@ -362,6 +359,7 @@ func (tdf *TwoDFan) GetItemLinks(node *goquery.Document) ([]model.Link, error) {
 		links = append(links, model.Link{
 			Name: n.Text(),
 			Url:  tdf.AbsUrl(n.AttrOr("href", "")),
+			Type: model.LinkTypeOther,
 		})
 	})
 

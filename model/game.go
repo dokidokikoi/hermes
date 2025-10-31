@@ -13,6 +13,8 @@ const (
 	LinkTypeMv          LinkType = "mv"           // mv
 	LinkTypeInfo        LinkType = "info"         // 介绍
 	LinkTypeWorkThrough LinkType = "work_through" // 攻略
+	LinkTypeOfficial    LinkType = "official"
+	LinkTypeOther       LinkType = "other"
 )
 
 var LinkTypeMap = map[string]LinkType{

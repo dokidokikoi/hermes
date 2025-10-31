@@ -64,6 +64,8 @@ github.com/dokidokikoi/go-common v0.0.0-20251023091606-0df9774072ee h1:+pIG3h9yX
 github.com/dokidokikoi/go-common v0.0.0-20251023091606-0df9774072ee/go.mod h1:5L7NkftsbGoZa28aWKvTBijuQMW9/vAwwJ+w4L0EMY0=
 github.com/dokidokikoi/go-common v0.0.0-20251023092703-0ecaa050db11 h1:FIcvQy5BX0yTBa0DgSnSzQM6GaWIHfY40FEni10ow/4=
 github.com/dokidokikoi/go-common v0.0.0-20251023092703-0ecaa050db11/go.mod h1:5L7NkftsbGoZa28aWKvTBijuQMW9/vAwwJ+w4L0EMY0=
+github.com/dokidokikoi/go-common v0.0.0-20251031041240-1e3c8ec4cf84 h1:VH+LWcC0qbSaX6gV9NytYennR4r1IWEgMUXKtNe57AY=
+github.com/dokidokikoi/go-common v0.0.0-20251031041240-1e3c8ec4cf84/go.mod h1:5L7NkftsbGoZa28aWKvTBijuQMW9/vAwwJ+w4L0EMY0=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=

@@ -67,6 +67,11 @@ func (d *data) Task() db.ITask {
 func (d *data) Policy() db.IPolicy {
 	return newPolicy(d)
 }
+
+func (d *data) SystemTask() db.ISystemTask {
+	return newSystemTask(d)
+}
+
 func (d *data) Transaction() db.ITransaction {
 	return newTransaction(d)
 }
