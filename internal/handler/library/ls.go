@@ -14,7 +14,7 @@ func (h *Handler) Ls(ctx context.Context, req *handler.LsReq, op *middleware.Pre
 	if req.Path == "" {
 		req.Path = "/"
 	}
-	infos, err := h.srv.Library().Ls(ctx, req.Path)
+	infos, err := h.srv.Library().Ls(ctx, req.Path, req.OnlyNoScrap)
 	if err != nil {
 		return nil, err
 	}

@@ -7,9 +7,9 @@ services:
       dockerfile: Dockerfile
     environment:
       IZUMI_DATA_DIR: /data/izumi
-      http_proxy: http://127.0.0.1:7890
-      https_proxy: http://127.0.0.1:7890
-      all_proxy: http://127.0.0.1:7890
+      http_proxy: socks5://192.168.1.4:20170
+      https_proxy: socks5://192.168.1.4:20170
+      all_proxy: socks5://192.168.1.4:20170
     ports:
       - "8888:80"
     volumes:

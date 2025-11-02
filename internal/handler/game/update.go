@@ -73,7 +73,7 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middlewa
 	return nil, nil
 }
 
-func (h Handler) UpdateIns(ctx context.Context, input *model.GameInstance) (any, error) {
+func (h Handler) UpdateIns(ctx context.Context, input *model.GameInstance, op *middleware.PreHandleOptions) (any, error) {
 	err := data.GetDataFactory().GameInstance().Update(ctx, input, nil)
 	if err != nil {
 		return nil, err

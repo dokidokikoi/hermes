@@ -6,8 +6,8 @@ import (
 
 type GameItem struct {
 	handler.GameVo
-	ScraperName string   `json:"scraper_name"`
-	AllImages   []string `json:"all_images"`
+	ScraperName string `json:"scraper_name"`
+	// AllImages   []string `json:"all_images"`
 }
 
 type SearchItem struct {

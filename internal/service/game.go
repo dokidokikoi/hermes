@@ -53,6 +53,7 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 		return err
 	}
 	if gIns != nil {
+		gIns.GameID = g.ID
 		err = tx.GameInstance().Create(ctx, gIns, nil)
 		if err != nil {
 			tx.Transaction().Rollback()
@@ -831,6 +832,7 @@ func NewGame(store db.IStore) *game {
 }
 
 func loadGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error {
+	path = filepath.Join(path, "images")
 	if gVo.Cover != "" {
 		err := tools.Cp(filepath.Join(path, gVo.Cover), filepath.Join(config.DataDir, gVo.Cover))
 		if err != nil {

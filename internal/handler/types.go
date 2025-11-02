@@ -150,5 +150,6 @@ type UpdateProxyReq struct {
 }
 
 type LsReq struct {
-	Path string `form:"path"`
+	Path        string `form:"path"`
+	OnlyNoScrap bool   `form:"only_no_scrap"`
 }

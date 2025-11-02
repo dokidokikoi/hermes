@@ -17,6 +17,7 @@ type CreateGameInstanceRequst struct {
 	Path     string   `json:"path"`
 	Size     int64    `json:"size"`
 	Language []string `json:"language"`
+	Platform []string `json:"platform"`
 	Comment  string   `json:"comment"`
 }
 
@@ -114,6 +115,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 			Language: input.GameIns.Language,
 			Size:     input.GameIns.Size,
 			Comment:  input.GameIns.Comment,
+			Platform: input.GameIns.Platform,
 		}
 	}
 
@@ -124,7 +126,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 	return g.ID, nil
 }
 
-func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst) (uint, error) {
+func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst, op *middleware.PreHandleOptions) (uint, error) {
 	gameIns := &model.GameInstance{
 		GameID:   input.GameID,
 		Version:  input.Version,
@@ -132,6 +134,7 @@ func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst)
 		Size:     input.Size,
 		Language: input.Language,
 		Comment:  input.Comment,
+		Platform: input.Platform,
 	}
 	if err := data.GetDataFactory().GameInstance().Create(ctx, gameIns, nil); err != nil {
 		return 0, err

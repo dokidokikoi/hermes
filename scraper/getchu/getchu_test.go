@@ -16,9 +16,9 @@ import (
 var getChuScraper *getchu.GetChu
 
 func init() {
-	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
-	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
-	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("https_proxy", "socks5://127.0.0.1:20170")
+	os.Setenv("http_proxy", "socks5://127.0.0.1:20170")
+	os.Setenv("all_proxy", "socks5://127.0.0.1:20170")
 	scraper := getchu.NewGetChu(map[string]string{
 		"User-Agent":         config.DefaultUserAgent,
 		"Accept-Language":    config.ZhLanguage,
@@ -85,7 +85,7 @@ func TestGetItemCover(t *testing.T) {
 }
 
 func TestGetItemCharacter(t *testing.T) {
-	data, err := getChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=1273918", nil, nil)
+	data, err := getChuScraper.DoReq(http.MethodGet, "https://www.getchu.com/soft.phtml?id=851229", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -94,11 +94,14 @@ func TestGetItemCharacter(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	cs, err := getChuScraper.GetItemCharacter(root)
+	cs, staff, err := getChuScraper.GetItemCharacter(root)
 	if err != nil {
 		panic(err)
 	}
 	for _, c := range cs {
+		fmt.Printf("%+v\n", c)
+	}
+	for _, c := range staff {
 		fmt.Printf("%+v\n", c)
 	}
 }

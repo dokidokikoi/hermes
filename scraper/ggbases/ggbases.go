@@ -45,6 +45,8 @@ type GGBases struct {
 	Headers   map[string]string
 	Proxy     string
 	logger    *zap.Logger
+
+	getitemChan chan struct{}
 }
 
 func NewGGBases(header map[string]string, proxy string) scraper.IGameScraper {
@@ -53,12 +55,13 @@ func NewGGBases(header map[string]string, proxy string) scraper.IGameScraper {
 	}
 	header["Referer"] = GGBasesDomain
 	return &GGBases{
-		name:      Name,
-		Domain:    GGBasesDomain,
-		SearchUri: GGBasesSearchUri,
-		Headers:   header,
-		Proxy:     proxy,
-		logger:    zaplog.L().Named(Name),
+		name:        Name,
+		Domain:      GGBasesDomain,
+		SearchUri:   GGBasesSearchUri,
+		Headers:     header,
+		Proxy:       proxy,
+		logger:      zaplog.L().Named(Name),
+		getitemChan: make(chan struct{}, 1),
 	}
 }
 
@@ -79,7 +82,9 @@ func (gg *GGBases) SetProxy(proxy string) {
 }
 
 func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
-	data, err := gg.DoReq(http.MethodGet, fmt.Sprintf(gg.SearchUri, page-1, keyword), nil, nil)
+	data, err := gg.DoReq(http.MethodGet, fmt.Sprintf(gg.SearchUri, page-1, keyword), map[string]string{
+		"Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+	}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +141,12 @@ func (gg *GGBases) DoReq(method, uri string, header map[string]string, body inte
 }
 
 func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
+	// 防止同时请求
+	gg.getitemChan <- struct{}{}
+	go func() {
+		time.Sleep(time.Second * 2)
+		<-gg.getitemChan
+	}()
 	data, err := gg.DoReq(http.MethodGet, uri, nil, nil)
 	if err != nil {
 		return nil, err

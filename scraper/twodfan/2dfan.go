@@ -175,10 +175,6 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		tdf.logger.Error("获取开发厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Brand, err = tdf.GetItemBrand(root)
-	if err != nil {
-		tdf.logger.Error("获取发布厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
-	}
 	item.Tags, err = tdf.GetItemTags(root)
 	if err != nil {
 		tdf.logger.Error("获取tag失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
@@ -195,10 +191,12 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 		Name: Name,
 		Url:  uri,
 	})
-	item.Story, item.AllImages, err = tdf.GetItemStory(root)
+	var images []string
+	item.Story, images, err = tdf.GetItemStory(root)
 	if err != nil {
 		tdf.logger.Error("获取故事失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
+	item.Images = append(item.Images, images...)
 	item.Staff, err = tdf.GetItemStaff(root)
 	if err != nil {
 		tdf.logger.Error("获取staff失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
@@ -275,15 +273,11 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 	}
 
 	maxPage := 0
-	root.Find("#content-pagination div.pagination ul li").Each(func(i int, s *goquery.Selection) {
-		page, err := strconv.ParseInt(s.Find("a").Text(), 10, 32)
-		if err != nil {
-			return
-		}
-		if maxPage < int(page) {
-			maxPage = int(page)
-		}
-	})
+	href := root.Find("#content-pagination div.pagination ul li").Last().Find("a").AttrOr("href", "")
+	hrefArr := strings.Split(href, "/")
+	if len(hrefArr) > 2 && hrefArr[len(hrefArr)-2] == "page" {
+		maxPage, _ = strconv.Atoi(hrefArr[len(hrefArr)-1])
+	}
 
 	story := strings.Builder{}
 	var images []string
@@ -426,6 +420,30 @@ func (tdf *TwoDFan) GetItemStaff(node *goquery.Document) ([]handler.StaffVo, err
 					}
 				}
 				staffMap[s.Text()] = sta
+			})
+		} else if strings.Contains(s.Text(), "声优") {
+			s.Find("a").Each(func(i int, s *goquery.Selection) {
+				sta, ok := staffMap[s.Text()]
+				if ok {
+					sta.Relation = append(sta.Relation, model.PRelationCV)
+				} else {
+					sta = handler.StaffVo{
+						Name:     s.Text(),
+						Relation: []model.PersonRelation{model.PRelationCV},
+					}
+				}
+			})
+		} else if strings.Contains(s.Text(), "音乐") {
+			s.Find("a").Each(func(i int, s *goquery.Selection) {
+				sta, ok := staffMap[s.Text()]
+				if ok {
+					sta.Relation = append(sta.Relation, model.PRelationMusic)
+				} else {
+					sta = handler.StaffVo{
+						Name:     s.Text(),
+						Relation: []model.PersonRelation{model.PRelationMusic},
+					}
+				}
 			})
 		}
 	})

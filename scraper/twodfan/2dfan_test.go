@@ -16,9 +16,9 @@ import (
 var twoDFanScraper *twodfan.TwoDFan
 
 func init() {
-	os.Setenv("https_proxy", "socks://127.0.0.1:7890")
-	os.Setenv("http_proxy", "socks://127.0.0.1:7890")
-	os.Setenv("all_proxy", "socks://127.0.0.1:7890")
+	os.Setenv("https_proxy", "socks5://127.0.0.1:20170")
+	os.Setenv("http_proxy", "socks5://127.0.0.1:20170")
+	os.Setenv("all_proxy", "socks5://127.0.0.1:20170")
 	scraper := twodfan.NewTwoDFan(map[string]string{
 		"User-Agent":      config.DefaultUserAgent,
 		"Accept-Language": config.ZhLanguage,
@@ -29,7 +29,7 @@ func init() {
 }
 
 func TestTwoDFan_GetItem(t *testing.T) {
-	item, err := twoDFanScraper.GetItem("https://2dfan.com/subjects/4566")
+	item, err := twoDFanScraper.GetItem("https://2dfan.com/subjects/15193")
 	if err != nil {
 		fmt.Println(err)
 		return

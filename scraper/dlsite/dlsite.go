@@ -189,7 +189,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	nameSet := map[string]int{}
 	root.Find("#work_outline tr").Each(func(i int, s *goquery.Selection) {
 		label := s.Find("th").Text()
-		if slices.Contains([]string{"贩卖日", "販売日"}, label) {
+		if slices.Contains([]string{"贩卖日", "販売日", "发售日"}, label) {
 			item.IssueDate = tools.Str2Time(s.Find("td").First().Text())
 		} else if slices.Contains([]string{"剧情", "シナリオ"}, label) {
 			s.Find("td").First().Each(func(i int, s *goquery.Selection) {
@@ -292,7 +292,7 @@ func (ds *DlSite) GetItemBrand(node *goquery.Document) (*model.Brand, error) {
 
 func (ds *DlSite) GetItemStory(node *goquery.Document) (string, error) {
 	story := bytes.Buffer{}
-	node.Find("div.work_parts_container div.work_parts.type_text").Each(func(i int, s *goquery.Selection) {
+	node.Find("div.work_parts_container").Each(func(i int, s *goquery.Selection) {
 		html, _ := s.Html()
 		story.WriteString(html)
 		story.WriteByte('\n')

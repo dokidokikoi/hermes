@@ -15,7 +15,7 @@ type PathInfo struct {
 }
 
 type ILibrary interface {
-	Ls(ctx context.Context, path string) ([]PathInfo, error)
+	Ls(ctx context.Context, path string, onlyNoScrap bool) ([]PathInfo, error)
 }
 
 var _ ILibrary = (*library)(nil)
@@ -24,21 +24,38 @@ type library struct {
 	store db.IStore
 }
 
-func (lsrv *library) Ls(ctx context.Context, path string) ([]PathInfo, error) {
+func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool) ([]PathInfo, error) {
 	paths, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
 	var result []PathInfo
-	for _, p := range paths {
-		if strings.HasPrefix(p.Name(), ".") {
-			continue
+	if onlyNoScrap {
+		for _, p := range paths {
+			if strings.HasPrefix(p.Name(), ".") {
+				continue
+			}
+			if !p.IsDir() {
+				continue
+			}
+			if _, err := os.Stat(filepath.Join(path, p.Name(), "info.json")); err == nil {
+				continue
+			}
+			result = append(result, PathInfo{
+				Path:  filepath.Join(path, p.Name()),
+				IsDir: p.IsDir(),
+			})
 		}
-		result = append(result, PathInfo{
-			Path:  filepath.Join(path, p.Name()),
-			IsDir: p.IsDir(),
-		})
-
+	} else {
+		for _, p := range paths {
+			if strings.HasPrefix(p.Name(), ".") {
+				continue
+			}
+			result = append(result, PathInfo{
+				Path:  filepath.Join(path, p.Name()),
+				IsDir: p.IsDir(),
+			})
+		}
 	}
 	sort.Slice(result, func(i, j int) bool {
 		if result[i].IsDir == result[j].IsDir {

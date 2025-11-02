@@ -27,8 +27,10 @@ func Install(r gin.IRouter) {
 		gG.PUT("", middleware.PreHandle(gH.Create))
 		gG.POST("/search", middleware.PreHandle(gH.Search))
 		gG.GET("/ins", middleware.PreHandle(gH.GetIns))
+		gG.POST("/ins", middleware.PreHandle(gH.CreateIns))
 		gG.GET("", middleware.PreHandle(gH.Get))
 		gG.PATCH("", middleware.PreHandle(gH.Update))
+		gG.PATCH("/ins", middleware.PreHandle(gH.UpdateIns))
 		gG.POST("/download", middleware.PreHandle(gH.DownloadInfo))
 		gG.POST("/download_all", middleware.PreHandle(gH.DownloadAllInfo))
 	}

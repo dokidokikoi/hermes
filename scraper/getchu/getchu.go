@@ -247,10 +247,12 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 		}
 	})
 
-	item.Characters, err = gc.GetItemCharacter(root)
+	var staff []handler.StaffVo
+	item.Characters, staff, err = gc.GetItemCharacter(root)
 	if err != nil {
 		gc.logger.Error("获取角色失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
 	}
+	item.Staff = append(item.Staff, staff...)
 	item.Story, err = gc.GetItemStory(root)
 	if err != nil {
 		gc.logger.Error("获取故事失败", zap.String("scraper", gc.name), zap.String("uri", uri), zap.Error(err))
@@ -323,8 +325,9 @@ func (gc *GetChu) GetItemStory(node *goquery.Document) (string, error) {
 	return comm_tools.TrimBlankChar(story), nil
 }
 
-func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, error) {
+func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, []handler.StaffVo, error) {
 	var characters []handler.CharacterVo
+	var staff []handler.StaffVo
 	node.Find("div.tabletitle").Each(func(i int, selection *goquery.Selection) {
 		title, err := tools.Jp2Utf8([]byte(selection.Text()))
 		if err != nil {
@@ -338,11 +341,27 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 					return
 				}
 				avatar, _ := selection.Find("td:nth-child(1) img").Attr("src")
-				name, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name").Text()))
+				name, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name charalist").Text()))
 				if err != nil {
 					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
 				name = comm_tools.TrimBlankChar(name)
+				nameText, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name").Text()))
+				if err != nil {
+					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
+				}
+				if name == "" {
+					name = comm_tools.TrimBlankChar(nameText)
+				}
+				idx := strings.Index(nameText, "CV")
+				if idx > 0 && len(nameText) > idx+5 {
+					staff = append(staff, handler.StaffVo{
+						Name: comm_tools.TrimBlankChar(nameText[idx+5:]),
+						Relation: model.PersonRelations{
+							model.PRelationCV,
+						},
+					})
+				}
 				introduction, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) dd").Text()))
 				if err != nil {
 					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
@@ -378,5 +397,5 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 		}
 	})
 
-	return characters, nil
+	return characters, staff, nil
 }
