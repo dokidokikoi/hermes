@@ -151,7 +151,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: Name, Url: uri}}}, ScraperName: ds.name}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: Name, Url: uri, Type: model.LinkTypeInfo}}}, ScraperName: ds.name}
 
 	id := ""
 	arr := strings.Split(uri, "/")
@@ -327,7 +327,7 @@ func (ds *DlSite) GetItemlink(node *goquery.Document, id string) ([]model.Link, 
 		links = append(links, model.Link{
 			Name: a.Get("work_name").String(),
 			Url:  url,
-			Type: model.LinkTypeMap[a.Get("file_type").String()],
+			Type: model.LinkTypeMv,
 		})
 	}
 

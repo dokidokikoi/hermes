@@ -11,6 +11,7 @@ import (
 	"izumi/internal/handler/policy"
 	"izumi/internal/handler/scraper"
 	"izumi/internal/handler/series"
+	"izumi/internal/handler/system_task"
 	"izumi/internal/handler/tag"
 
 	"github.com/dokidokikoi/go-common/middleware"
@@ -33,6 +34,7 @@ func Install(r gin.IRouter) {
 		gG.PATCH("/ins", middleware.PreHandle(gH.UpdateIns))
 		gG.POST("/download", middleware.PreHandle(gH.DownloadInfo))
 		gG.POST("/download_all", middleware.PreHandle(gH.DownloadAllInfo))
+		gG.POST("/load_all", middleware.PreHandle(gH.LoadInfo))
 	}
 
 	sH := scraper.NewHandler()
@@ -122,5 +124,11 @@ func Install(r gin.IRouter) {
 	libraryG := r.Group("/library")
 	{
 		libraryG.GET("", middleware.PreHandle(libraryH.Ls))
+	}
+
+	systemTaskH := system_task.NewHandler()
+	systemTaskG := r.Group("/system_task")
+	{
+		systemTaskG.GET("", middleware.PreHandle(systemTaskH.List))
 	}
 }

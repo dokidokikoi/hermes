@@ -151,7 +151,7 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: "ggbases", Url: uri}}}, ScraperName: gg.name}
+	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: gg.name, Url: uri, Type: model.LinkTypeInfo}}}, ScraperName: gg.name}
 	root, err := goquery.NewDocumentFromReader(bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -314,6 +314,7 @@ func (gg *GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link,
 				links = append(links, model.Link{
 					Name: s.Text(),
 					Url:  url,
+					Type: model.LinkTypeOther,
 				})
 			}
 		} else {
@@ -326,6 +327,7 @@ func (gg *GGBases) GetItemLink(node *goquery.Document, id string) ([]model.Link,
 					links = append(links, model.Link{
 						Name: s.Text(),
 						Url:  url,
+						Type: model.LinkTypeOther,
 					})
 				}
 			})

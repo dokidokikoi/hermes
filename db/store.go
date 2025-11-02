@@ -18,4 +18,5 @@ type IStore interface {
 	GameInstance() IGameInstance
 	Task() ITask
 	Policy() IPolicy
+	SystemTask() ISystemTask
 }
