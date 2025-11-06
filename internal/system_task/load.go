@@ -18,7 +18,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func init() {
+func StartLoad() {
 	ts, err := data.GetDataFactory().SystemTask().List(context.Background(), &model.SystemTask{
 		Type:  model.SystemTaskTypeLoad,
 		State: model.SystemTaskStateRunning,
@@ -63,11 +63,13 @@ func init() {
 	}
 
 	srv := service.NewSrv(data.GetDataFactory())
-	infos, err := srv.Library().Ls(context.Background(), sp.GameLibrary, false)
-	if err != nil {
-		zaplog.L().Error("get game library error", zap.Error(err))
+	for _, l := range sp.GameLibrary {
+		infos, err := srv.Library().Ls(context.Background(), l, false)
+		if err != nil {
+			zaplog.L().Error("get game library error", zap.Error(err))
+		}
+		LoadTask(infos, ts[0])
 	}
-	LoadTask(infos, ts[0])
 }
 
 func LoadTask(infos []service.PathInfo, t *model.SystemTask) {

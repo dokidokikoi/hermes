@@ -23,6 +23,7 @@ type Person struct {
 	Tags      []Tag     `gorm:"many2many:person_tag;" json:"tags"`
 	Summary   string    `json:"summary"`
 	Gender    Gender    `gorm:"type:varchar(10)" json:"gender"`
+	Links     Links     `gorm:"type:json" json:"links"`
 	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }

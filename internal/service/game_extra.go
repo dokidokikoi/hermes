@@ -12,6 +12,7 @@ import (
 	"izumi/model"
 	"izumi/tools"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -293,6 +294,16 @@ func GameWhereNodeCreatedAtRange(ctx context.Context, param handler.GameListReq,
 
 func cpGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error {
 	path = filepath.Join(path, "images")
+	_, err := os.ReadDir(path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
 	root, err := goquery.NewDocumentFromReader(bytes.NewReader([]byte(gVo.Story)))
 	if err != nil {
 		logger.With(zap.Error(err)).Error("NewDocumentFromReader")
@@ -300,6 +311,7 @@ func cpGameAllImages(logger *zap.Logger, path string, gVo *handler.GameVo) error
 		root.Find("img").Each(func(i int, s *goquery.Selection) {
 			src, ok := s.Attr("src")
 			if ok {
+				src = strings.TrimPrefix(src, "/api/file/")
 				err := tools.Cp(filepath.Join(config.DataDir, src), filepath.Join(path, src))
 				if err != nil {
 					logger.With(zap.Error(err)).Sugar().Errorf("tools.Cp(%s)", filepath.Join(path, src))

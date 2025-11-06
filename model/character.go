@@ -4,21 +4,25 @@ import (
 	"time"
 )
 
+type PersonalInfo struct {
+}
+
 type Character struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"uniqueIndex;type:varchar(255)" json:"uuid"`
-	Name      string    `gorm:"type:varchar(255);index:character_name_idx" json:"name"`
-	Alias     Array     `gorm:"type:json" json:"alias"`
-	Gender    Gender    `gorm:"type:varchar(10)" json:"gender"`
-	Summary   string    `json:"summary"`
-	Cover     string    `gorm:"type:varchar(512)" json:"cover"`
-	Images    Array     `gorm:"type:json" json:"images"`
-	CV        Person    `gorm:"foreignKey:PersonID" json:"cv"`
-	PersonID  uint      `gorm:"default:0" json:"-"`
-	Tags      []Tag     `gorm:"many2many:character_tag;" json:"tags"`
-	Weight    int8      `gorm:"default:0;type:tinyint" json:"weight"`
-	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
+	ID           uint         `gorm:"primaryKey" json:"id"`
+	UUID         string       `gorm:"uniqueIndex;type:varchar(255)" json:"uuid"`
+	Name         string       `gorm:"type:varchar(255);index:character_name_idx" json:"name"`
+	Alias        Array        `gorm:"type:json" json:"alias"`
+	Gender       Gender       `gorm:"type:varchar(10)" json:"gender"`
+	Summary      string       `json:"summary"`
+	Cover        string       `gorm:"type:varchar(512)" json:"cover"`
+	Images       Array        `gorm:"type:json" json:"images"`
+	CV           Person       `gorm:"foreignKey:PersonID" json:"cv"`
+	PersonID     uint         `gorm:"default:0" json:"-"`
+	Tags         []Tag        `gorm:"many2many:character_tag;" json:"tags"`
+	Weight       int8         `gorm:"default:0;type:tinyint" json:"weight"`
+	PersonalInfo PersonalInfo `json:"personal_info"`
+	CreatedAt    time.Time    `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt    time.Time    `gorm:"autoUpdateTime:milli"`
 }
 
 func (Character) TableName() string {

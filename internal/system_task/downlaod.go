@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func init() {
+func StartDownload() {
 	ts, err := data.GetDataFactory().SystemTask().List(context.Background(), &model.SystemTask{
 		Type:  model.SystemTaskTypeDownload,
 		State: model.SystemTaskStateRunning,

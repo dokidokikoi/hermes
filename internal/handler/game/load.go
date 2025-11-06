@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"izumi/db/data"
+	"izumi/internal/service"
 	systemtask "izumi/internal/system_task"
 	"izumi/model"
 	"os"
@@ -23,13 +24,19 @@ func (h Handler) LoadInfo(ctx context.Context, req *struct{}, op *middleware.Pre
 	if err != nil {
 		return nil, err
 	}
-	infos, err := h.srv.Library().Ls(ctx, sp.GameLibrary, false)
-	if err != nil {
-		if os.IsNotExist(err) {
-			op.SetMsg("game library not exist")
+
+	var infos []service.PathInfo
+	for _, l := range sp.GameLibrary {
+		is, err := h.srv.Library().Ls(ctx, l, false)
+		if err != nil {
+			if os.IsNotExist(err) {
+				op.SetMsg("game library not exist")
+			}
+			return nil, err
 		}
-		return nil, err
+		infos = append(infos, is...)
 	}
+
 	t := &model.SystemTask{
 		Amount: len(infos),
 		Type:   model.SystemTaskTypeLoad,

@@ -5,6 +5,7 @@ import (
 	"izumi/config"
 	"izumi/db/data"
 	"izumi/internal/service"
+	systemtask "izumi/internal/system_task"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 )
@@ -18,4 +19,7 @@ func Init() {
 	if err != nil {
 		panic(err)
 	}
+
+	systemtask.StartDownload()
+	systemtask.StartLoad()
 }
