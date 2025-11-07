@@ -217,8 +217,8 @@ func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
 							Relation: []model.PersonRelation{model.PRelationPainter},
 						})
 					case "group":
-						item.Brand = &model.Brand{
-							Name: content,
+						item.Brands = []*model.Brand{
+							{Name: content},
 						}
 					default:
 						item.Tags = append(item.Tags, &model.Tag{

@@ -56,7 +56,7 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 		zaplog.From(ctx).With(zap.Error(err)).Error("SaveHtmlImg")
 	}
 	tx := gsrv.store.Transaction().Begin()
-	err = tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Brand", "Category"}})
+	err = tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Brands", "Category"}})
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
@@ -68,6 +68,19 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 			tx.Transaction().Rollback()
 			return err
 		}
+	}
+
+	var gBrands = []*model.GameBrands{}
+	for _, b := range g.Brands {
+		gBrands = append(gBrands, &model.GameBrands{
+			GameID:  g.ID,
+			BrandID: b.ID,
+		})
+	}
+	err = tx.GameBrands().Creates(ctx, gBrands, nil)
+	if err != nil {
+		tx.Transaction().Rollback()
+		return err
 	}
 
 	var gSeries = []*model.GameSeries{}
@@ -191,6 +204,11 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 		tx.Transaction().Rollback()
 		return err
 	}
+	err = tx.GameBrands().Delete(ctx, &model.GameBrands{GameID: g.ID}, nil)
+	if err != nil {
+		tx.Transaction().Rollback()
+		return err
+	}
 	var gSeries = []*model.GameSeries{}
 	for _, s := range g.Series {
 		gSeries = append(gSeries, &model.GameSeries{
@@ -199,6 +217,18 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 		})
 	}
 	err = tx.GameSeries().Creates(ctx, gSeries, nil)
+	if err != nil {
+		tx.Transaction().Rollback()
+		return err
+	}
+	var gBrands = []*model.GameBrands{}
+	for _, b := range g.Brands {
+		gBrands = append(gBrands, &model.GameBrands{
+			GameID:  g.ID,
+			BrandID: b.ID,
+		})
+	}
+	err = tx.GameBrands().Creates(ctx, gBrands, nil)
 	if err != nil {
 		tx.Transaction().Rollback()
 		return err
@@ -334,29 +364,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		return nil, err
 	}
 	for _, c := range cs {
-		cVos = append(cVos, handler.CharacterVo{
-			ID:      c.ID,
-			Name:    c.Name,
-			Alias:   c.Alias,
-			Gender:  c.Gender,
-			Rlation: crMap[c.ID],
-			Summary: c.Summary,
-			Cover:   c.Cover,
-			Images:  c.Images,
-			Tags:    c.Tags,
-			CV: handler.StaffVo{
-				ID:        c.CV.ID,
-				Name:      c.CV.Name,
-				Cover:     c.CV.Cover,
-				Images:    c.CV.Images,
-				Alias:     c.CV.Alias,
-				CreatedAt: c.CV.CreatedAt,
-				Tags:      c.CV.Tags,
-				Gender:    c.CV.Gender,
-				Summary:   c.CV.Summary,
-			},
-			CreatedAt: c.CreatedAt,
-		})
+		cVos = append(cVos, handler.Character2Vo(*c, crMap[c.ID], nil))
 	}
 
 	// staff
@@ -385,38 +393,9 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		return nil, err
 	}
 	for _, s := range ss {
-		sVos = append(sVos, handler.StaffVo{
-			ID:        s.ID,
-			Name:      s.Name,
-			Alias:     s.Alias,
-			Cover:     s.Cover,
-			Images:    s.Images,
-			Tags:      s.Tags,
-			Summary:   s.Summary,
-			Gender:    s.Gender,
-			Relation:  prMap[s.ID],
-			CreatedAt: s.CreatedAt,
-		})
+		sVos = append(sVos, handler.Person2Vo(*s, prMap[s.ID]))
 	}
-	return &handler.GameVo{
-		ID:         g.ID,
-		Name:       g.Name,
-		Alias:      g.Alias,
-		Cover:      g.Cover,
-		Images:     g.Images,
-		Category:   g.Category,
-		Series:     g.Series,
-		Brand:      g.Brand,
-		Price:      g.Price,
-		IssueDate:  g.IssueDate,
-		Story:      g.Story,
-		Tags:       g.Tags,
-		Characters: cVos,
-		Staff:      sVos,
-		Links:      g.Links,
-		OtherInfo:  g.OtherInfo,
-		CreatedAt:  g.CreatedAt,
-	}, nil
+	return tools.GetPtr(handler.Game2Vo(*g, cVos, sVos)), nil
 }
 
 func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *meta.ListOption, gwfs ...GameWhereNodeFunc) (int64, []handler.GameVo, error) {
@@ -439,21 +418,7 @@ func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *me
 	}
 	gvos := make([]handler.GameVo, 0, len(gs))
 	for _, g := range gs {
-		gvos = append(gvos, handler.GameVo{
-			ID:        g.ID,
-			Name:      g.Name,
-			Cover:     g.Cover,
-			Alias:     g.Alias,
-			Images:    g.Images,
-			Category:  g.Category,
-			Series:    g.Series,
-			Price:     g.Price,
-			IssueDate: g.IssueDate,
-			Story:     g.Story,
-			Tags:      g.Tags,
-			Links:     g.Links,
-			OtherInfo: g.OtherInfo,
-		})
+		gvos = append(gvos, handler.Game2Vo(*g, nil, nil))
 	}
 
 	return total, gvos, nil
@@ -557,20 +522,21 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	} else {
 		gVo.Category.ID = cate.ID
 	}
-
-	dev, err := db.Brand().Get(ctx, &model.Brand{Name: gVo.Brand.Name}, &meta.GetOption{Select: []string{"ID"}})
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("create brand error: %w", err)
-		}
-	}
-	if dev == nil {
-		err = db.Brand().Create(ctx, gVo.Brand, nil)
+	for _, brand := range gVo.Brands {
+		dev, err := db.Brand().Get(ctx, &model.Brand{Name: brand.Name}, &meta.GetOption{Select: []string{"ID"}})
 		if err != nil {
-			return fmt.Errorf("create brand error: %w", err)
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("create brand error: %w", err)
+			}
 		}
-	} else {
-		gVo.Brand.ID = dev.ID
+		if dev == nil {
+			err = db.Brand().Create(ctx, brand, nil)
+			if err != nil {
+				return fmt.Errorf("create brand error: %w", err)
+			}
+		} else {
+			brand.ID = dev.ID
+		}
 	}
 
 	for _, series := range gVo.Series {
@@ -610,17 +576,7 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	charactersCreate := []*model.Character{}
 	charactersUpdate := []*model.Character{}
 	for _, character := range gVo.Characters {
-		c := &model.Character{
-			UUID:     character.UUID,
-			Name:     character.Name,
-			Alias:    character.Alias,
-			Cover:    character.Cover,
-			Images:   character.Images,
-			Tags:     character.Tags,
-			Summary:  character.Summary,
-			Gender:   character.Gender,
-			PersonID: character.CV.ID,
-		}
+		c := tools.GetPtr(handler.Vo2Character(character))
 		cs = append(cs, &model.GameCharacter{
 			Character: c,
 			Relation:  character.Rlation,
@@ -647,16 +603,7 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	staffCreate := []*model.Person{}
 	staffUpdate := []*model.Person{}
 	for _, staff := range gVo.Staff {
-		s := &model.Person{
-			UUID:    staff.UUID,
-			Name:    staff.Name,
-			Alias:   staff.Alias,
-			Cover:   staff.Cover,
-			Images:  staff.Images,
-			Tags:    staff.Tags,
-			Summary: staff.Summary,
-			Gender:  staff.Gender,
-		}
+		s := tools.GetPtr(handler.Vo2Person(staff))
 		ss = append(ss, &model.GameStaff{
 			Person:    s,
 			Relations: staff.Relation,
@@ -691,7 +638,6 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	if len(staffCreate) > 0 {
 		err = tx.Person().Creates(ctx, staffCreate, nil)
 		if err != nil {
-			tx.Transaction().Rollback()
 			return err
 		}
 	}
@@ -699,7 +645,6 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	if len(errs) > 0 {
 		for _, err := range errs {
 			if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
-				tx.Transaction().Rollback()
 				return err
 			}
 		}
@@ -723,22 +668,7 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 		return errors.Join(errs...)
 	}
 
-	g := &model.Game{
-		Name:       gVo.Name,
-		UUID:       gVo.UUID,
-		Alias:      gVo.Alias,
-		JanCode:    gVo.JanCode,
-		Code:       gVo.Code,
-		Cover:      gVo.Cover,
-		Images:     gVo.Images,
-		Tags:       gVo.Tags,
-		CategoryID: gVo.Category.ID,
-		BrandID:    gVo.Brand.ID,
-		OtherInfo:  gVo.OtherInfo,
-		Story:      gVo.Story,
-		Price:      gVo.Price,
-		IssueDate:  gVo.IssueDate,
-	}
+	g := tools.GetPtr(handler.Vo2Game(*gVo))
 	gRsp, err := tx.Game().Get(ctx, &model.Game{ID: gVo.ID}, &meta.GetOption{Select: []string{"ID", "UUID"}})
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -795,6 +725,10 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 			if err != nil {
 				return err
 			}
+			err = tx.GameBrands().Delete(ctx, &model.GameBrands{GameID: g.ID}, nil)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -806,6 +740,18 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 		})
 	}
 	err = tx.GameSeries().Creates(ctx, gameSeries, nil)
+	if err != nil {
+		return err
+	}
+
+	var gameBrands []*model.GameBrands
+	for _, brand := range gVo.Brands {
+		gameBrands = append(gameBrands, &model.GameBrands{
+			GameID:  g.ID,
+			BrandID: brand.ID,
+		})
+	}
+	err = tx.GameBrands().Creates(ctx, gameBrands, nil)
 	if err != nil {
 		return err
 	}

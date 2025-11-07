@@ -9,6 +9,7 @@ import (
 	"izumi/scraper/getchu"
 	"izumi/scraper/ggbases"
 	"izumi/scraper/twodfan"
+	"izumi/scraper/vndb"
 )
 
 var GameScraperConstructors = map[string]func(header map[string]string, proxy string) scraper.IGameScraper{
@@ -17,6 +18,7 @@ var GameScraperConstructors = map[string]func(header map[string]string, proxy st
 	getchu.Name:  getchu.NewGetChu,
 	ggbases.Name: ggbases.NewGGBases,
 	twodfan.Name: twodfan.NewTwoDFan,
+	vndb.Name:    vndb.NewVNDB,
 }
 
 var GameScraperMap = map[string]scraper.IGameScraper{
@@ -63,7 +65,7 @@ var GameScraperPolicyMap = model.ScraperPolicy{
 		Header: map[string]string{
 			"Referer":         ggbases.GGBasesDomain,
 			"User-Agent":      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-			"Accept-Language": "q=0.9,zh-CN;q=0.8,zh;q=0.7",
+			"Accept-Language": "q=0.9,zh-CN;q=0.8,zh;",
 			"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
 		},
 	},
@@ -73,6 +75,11 @@ var GameScraperPolicyMap = model.ScraperPolicy{
 			"Referer":         "https://2dfan.com/",
 			"Accept-Language": config.ZhLanguage,
 			"Cookie":          twodfan.DefaultHeader_Cookie,
+		},
+	},
+	vndb.Name: model.ScraperSubPolicy{
+		Header: map[string]string{
+			"User-Agent": vndb.DefaultHeader_UserAgent,
 		},
 	},
 }

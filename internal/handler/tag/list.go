@@ -4,6 +4,7 @@ import (
 	"context"
 	"izumi/db/data"
 	"izumi/model"
+	"sort"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/dokidokikoi/go-common/middleware"
@@ -19,6 +20,15 @@ func (h Handler) List(ctx context.Context, req *struct{}, op *middleware.PreHand
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(list, func(i, j int) bool {
+		if list[j].Lang == "zh" {
+			return false
+		} else if list[j].Lang == "ja" && list[i].Lang != "zh" {
+			return false
+		} else {
+			return true
+		}
+	})
 
 	return &ListResponse{
 		List:  list,

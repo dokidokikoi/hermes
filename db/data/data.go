@@ -45,6 +45,9 @@ func (d *data) GameCharacter() db.IGameCharacter {
 func (d *data) GameSeries() db.IGameSeries {
 	return newGameSeries(d)
 }
+func (d *data) GameBrands() db.IGameBrands {
+	return newGameBrands(d)
+}
 func (d *data) GameTag() db.IGameTag {
 	return newGameTag(d)
 }

@@ -163,12 +163,12 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	}
 
 	item.Name = root.Find("#work_name").Text()
-	item.Code = id
+	item.DlCode = id
 	item.Cover, item.Images, err = ds.GetItemCover(root)
 	if err != nil {
 		ds.logger.Error("获取封面失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Brand, err = ds.GetItemBrand(root)
+	item.Brands, err = ds.GetItemBrands(root)
 	if err != nil {
 		ds.logger.Error("获取开发商失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
@@ -284,9 +284,9 @@ func (ds *DlSite) GetItemCover(node *goquery.Document) (string, []string, error)
 	return images[0], images[1:], nil
 }
 
-func (ds *DlSite) GetItemBrand(node *goquery.Document) (*model.Brand, error) {
-	return &model.Brand{
-		Name: comm_tools.TrimBlankChar(node.Find("#work_maker span.maker_name").Text()),
+func (ds *DlSite) GetItemBrands(node *goquery.Document) ([]*model.Brand, error) {
+	return []*model.Brand{
+		{Name: comm_tools.TrimBlankChar(node.Find("#work_maker span.maker_name").Text())},
 	}, nil
 }
 

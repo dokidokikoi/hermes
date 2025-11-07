@@ -125,8 +125,9 @@ func (GameInstance) TableName() string {
 type Game struct {
 	ID         uint      `gorm:"primaryKey" json:"id"`
 	UUID       string    `gorm:"uniqueIndex;type:varchar(100)" json:"uuid"`
+	VNDBID     string    `gorm:"type:varchar(255);index:game_vndbid_idx" json:"vndb_id"`
 	JanCode    string    `gorm:"type:varchar(32)" json:"jan_code"`
-	Code       string    `gorm:"type:varchar(32)" json:"code"`
+	DlCode     string    `gorm:"type:varchar(32)" json:"dl_code"`
 	Name       string    `gorm:"type:varchar(255);index:game_name_idx" json:"name"`
 	Alias      Array     `gorm:"type:json" json:"alias"`
 	Cover      string    `gorm:"type:varchar(512)" json:"cover"`
@@ -134,8 +135,7 @@ type Game struct {
 	Category   *Category `gorm:"foreignKey:CategoryID" json:"category"`
 	CategoryID uint      `gorm:"default:null" json:"-"`
 	Series     []*Series `gorm:"many2many:game_series;" json:"series"`
-	Brand      *Brand    `gorm:"foreignKey:BrandID" json:"brand"`
-	BrandID    uint      `gorm:"default:null" json:"-"`
+	Brands     []*Brand  `gorm:"many2many:game_brands;" json:"brands"`
 	Price      string    `gorm:"type:varchar(32)" json:"price"`
 	IssueDate  time.Time `json:"issue_date"`
 	Story      string    `json:"story"`
@@ -148,6 +148,15 @@ type Game struct {
 
 func (Game) TableName() string {
 	return "games"
+}
+
+type GameBrands struct {
+	GameID  uint `gorm:"primaryKey"`
+	BrandID uint `gorm:"primaryKey"`
+}
+
+func (GameBrands) TableName() string {
+	return "game_brands"
 }
 
 type GameSeries struct {

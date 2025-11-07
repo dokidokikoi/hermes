@@ -22,6 +22,14 @@ func NewGameSeriess(db *Store) *GameSeriess {
 	return &GameSeriess{PgModel: base.PgModel[model.GameSeries]{DB: db.DB}}
 }
 
+type GameBrands struct {
+	base.PgModel[model.GameBrands]
+}
+
+func NewGameBrands(db *Store) *GameBrands {
+	return &GameBrands{PgModel: base.PgModel[model.GameBrands]{DB: db.DB}}
+}
+
 type GameCharacters struct {
 	base.PgModel[model.GameCharacter]
 }

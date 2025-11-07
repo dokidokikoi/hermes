@@ -16,6 +16,7 @@ const (
 type Person struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UUID      string    `gorm:"uniqueIndex;type:varchar(100)" json:"uuid"`
+	VNDBID    string    `gorm:"type:varchar(255);index:person_vndbid_idx" json:"vndb_id"`
 	Name      string    `gorm:"type:varchar(255);index:people_name_idx" json:"name"`
 	Alias     Array     `gorm:"type:json" json:"alias"`
 	Cover     string    `gorm:"type:varchar(512)" json:"cover"`

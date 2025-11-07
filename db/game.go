@@ -18,6 +18,10 @@ type IGameSeries interface {
 	base.BasicCURD[model.GameSeries]
 }
 
+type IGameBrands interface {
+	base.BasicCURD[model.GameBrands]
+}
+
 type IGameTag interface {
 	base.BasicCURD[model.GameTag]
 }

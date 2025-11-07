@@ -5,29 +5,13 @@ import (
 	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/model"
+	"izumi/tools"
 
 	"github.com/dokidokikoi/go-common/middleware"
 )
 
 func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middleware.PreHandleOptions) (any, error) {
-	g := &model.Game{
-		ID:        input.ID,
-		JanCode:   input.JanCode,
-		Code:      input.Code,
-		Name:      input.Name,
-		Cover:     input.Cover,
-		Images:    input.Images,
-		Alias:     input.Alias,
-		Category:  input.Category,
-		Brand:     input.Brand,
-		Price:     input.Price,
-		Story:     input.Story,
-		Series:    input.Series,
-		IssueDate: input.IssueDate,
-		Links:     input.Links,
-		OtherInfo: input.OtherInfo,
-		Tags:      input.Tags,
-	}
+	g := tools.GetPtr(handler.Vo2Game(*input))
 	cs := []*model.GameCharacter{}
 	ss := []*model.GameStaff{}
 	for _, c := range input.Characters {
@@ -35,34 +19,14 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middlewa
 			GameID:      input.ID,
 			CharacterID: c.ID,
 			Relation:    c.Rlation,
-			Character: &model.Character{
-				ID:       c.ID,
-				Name:     c.Name,
-				Alias:    c.Alias,
-				Gender:   c.Gender,
-				Summary:  c.Summary,
-				Images:   c.Images,
-				Cover:    c.Cover,
-				Tags:     c.Tags,
-				PersonID: c.CV.ID,
-				Weight:   c.Weight,
-			},
+			Character:   tools.GetPtr(handler.Vo2Character(c)),
 		})
 	}
 	for _, s := range input.Staff {
 		ss = append(ss, &model.GameStaff{
-			GameID:   g.ID,
-			PersonID: s.ID,
-			Person: &model.Person{
-				ID:      s.ID,
-				Name:    s.Name,
-				Alias:   s.Alias,
-				Gender:  s.Gender,
-				Summary: s.Summary,
-				Cover:   s.Cover,
-				Images:  s.Images,
-				Tags:    s.Tags,
-			},
+			GameID:    g.ID,
+			PersonID:  s.ID,
+			Person:    tools.GetPtr(handler.Vo2Person(s)),
 			Relations: s.Relation,
 		})
 	}

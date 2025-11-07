@@ -257,11 +257,11 @@ func TestTwoDFan_GetItemBrand(t *testing.T) {
 		panic(err)
 	}
 
-	brand, err := twoDFanScraper.GetItemBrand(root)
+	brands, err := twoDFanScraper.GetItemBrands(root)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%+v\n", brand)
+	fmt.Printf("%+v\n", brands)
 }
 
 func TestReq(t *testing.T) {

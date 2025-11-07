@@ -38,9 +38,9 @@ func (h Handler) LoadInfo(ctx context.Context, req *struct{}, op *middleware.Pre
 	}
 
 	t := &model.SystemTask{
-		Amount: len(infos),
-		Type:   model.SystemTaskTypeLoad,
-		State:  model.SystemTaskStateRunning,
+		Param: model.SystemTaskParam{Amount: len(infos)},
+		Type:  model.SystemTaskTypeLoad,
+		State: model.SystemTaskStateRunning,
 	}
 	err = data.GetDataFactory().SystemTask().Create(ctx, t, nil)
 	if err != nil {

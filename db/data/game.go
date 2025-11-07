@@ -39,6 +39,14 @@ func newGameSeries(d *data) *gameSeries {
 	return &gameSeries{GameSeriess: *postgres.NewGameSeriess(d.pg)}
 }
 
+type gameBrands struct {
+	postgres.GameBrands
+}
+
+func newGameBrands(d *data) *gameBrands {
+	return &gameBrands{GameBrands: *postgres.NewGameBrands(d.pg)}
+}
+
 type gameStaffs struct {
 	postgres.GameStaffs
 }

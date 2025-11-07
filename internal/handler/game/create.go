@@ -5,7 +5,7 @@ import (
 	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/model"
-	"strings"
+	"izumi/tools"
 
 	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/google/uuid"
@@ -27,37 +27,8 @@ type CreateGameRequest struct {
 }
 
 func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middleware.PreHandleOptions) (uint, error) {
-	g := &model.Game{
-		UUID:    uuid.NewString(),
-		Code:    strings.TrimSpace(input.Game.Code),
-		JanCode: strings.TrimSpace(input.Game.JanCode),
-		Name:    strings.TrimSpace(input.Game.Name),
-		Cover:   input.Game.Cover,
-		Alias:   input.Game.Alias,
-		Images:  input.Game.Images,
-		CategoryID: func() uint {
-			if input.Game.Category != nil {
-				return input.Game.Category.ID
-			}
-			return 0
-		}(),
-		Series: input.Game.Series,
-		BrandID: func() uint {
-			if input.Game.Brand != nil {
-				return input.Game.Brand.ID
-			}
-			return 0
-		}(),
-		Price:     input.Game.Price,
-		IssueDate: input.Game.IssueDate,
-		Story:     strings.TrimSpace(input.Game.Story),
-		Tags:      input.Game.Tags,
-		Links:     input.Game.Links,
-		OtherInfo: input.Game.OtherInfo,
-	}
-	if g.Brand != nil && g.Brand.Name == "" && g.Brand.ID == 0 {
-		g.Brand = nil
-	}
+	g := tools.GetPtr(handler.Vo2Game(input.Game))
+	g.UUID = uuid.NewString()
 
 	// 角色
 	var cs []*model.GameCharacter
@@ -66,18 +37,8 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 			continue
 		}
 		cs = append(cs, &model.GameCharacter{
-			Character: &model.Character{
-				ID:       c.ID,
-				Name:     c.Name,
-				Alias:    c.Alias,
-				Gender:   c.Gender,
-				Summary:  c.Summary,
-				Images:   c.Images,
-				Cover:    c.Cover,
-				Tags:     c.Tags,
-				PersonID: c.CV.ID,
-			},
-			Relation: c.Rlation,
+			Character: tools.GetPtr(handler.Vo2Character(c)),
+			Relation:  c.Rlation,
 		})
 	}
 
@@ -88,16 +49,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 			continue
 		}
 		ss = append(ss, &model.GameStaff{
-			Person: &model.Person{
-				ID:      s.ID,
-				Name:    s.Name,
-				Alias:   s.Alias,
-				Gender:  s.Gender,
-				Summary: s.Summary,
-				Cover:   s.Cover,
-				Images:  s.Images,
-				Tags:    s.Tags,
-			},
+			Person:    tools.GetPtr(handler.Vo2Person(s)),
 			Relations: s.Relation,
 		})
 	}
@@ -109,14 +61,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 	// 游戏实体
 	var gameIns *model.GameInstance
 	if input.GameIns != nil && input.GameIns.Path != "" {
-		gameIns = &model.GameInstance{
-			Path:     input.GameIns.Path,
-			Version:  input.GameIns.Version,
-			Language: input.GameIns.Language,
-			Size:     input.GameIns.Size,
-			Comment:  input.GameIns.Comment,
-			Platform: input.GameIns.Platform,
-		}
+		gameIns = input.GameIns
 	}
 
 	err = h.srv.Game().CreateL(ctx, g, cs, ss, gameIns)

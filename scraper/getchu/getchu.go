@@ -195,8 +195,8 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 
 		title = comm_tools.TrimBlankChar(title)
 		if strings.Contains(title, "ブランド") {
-			item.Brand = &model.Brand{
-				Name: content,
+			item.Brands = []*model.Brand{
+				{Name: content},
 			}
 		} else if strings.Contains(title, "定価") {
 			item.Price = content
@@ -204,8 +204,6 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 			item.IssueDate = tools.Str2Time(content)
 		} else if strings.Contains(title, "JANコード") {
 			item.JanCode = content
-		} else if strings.Contains(title, "品番") {
-			item.Code = content
 		} else if strings.Contains(title, "原画") {
 			s.Find("td").Eq(1).Find("a").Each(func(i int, s *goquery.Selection) {
 				name, err := tools.Jp2Utf8([]byte(s.Text()))

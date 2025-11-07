@@ -30,7 +30,7 @@ func (h Handler) DownloadAllInfo(ctx context.Context, input *struct{}, op *middl
 		return nil, err
 	}
 	t := &model.SystemTask{
-		Amount:    len(gs),
+		Param:     model.SystemTaskParam{Amount: len(gs)},
 		Type:      model.SystemTaskTypeDownload,
 		State:     model.SystemTaskStateRunning,
 		CreatedAt: time.Now(),

@@ -171,7 +171,7 @@ func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		tdf.logger.Error("获取角色失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Brand, err = tdf.GetItemBrand(root)
+	item.Brands, err = tdf.GetItemBrands(root)
 	if err != nil {
 		tdf.logger.Error("获取开发厂商失败", zap.String("scraper", tdf.name), zap.String("uri", uri), zap.Error(err))
 	}
@@ -238,9 +238,9 @@ func (tdf *TwoDFan) GetItemCategory(node *goquery.Document) (*model.Category, er
 	return nil, nil
 }
 
-func (tdf *TwoDFan) GetItemBrand(node *goquery.Document) (*model.Brand, error) {
-	return &model.Brand{
-		Name: node.Find("#content div.control-group p.tags").First().Find("a").Text(),
+func (tdf *TwoDFan) GetItemBrands(node *goquery.Document) ([]*model.Brand, error) {
+	return []*model.Brand{
+		{Name: node.Find("#content div.control-group p.tags").First().Find("a").Text()},
 	}, nil
 }
 

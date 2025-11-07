@@ -6,6 +6,7 @@ type IStore interface {
 	CharacterTag() ICharacterTag
 	Brand() IBrand
 	Series() ISeries
+	GameBrands() IGameBrands
 	Tag() ITag
 	Game() IGame
 	GameCharacter() IGameCharacter
