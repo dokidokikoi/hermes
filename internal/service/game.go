@@ -13,11 +13,13 @@ import (
 	"izumi/model"
 	"izumi/tools"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/abadojack/whatlanggo"
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -35,9 +37,10 @@ type IGame interface {
 	CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error
 	UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error
 	GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error)
+	UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance) error
 
 	Search(ctx context.Context, param handler.GameListReq, opt *meta.ListOption, gwfs ...GameWhereNodeFunc) (int64, []handler.GameVo, error)
-	SaveFiles(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error
+	SaveFiles(ctx context.Context, g *handler.GameVo) error
 
 	Load(ctx context.Context, gVo *handler.GameVo, path string) error
 	DownloadInfo(ctx context.Context, gameID uint, t time.Time) error
@@ -47,6 +50,331 @@ var _ IGame = (*game)(nil)
 
 type game struct {
 	store db.IStore
+}
+
+func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance) error {
+	err := gsrv.SaveFiles(ctx, gVo)
+	if err != nil {
+		return err
+	}
+	db := gsrv.store
+	if gVo.VNDBID != "" {
+		g, err := db.Game().Get(ctx, &model.Game{VNDBID: gVo.VNDBID}, &meta.GetOption{Include: []string{"ID"}})
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if g != nil {
+			gVo.ID = g.ID
+		}
+	}
+	g := tools.GetPtr(handler.Vo2Game(*gVo))
+	if gVo.Category != nil && gVo.Category.Name != "" {
+		c, err := db.Category().Get(ctx, &model.Category{Name: gVo.Category.Name}, &meta.GetOption{Include: []string{"ID"}})
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if c == nil {
+			err = db.Category().Create(ctx, gVo.Category, nil)
+			if err != nil {
+				return err
+			}
+			g.CategoryID = gVo.Category.ID
+		} else {
+			g.CategoryID = c.ID
+		}
+	}
+	{
+		g.Story, err = SaveHtmlImg(ctx, g.Story)
+		if err != nil {
+			zaplog.From(ctx).With(zap.Error(err)).Error("SaveHtmlImg")
+		}
+		if g.ID != 0 {
+			err := db.Game().Update(ctx, g, &meta.UpdateOption{Omit: []string{clause.Associations}})
+			if err != nil {
+				return err
+			}
+		} else {
+			g.UUID = uuid.New().String()
+			err := db.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{clause.Associations}})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if gIns != nil {
+		gIns.GameID = g.ID
+		i, err := db.GameInstance().Get(ctx, &model.GameInstance{GameID: g.ID, Version: gIns.Version}, &meta.GetOption{Include: []string{"ID"}})
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if i == nil {
+			err := db.GameInstance().Create(ctx, gIns, nil)
+			if err != nil {
+				return err
+			}
+		} else {
+			gIns.ID = i.ID
+			err := db.GameInstance().Update(ctx, gIns, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if len(gVo.Brands) > 0 {
+		gameBrands := []*model.GameBrands{}
+		for _, brand := range gVo.Brands {
+			b, err := db.Brand().Get(ctx, &model.Brand{Name: brand.Name}, &meta.GetOption{Include: []string{"ID"}})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			if b == nil {
+				err = db.Brand().Create(ctx, brand, nil)
+				if err != nil {
+					return err
+				}
+				gameBrands = append(gameBrands, &model.GameBrands{
+					GameID:  g.ID,
+					BrandID: brand.ID,
+				})
+			} else {
+				gameBrands = append(gameBrands, &model.GameBrands{
+					GameID:  g.ID,
+					BrandID: b.ID,
+				})
+			}
+			tx := db.Transaction().Begin()
+			err = tx.GameBrands().Delete(ctx, &model.GameBrands{GameID: g.ID}, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.GameBrands().Creates(ctx, gameBrands, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.Transaction().Commit()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if len(gVo.Series) > 0 {
+		gameSeries := []*model.GameSeries{}
+		for _, series := range gVo.Series {
+			s, err := db.Series().Get(ctx, &model.Series{Name: series.Name}, &meta.GetOption{Include: []string{"ID"}})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			if s == nil {
+				err = db.Series().Create(ctx, series, nil)
+				if err != nil {
+					return err
+				}
+				gameSeries = append(gameSeries, &model.GameSeries{
+					GameID:   g.ID,
+					SeriesID: series.ID,
+				})
+			} else {
+				gameSeries = append(gameSeries, &model.GameSeries{
+					GameID:   g.ID,
+					SeriesID: s.ID,
+				})
+			}
+			tx := db.Transaction().Begin()
+			err = tx.GameSeries().Delete(ctx, &model.GameSeries{GameID: g.ID}, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.GameSeries().Creates(ctx, gameSeries, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.Transaction().Commit()
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+		}
+	}
+	if len(gVo.Tags) > 0 {
+		gameTags := []*model.GameTag{}
+		for _, tag := range gVo.Tags {
+			t, err := db.Tag().Get(ctx, &model.Tag{Name: tag.Name}, &meta.GetOption{Include: []string{"ID"}})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			if t == nil {
+				lang := whatlanggo.DetectLang(tag.Name)
+				if lang.Iso6391() == "zh" || lang.Iso6391() == "ja" {
+					tag.Lang = lang.Iso6391()
+				} else {
+					tag.Lang = "en"
+				}
+				err = db.Tag().Create(ctx, tag, nil)
+				if err != nil {
+					return err
+				}
+				gameTags = append(gameTags, &model.GameTag{
+					GameID: g.ID,
+					TagID:  tag.ID,
+				})
+			} else {
+				gameTags = append(gameTags, &model.GameTag{
+					GameID: g.ID,
+					TagID:  t.ID,
+				})
+			}
+		}
+		tx := db.Transaction().Begin()
+		err := tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil)
+		if err != nil {
+			tx.Transaction().Rollback()
+			return err
+		}
+		err = tx.GameTag().Creates(ctx, gameTags, nil)
+		if err != nil {
+			tx.Transaction().Rollback()
+			return err
+		}
+		err = tx.Transaction().Commit()
+		if err != nil {
+			tx.Transaction().Rollback()
+			return err
+		}
+	}
+	staffM := map[string]uint{}
+	if len(gVo.Staff) > 0 {
+		gameStaff := []*model.GameStaff{}
+		for _, staff := range gVo.Staff {
+			if staff.VNDBID != "" {
+				s, err := db.Person().Get(ctx, &model.Person{VNDBID: staff.VNDBID}, &meta.GetOption{Include: []string{"ID"}})
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+				if s != nil {
+					staff.ID = s.ID
+				}
+			}
+			if staff.ID == 0 {
+				list, err := data.GetDataFactory().Person().ListComplex(
+					ctx,
+					&model.Person{},
+					&meta.WhereNode{
+						Conditions: []*meta.Condition{
+							{
+								Field:    "vndb_id",
+								Operator: meta.EQUAL,
+								Value:    "",
+							},
+							{
+								Field:    "name",
+								Operator: meta.EQUAL,
+								Value:    staff.Name,
+							},
+						},
+					},
+					&meta.ListOption{GetOption: meta.GetOption{Include: []string{"ID"}}})
+				if err != nil {
+					return err
+				}
+				if len(list) > 0 {
+					staff.ID = list[0].ID
+					staff.UUID = list[0].UUID
+				}
+			}
+			s := tools.GetPtr(handler.Vo2Person(staff))
+			if staff.ID != 0 {
+				err := db.Person().Update(ctx, s, nil)
+				if err != nil {
+					return err
+				}
+			} else {
+				s.UUID = uuid.New().String()
+				err := db.Person().Create(ctx, s, nil)
+				if err != nil {
+					return err
+				}
+			}
+			gameStaff = append(gameStaff, &model.GameStaff{
+				PersonID:  s.ID,
+				GameID:    g.ID,
+				Relations: staff.Relation,
+			})
+			tx := db.Transaction().Begin()
+			err := tx.GameStaff().Delete(ctx, &model.GameStaff{GameID: g.ID}, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.GameStaff().Creates(ctx, gameStaff, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.Transaction().Commit()
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			staffM[s.Name] = s.ID
+		}
+	}
+	if len(gVo.Characters) > 0 {
+		gameCharacters := []*model.GameCharacter{}
+		for _, char := range gVo.Characters {
+			if char.VNDBID != "" {
+				c, err := db.Character().Get(ctx, &model.Character{VNDBID: char.VNDBID}, &meta.GetOption{Include: []string{"ID"}})
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+				if c != nil {
+					char.ID = c.ID
+				}
+			}
+			c := tools.GetPtr(handler.Vo2Character(char))
+			if char.CV.Name != "" {
+				c.PersonID = staffM[char.CV.Name]
+			}
+			if char.ID != 0 {
+				err := db.Character().Update(ctx, c, &meta.UpdateOption{Omit: []string{clause.Associations}})
+				if err != nil {
+					return err
+				}
+			} else {
+				c.UUID = uuid.New().String()
+				err := db.Character().Create(ctx, c, &meta.CreateOption{Omit: []string{clause.Associations}})
+				if err != nil {
+					return err
+				}
+			}
+			gameCharacters = append(gameCharacters, &model.GameCharacter{
+				CharacterID: c.ID,
+				GameID:      g.ID,
+				Relation:    char.Rlation,
+			})
+			tx := db.Transaction().Begin()
+			err := tx.GameCharacter().Delete(ctx, &model.GameCharacter{GameID: g.ID}, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.GameCharacter().Creates(ctx, gameCharacters, nil)
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+			err = tx.Transaction().Commit()
+			if err != nil {
+				tx.Transaction().Rollback()
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error {
@@ -320,7 +648,7 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 }
 
 func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error) {
-	g, err := gsrv.store.Game().Get(ctx, &model.Game{ID: uint(id)}, &meta.GetOption{Preload: []string{"Tags", "Category", "Series", "Brand"}})
+	g, err := gsrv.store.Game().Get(ctx, &model.Game{ID: uint(id)}, &meta.GetOption{Preload: []string{"Tags", "Category", "Series", "Brands"}})
 	if err != nil {
 		return nil, err
 	}
@@ -424,16 +752,22 @@ func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *me
 	return total, gvos, nil
 }
 
-func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error {
+func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo) error {
+	cs := g.Characters
+	ss := g.Staff
 	images := []string{}
-	urls := map[string][]*string{}
+	urls := map[string]map[string][]*string{}
 	f := func(image *string) bool {
 		if len(*image) > 4 && (*image)[:4] == "http" {
-			_, ok := urls[*image]
-			if !ok {
-				urls[*image] = []*string{}
+			u, err := url.Parse(*image)
+			if err != nil {
+				return false
 			}
-			urls[*image] = append(urls[*image], image)
+			_, ok := urls[u.Host]
+			if !ok {
+				urls[u.Host] = make(map[string][]*string, 0)
+			}
+			urls[u.Host][*image] = append(urls[u.Host][*image], image)
 
 			return false
 		} else if len(*image) > 0 {
@@ -451,45 +785,52 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *model.Game, cs []*model.Game
 			g.Images[i] = tools.GetFileName(g.Images[i])
 		}
 	}
-	for _, c := range cs {
-		if f(&c.Character.Cover) {
-			c.Character.Cover = tools.GetFileName(c.Character.Cover)
+	for i := range cs {
+		if f(&cs[i].Cover) {
+			cs[i].Cover = tools.GetFileName(cs[i].Cover)
 		}
-		for i := range c.Character.Images {
-			if f(&c.Character.Images[i]) {
-				c.Character.Images[i] = tools.GetFileName(c.Character.Images[i])
+		for j := range cs[i].Images {
+			if f(&cs[i].Images[j]) {
+				cs[i].Images[j] = tools.GetFileName(cs[i].Images[j])
 			}
 		}
 	}
-	for _, s := range ss {
-		if f(&s.Person.Cover) {
-			s.Person.Cover = tools.GetFileName(s.Person.Cover)
+	for i := range ss {
+		if f(&ss[i].Cover) {
+			ss[i].Cover = tools.GetFileName(ss[i].Cover)
+		}
+		for j := range ss[i].Images {
+			if f(&ss[i].Images[j]) {
+				ss[i].Images[j] = tools.GetFileName(ss[i].Images[j])
+			}
 		}
 	}
 	wait := sync.WaitGroup{}
-	for k, vs := range urls {
-		url := k
+	for _, us := range urls {
 		wait.Add(1)
 		gopool.CtxGo(ctx, func() {
 			defer wait.Done()
 
-			rsp, err := tools.Req(http.MethodGet, url, nil)
-			if err != nil {
-				zaplog.L().Error("fetch file error", zap.String("file url", url), zap.Error(err))
-				return
-			}
-			if rsp.StatusCode() != http.StatusOK {
-				zaplog.L().Error("fetch file status code not 200", zap.Int("status code", rsp.StatusCode()))
-				return
-			}
-			path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(rsp.Bytes()), config.DataDir)
-			if err != nil {
-				zaplog.L().Error("save file error", zap.Error(err))
-				return
-			}
-			p := tools.GetFileName(path)
-			for _, v := range vs {
-				*v = p
+			for url, vs := range us {
+				rsp, err := tools.Req(http.MethodGet, url, nil)
+				if err != nil {
+					zaplog.L().Error("fetch file error", zap.String("file url", url), zap.Error(err))
+					return
+				}
+				if rsp.StatusCode() != http.StatusOK {
+					zaplog.L().Error("fetch file status code not 200", zap.Int("status code", rsp.StatusCode()))
+					return
+				}
+				path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(rsp.Bytes()), config.DataDir)
+				if err != nil {
+					zaplog.L().Error("save file error", zap.Error(err))
+					return
+				}
+				p := tools.GetFileName(path)
+				for _, v := range vs {
+					*v = p
+				}
+				time.Sleep(time.Millisecond * 50)
 			}
 		})
 	}

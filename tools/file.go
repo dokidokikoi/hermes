@@ -7,6 +7,7 @@ import (
 	"io"
 	"izumi/config"
 	"math/rand"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,36 +87,41 @@ func SaveTmpFile(ext string, data io.Reader) (string, error) {
 	return SaveFile(ext, data, config.TmpDir)
 }
 
-func SaveBunchTmpFile(fn func(url string) ([]byte, error), urls []string) map[string]string {
+func SaveBunchTmpFile(fn func(uri string) ([]byte, error), urls []string) map[string]string {
 	res := map[string]string{}
 
 	var lock sync.Mutex
 	wait := sync.WaitGroup{}
-	for _, url := range urls {
-		url := url
+	for _, uri := range urls {
+		uri := uri
 		wait.Add(1)
 		gopool.Go(func() {
 			defer wait.Done()
 
+			u, err := url.Parse(uri)
+			if err != nil {
+				zaplog.L().Error("parse url error", zap.String("url", uri), zap.Error(err))
+				return
+			}
 			cnt := 0
 			var data []byte
-			var err error = errors.New("fetch file")
+			err = errors.New("fetch file")
 			for err != nil && cnt < 10 {
 				cnt++
-				data, err = fn(url)
+				data, err = fn(uri)
 				if err != nil {
-					zaplog.L().Error("fetch file error", zap.Int("retry", cnt), zap.String("url", url), zap.Error(err))
+					zaplog.L().Error("fetch file error", zap.Int("retry", cnt), zap.String("url", uri), zap.Error(err))
 				}
 			}
 			if err != nil {
-				zaplog.L().Error("fetch file failed", zap.String("url", url))
+				zaplog.L().Error("fetch file failed", zap.String("url", uri))
 			}
 
 			lock.Lock()
-			res[url], err = SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
+			res[uri], err = SaveTmpFile(filepath.Ext(u.Path), bytes.NewBuffer(data))
 			lock.Unlock()
 			if err != nil {
-				zaplog.L().Error("fetch file failed", zap.String("url", url), zap.Error(err))
+				zaplog.L().Error("fetch file failed", zap.String("url", uri), zap.Error(err))
 			}
 		})
 	}

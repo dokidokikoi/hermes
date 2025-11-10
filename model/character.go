@@ -21,6 +21,7 @@ type PersonalInfo struct {
 	Hips      int     `json:"hips,omitempty"`
 	Cup       string  `json:"cup,omitempty"`
 	Age       int     `json:"age,omitempty"`
+	BrithYear int     `json:"birth_year,omitempty"`
 	Birthday  [2]int  `json:"birthday,omitempty"`
 	Traits    []Trait `json:"traits,omitempty"`
 }

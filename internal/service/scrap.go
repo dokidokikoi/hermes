@@ -28,7 +28,7 @@ type scrap struct {
 }
 
 func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapObj) (*sync.WaitGroup, error) {
-	var wait *sync.WaitGroup
+	wait := &sync.WaitGroup{}
 	for _, req := range objs {
 		_, err := data.GetDataFactory().Task().Get(ctx, &model.Task{RequestID: requestID, Param: req.Url}, nil)
 		if err == nil {

@@ -43,6 +43,7 @@ func Install(r gin.IRouter) {
 		sG.POST("", middleware.PreHandle(sH.Search))
 		sG.GET("", middleware.PreHandle(sH.Get))
 		sG.POST("/scrape", middleware.PreHandle(sH.Scrape))
+		sG.POST("/auto", middleware.PreHandle(sH.AutoScrape))
 	}
 
 	fH := file.NewHandler()

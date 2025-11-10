@@ -34,13 +34,13 @@ func (b *Bangumi) DoReq(method, uri string, header map[string]string, body any) 
 
 func PersonRelation(career string) model.PersonRelation {
 	switch career {
-	case "artist":
+	case "artist", "主题歌演出", "音乐", "主题歌作词", "主题歌作曲":
 		return model.PRelationMusic
 	case "seiyu":
 		return model.PRelationCV
-	case "writer":
+	case "writer", "剧本":
 		return model.PRelationWriter
-	case "illustrator":
+	case "illustrator", "原画":
 		return model.PRelationPainter
 	default:
 		return model.PRelationUnknown
@@ -57,5 +57,20 @@ func Gender(gender string) model.Gender {
 		return model.Futa
 	default:
 		return model.UnKnown
+	}
+}
+
+func BloodType(ty int) string {
+	switch ty {
+	case 1:
+		return "A"
+	case 2:
+		return "B"
+	case 3:
+		return "AB"
+	case 4:
+		return "O"
+	default:
+		return ""
 	}
 }

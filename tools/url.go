@@ -7,5 +7,5 @@ func GetFileName(url string) string {
 		return ""
 	}
 	arr := strings.Split(url, "/")
-	return arr[len(arr)-1]
+	return strings.Split(arr[len(arr)-1], "?")[0]
 }

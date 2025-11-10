@@ -172,7 +172,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	if err != nil {
 		ds.logger.Error("获取开发商失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
-	item.Characters, err = ds.GetItemCharacter(root)
+	item.Characters, item.Staff, err = ds.GetItemCharacter(root)
 	if err != nil {
 		ds.logger.Error("获取角色失败", zap.String("scraper", ds.name), zap.String("uri", uri), zap.Error(err))
 	}
@@ -187,57 +187,39 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	item.Links = append(item.Links, links...)
 
 	nameSet := map[string]int{}
+	addStaffNameF := func(text string, rs []model.PersonRelation) {
+		names := strings.Split(text, "/")
+		for _, name := range names {
+			name = comm_tools.TrimBlankChar(name)
+			if idx, ok := nameSet[name]; ok {
+				item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter)
+			} else {
+				item.Staff = append(item.Staff, handler.StaffVo{
+					Name:     name,
+					Relation: rs,
+				})
+			}
+		}
+	}
 	root.Find("#work_outline tr").Each(func(i int, s *goquery.Selection) {
 		label := s.Find("th").Text()
 		if slices.Contains([]string{"贩卖日", "販売日", "发售日"}, label) {
 			item.IssueDate = tools.Str2Time(s.Find("td").First().Text())
 		} else if slices.Contains([]string{"剧情", "シナリオ"}, label) {
 			s.Find("td").First().Each(func(i int, s *goquery.Selection) {
-				name := comm_tools.TrimBlankChar(s.Text())
-				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter)
-				} else {
-					item.Staff = append(item.Staff, handler.StaffVo{
-						Name:     name,
-						Relation: []model.PersonRelation{model.PRelationWriter},
-					})
-				}
+				addStaffNameF(s.Text(), []model.PersonRelation{model.PRelationWriter})
 			})
 		} else if slices.Contains([]string{"插画", "イラスト"}, label) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
-				name := comm_tools.TrimBlankChar(s.Text())
-				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter)
-				} else {
-					item.Staff = append(item.Staff, handler.StaffVo{
-						Name:     comm_tools.TrimBlankChar(name),
-						Relation: []model.PersonRelation{model.PRelationPainter},
-					})
-				}
+				addStaffNameF(s.Text(), []model.PersonRelation{model.PRelationPainter})
 			})
 		} else if slices.Contains([]string{"声优", "声優"}, label) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
-				name := comm_tools.TrimBlankChar(s.Text())
-				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationCV)
-				} else {
-					item.Staff = append(item.Staff, handler.StaffVo{
-						Name:     name,
-						Relation: []model.PersonRelation{model.PRelationCV},
-					})
-				}
+				addStaffNameF(s.Text(), []model.PersonRelation{model.PRelationCV})
 			})
 		} else if slices.Contains([]string{"音乐", "音楽"}, label) {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
-				name := comm_tools.TrimBlankChar(s.Text())
-				if idx, ok := nameSet[name]; ok {
-					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationMusic)
-				} else {
-					item.Staff = append(item.Staff, handler.StaffVo{
-						Name:     name,
-						Relation: []model.PersonRelation{model.PRelationMusic},
-					})
-				}
+				addStaffNameF(s.Text(), []model.PersonRelation{model.PRelationMusic})
 			})
 		} else {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
@@ -334,8 +316,9 @@ func (ds *DlSite) GetItemlink(node *goquery.Document, id string) ([]model.Link, 
 	return links, nil
 }
 
-func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, error) {
+func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, []handler.StaffVo, error) {
 	characters := []handler.CharacterVo{}
+	staff := []handler.StaffVo{}
 	node.Find("div.work_parts_container div.work_parts.type_multiimages .work_parts_area .work_parts_multiimage li.work_parts_multiimage_item").Each(func(i int, s *goquery.Selection) {
 		url := s.Find(".image a").AttrOr("href", "")
 		if !strings.HasPrefix(url, "https:") {
@@ -374,7 +357,11 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				Name: comm_tools.TrimBlankChar(name.String()),
 			},
 		})
+		staff = append(staff, handler.StaffVo{
+			Name:     comm_tools.TrimBlankChar(name.String()),
+			Relation: []model.PersonRelation{model.PRelationCV},
+		})
 	})
 
-	return characters, nil
+	return characters, staff, nil
 }

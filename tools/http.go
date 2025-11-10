@@ -18,7 +18,7 @@ import (
 	"resty.dev/v3"
 )
 
-var client *resty.Client = resty.New().SetRetryCount(3)
+var client *resty.Client = resty.New().SetRetryCount(3).SetRetryWaitTime(time.Second)
 
 type Option func(*resty.Request) error
 

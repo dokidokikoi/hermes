@@ -32,6 +32,8 @@ type ScrapObj struct {
 type SystemTaskParam struct {
 	Amount    int        `json:"amount,omitempty"`
 	ScrapObjs []ScrapObj `json:"objs"`
+	Path      string     `json:"path"`
+	Version   string     `json:"version"`
 }
 
 func (p *SystemTaskParam) Scan(src any) error {

@@ -30,6 +30,10 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 	g := tools.GetPtr(handler.Vo2Game(input.Game))
 	g.UUID = uuid.NewString()
 
+	err := h.srv.Game().SaveFiles(ctx, &input.Game)
+	if err != nil {
+		return 0, err
+	}
 	// 角色
 	var cs []*model.GameCharacter
 	for _, c := range input.Game.Characters {
@@ -52,10 +56,6 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 			Person:    tools.GetPtr(handler.Vo2Person(s)),
 			Relations: s.Relation,
 		})
-	}
-	err := h.srv.Game().SaveFiles(ctx, g, cs, ss)
-	if err != nil {
-		return 0, err
 	}
 
 	// 游戏实体

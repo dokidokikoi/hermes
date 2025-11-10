@@ -2,7 +2,10 @@ package scraper
 
 import (
 	"context"
+	"izumi/db/data"
 	"izumi/internal/handler"
+	systemtask "izumi/internal/system_task"
+	"izumi/model"
 
 	"github.com/dokidokikoi/go-common/middleware"
 
@@ -19,6 +22,26 @@ func (h Handler) Scrape(ctx context.Context, input *handler.ScraperDetailReq, op
 	return requestID, err
 }
 
-func (h Handler) AutoScrape(ctx context.Context, input *handler.ScraperDetailReq, op *middleware.PreHandleOptions) (string, error) {
+type AutoScrapeReq struct {
+	Objs    []model.ScrapObj `json:"objs"`
+	Path    string           `json:"path"`
+	Version string           `json:"version"`
+}
 
+func (h Handler) AutoScrape(ctx context.Context, input *AutoScrapeReq, op *middleware.PreHandleOptions) (string, error) {
+	t := &model.SystemTask{
+		Type:  model.SystemTaskTypeScrap,
+		State: model.SystemTaskStateRunning,
+		Param: model.SystemTaskParam{
+			ScrapObjs: input.Objs,
+			Path:      input.Path,
+			Version:   input.Version,
+		},
+	}
+	err := data.GetDataFactory().SystemTask().Create(ctx, t, nil)
+	if err != nil {
+		return "", err
+	}
+	systemtask.AutoScrap(t)
+	return "", nil
 }

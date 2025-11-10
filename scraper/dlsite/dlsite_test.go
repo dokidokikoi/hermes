@@ -69,7 +69,7 @@ func TestGetItemCharacter(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	characters, err := dlSiteScraper.GetItemCharacter(root)
+	characters, _, err := dlSiteScraper.GetItemCharacter(root)
 	if err != nil {
 		panic(err)
 	}

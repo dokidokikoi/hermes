@@ -13,7 +13,11 @@ import (
 
 func (h Handler) Create(ctx context.Context, input *model.Tag, op *middleware.PreHandleOptions) (uint, error) {
 	lang := whatlanggo.DetectLang(input.Name)
-	input.Lang = lang.Iso6391()
+	if lang.Iso6391() == "zh" || lang.Iso6391() == "ja" {
+		input.Lang = lang.Iso6391()
+	} else {
+		input.Lang = "en"
+	}
 	if err := data.GetDataFactory().Tag().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			c, err := data.GetDataFactory().Tag().Get(ctx, &model.Tag{Name: input.Name}, nil)

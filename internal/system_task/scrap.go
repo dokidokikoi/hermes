@@ -3,18 +3,22 @@ package systemtask
 import (
 	"context"
 	"encoding/json"
+	"izumi/constant"
 	"izumi/db/data"
+	"izumi/internal/handler"
 	"izumi/internal/service"
 	"izumi/model"
 	"izumi/scraper"
 	"izumi/scraper/bangumi"
 	"izumi/scraper/twodfan"
 	"izumi/scraper/vndb"
-	"strings"
+	"izumi/tools"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
+	"github.com/dokidokikoi/go-common/notice"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -57,14 +61,30 @@ func StartAutoScrap() {
 func AutoScrap(t *model.SystemTask) {
 	go func() {
 		var result string
+		var e error
 		defer func() {
+			var state = model.SystemTaskStateDone
+			if e != nil {
+				zaplog.L().Error("system scrap task error", zap.Error(e))
+				state = model.SystemTaskStateFailed
+			}
 			err := data.GetDataFactory().SystemTask().Update(context.Background(), &model.SystemTask{
 				ID:     t.ID,
-				State:  model.SystemTaskStateDone,
+				State:  state,
 				Result: result,
 			}, nil)
 			if err != nil {
 				zaplog.L().Error("system update error", zap.Error(err))
+			}
+
+			err = notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
+				Rid:     uuid.NewString(),
+				Event:   constant.EVENT_SCRAPER_AUTOSCRAP,
+				Success: e == nil,
+				Message: result,
+			})
+			if err != nil {
+				zaplog.L().Error("send notify error", zap.Error(err))
 			}
 		}()
 
@@ -76,12 +96,14 @@ func AutoScrap(t *model.SystemTask) {
 		}
 		if !flag {
 			result = "auto scrap need vndb item"
+			e = errors.New(result)
 			return
 		}
 
 		requestID := uuid.NewString()
 		wait, err := service.NewScrap(data.GetDataFactory()).Scrap(context.Background(), requestID, t.Param.ScrapObjs)
 		if err != nil {
+			e = err
 			result = err.Error()
 			return
 		}
@@ -92,6 +114,7 @@ func AutoScrap(t *model.SystemTask) {
 			Status:    model.TaskStatusSucceed,
 		}, nil)
 		if err != nil {
+			e = err
 			result = err.Error()
 			return
 		}
@@ -111,6 +134,7 @@ func AutoScrap(t *model.SystemTask) {
 			result = "vndb item scrap failed"
 			return
 		}
+		delete(itemM, vndb.Name)
 
 		gVo := items[0].GameVo
 		aliasM := map[string]struct{}{}
@@ -120,14 +144,17 @@ func AutoScrap(t *model.SystemTask) {
 		for _, a := range gVo.Alias {
 			aliasM[a] = struct{}{}
 		}
+		for _, t := range gVo.Tags {
+			tagM[t.Name] = struct{}{}
+		}
 		for i, c := range gVo.Characters {
-			name := strings.TrimSpace(strings.ToLower(c.Name))
+			name := tools.ToLowerNoSpace(c.Name)
 			if _, ok := characterM[name]; !ok {
 				characterM[name] = map[int]struct{}{}
 			}
 			characterM[name][i] = struct{}{}
 			for _, n := range c.Alias {
-				n := strings.TrimSpace(strings.ToLower(n))
+				n := tools.ToLowerNoSpace(n)
 				if _, ok := characterM[n]; !ok {
 					characterM[n] = map[int]struct{}{}
 				}
@@ -135,13 +162,13 @@ func AutoScrap(t *model.SystemTask) {
 			}
 		}
 		for i, s := range gVo.Staff {
-			name := strings.TrimSpace(strings.ToLower(s.Name))
+			name := tools.ToLowerNoSpace(s.Name)
 			if _, ok := staffM[name]; !ok {
 				staffM[name] = map[int]struct{}{}
 			}
 			staffM[name][i] = struct{}{}
 			for _, n := range s.Alias {
-				n := strings.TrimSpace(strings.ToLower(n))
+				n := tools.ToLowerNoSpace(n)
 				if _, ok := staffM[n]; !ok {
 					staffM[n] = map[int]struct{}{}
 				}
@@ -190,10 +217,13 @@ func AutoScrap(t *model.SystemTask) {
 			case bangumi.Name:
 				for _, i := range item {
 					for _, c := range i.Characters {
-						name := strings.TrimSpace(strings.ToLower(c.Name))
+						name := tools.ToLowerNoSpace(c.Name)
 						if m, ok := characterM[name]; ok && len(m) == 1 {
 							for k := range m {
-								gVo.Characters[k].Images = append(gVo.Characters[k].Images, append([]string{c.Cover}, c.Images...)...)
+								gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Images...)
+								if c.Cover != "" {
+									gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Cover)
+								}
 								if gVo.Characters[k].Gender == model.UnKnown {
 									gVo.Characters[k].Gender = c.Gender
 								}
@@ -214,10 +244,13 @@ func AutoScrap(t *model.SystemTask) {
 						}
 					}
 					for _, s := range i.Staff {
-						name := strings.TrimSpace(strings.ToLower(s.Name))
+						name := tools.ToLowerNoSpace(s.Name)
 						if m, ok := staffM[name]; ok && len(m) == 1 {
 							for k := range m {
-								gVo.Staff[k].Images = append(gVo.Staff[k].Images, append([]string{s.Cover}, s.Images...)...)
+								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
+								if s.Cover != "" {
+									gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Cover)
+								}
 								gVo.Staff[k].Links = append(gVo.Staff[k].Links, s.Links...)
 								if gVo.Staff[k].Gender == model.UnKnown {
 									gVo.Staff[k].Gender = s.Gender
@@ -250,10 +283,13 @@ func AutoScrap(t *model.SystemTask) {
 			default:
 				for _, i := range item {
 					for _, c := range i.Characters {
-						name := strings.TrimSpace(strings.ToLower(c.Name))
+						name := tools.ToLowerNoSpace(c.Name)
 						if m, ok := characterM[name]; ok && len(m) == 1 {
 							for k := range m {
-								gVo.Characters[k].Images = append(gVo.Characters[k].Images, append([]string{c.Cover}, c.Images...)...)
+								gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Images...)
+								if c.Cover != "" {
+									gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Cover)
+								}
 								if gVo.Characters[k].Gender == model.UnKnown {
 									gVo.Characters[k].Gender = c.Gender
 								}
@@ -274,10 +310,13 @@ func AutoScrap(t *model.SystemTask) {
 						}
 					}
 					for _, s := range i.Staff {
-						name := strings.TrimSpace(strings.ToLower(s.Name))
+						name := tools.ToLowerNoSpace(s.Name)
 						if m, ok := staffM[name]; ok && len(m) == 1 {
 							for k := range m {
-								gVo.Staff[k].Images = append(gVo.Staff[k].Images, append([]string{s.Cover}, s.Images...)...)
+								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
+								if s.Cover != "" {
+									gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Cover)
+								}
 								gVo.Staff[k].Links = append(gVo.Staff[k].Links, s.Links...)
 								if gVo.Staff[k].Gender == model.UnKnown {
 									gVo.Staff[k].Gender = s.Gender
@@ -303,8 +342,25 @@ func AutoScrap(t *model.SystemTask) {
 			}
 		}
 
-		// 用 cndbid 查询游戏是否存在
-		// 创建 tag brand series category
-		// 调用游戏创建方法
+		staffs := []handler.StaffVo{}
+		for _, staff := range gVo.Staff {
+			for _, r := range staff.Relation {
+				if r != model.PRelationUnknown {
+					staffs = append(staffs, staff)
+					break
+				}
+			}
+		}
+		gVo.Staff = staffs
+
+		err = service.NewGame(data.GetDataFactory()).UpsertFull(context.Background(), &gVo, &model.GameInstance{
+			Path:    t.Param.Path,
+			Version: t.Param.Version,
+		})
+		if err != nil {
+			e = err
+			result = err.Error()
+			return
+		}
 	}()
 }

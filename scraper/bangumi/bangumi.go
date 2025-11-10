@@ -173,27 +173,29 @@ func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
 		}
 	}
 	id := strconv.Itoa(int(gjson.GetBytes(data, "id").Int()))
-	item.Characters, err = b.GetItemCharacters(id)
+	item.Characters, item.Staff, err = b.GetItemCharacters(id)
 	if err != nil {
 		b.logger.Error("get characters error", zap.String("scraper", b.name), zap.Error(err))
 	}
-	item.Staff, err = b.GetItemStaff(id)
+	staff, err := b.GetItemStaff(id)
 	if err != nil {
 		b.logger.Error("get staff error", zap.String("scraper", b.name), zap.Error(err))
 	}
+	item.Staff = append(item.Staff, staff...)
 
 	return item, nil
 }
 
-func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, error) {
+func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, []handler.StaffVo, error) {
 	data, err := b.DoReq(http.MethodGet, fmt.Sprintf(BangumiCharactersUri, SubjetID), nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var lock sync.Mutex
 	wait := sync.WaitGroup{}
 	var characters []handler.CharacterVo
+	var staff []handler.StaffVo
 	for _, c := range gjson.ParseBytes(data).Array() {
 		c := c
 		wait.Add(1)
@@ -232,9 +234,20 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, err
 				Gender:  Gender(cc.Get("gender").String()),
 				Summary: cc.Get("summary").String(),
 				Alias:   alias,
+				PersonalInfo: model.PersonalInfo{
+					Birthday:  [2]int{int(cc.Get("birth_mon").Int()), int(cc.Get("birth_day").Int())},
+					BrithYear: int(cc.Get("birth_year").Int()),
+					BloodType: BloodType(int(cc.Get("blood_type").Int())),
+				},
 			}
 			arr := c.Get("actors").Array()
 			if len(arr) > 0 {
+				data, err := b.DoReq(http.MethodGet, fmt.Sprintf(BangumiPersonsInfoUri, arr[0].Get("id").String()), nil, nil)
+				if err != nil {
+					b.logger.Error("request error", zap.String("url", fmt.Sprintf(BangumiPersonsInfoUri, strconv.Itoa(int(id)))), zap.Error(err))
+					return
+				}
+				ss := gjson.ParseBytes(data)
 				character.CV = handler.StaffVo{
 					Name: arr[0].Get("name").String(),
 					Cover: func() string {
@@ -247,8 +260,11 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, err
 						}
 						return cover
 					}(),
-					Summary: arr[0].Get("short_summary").String(),
+					Summary:  arr[0].Get("short_summary").String(),
+					Gender:   Gender(ss.Get("gender").String()),
+					Relation: []model.PersonRelation{model.PRelationCV},
 				}
+				staff = append(staff, character.CV)
 			}
 
 			lock.Lock()
@@ -259,7 +275,7 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, err
 	}
 	wait.Wait()
 
-	return characters, nil
+	return characters, staff, nil
 }
 
 func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
@@ -271,19 +287,33 @@ func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
 	var lock sync.Mutex
 	wait := sync.WaitGroup{}
 	var staff []handler.StaffVo
+	relationM := map[int64][]model.PersonRelation{}
+	coverM := map[int64]string{}
+	nameM := map[int64]string{}
 	for _, s := range gjson.ParseBytes(data).Array() {
-		s := s
+		id := s.Get("id").Int()
+		relationM[id] = append(relationM[id], PersonRelation(s.Get("relation").String()))
+		cover := s.Get("images.large").String()
+		if cover == "" {
+			cover = s.Get("images.medium").String()
+		}
+		if cover == "" {
+			cover = s.Get("images.common").String()
+		}
+		coverM[id] = cover
+		nameM[id] = s.Get("name").String()
+	}
+	for id, relations := range relationM {
 		wait.Add(1)
-		go func() {
-			id := s.Get("id").Int()
+		go func(id int64, relations []model.PersonRelation) {
+			defer wait.Done()
+
 			data, err := b.DoReq(http.MethodGet, fmt.Sprintf(BangumiPersonsInfoUri, strconv.Itoa(int(id))), nil, nil)
 			if err != nil {
 				b.logger.Error("request error", zap.String("url", fmt.Sprintf(BangumiPersonsInfoUri, strconv.Itoa(int(id)))), zap.Error(err))
 				return
 			}
 			ss := gjson.ParseBytes(data)
-
-			relation := PersonRelation(s.Get("relation").String())
 
 			var alias []string
 			for _, a := range ss.Get("infobox").Array() {
@@ -295,26 +325,18 @@ func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
 			}
 			lock.Lock()
 			staff = append(staff, handler.StaffVo{
-				Name: s.Get("name").String(),
-				Cover: func() string {
-					cover := s.Get("images.large").String()
-					if cover == "" {
-						cover = s.Get("images.medium").String()
-					}
-					if cover == "" {
-						cover = s.Get("images.common").String()
-					}
-					return cover
-				}(),
-				Relation: []model.PersonRelation{relation},
+				Name:     nameM[id],
+				Cover:    coverM[id],
+				Relation: relations,
 				Gender:   Gender(ss.Get("gender").String()),
 				Summary:  ss.Get("short_summary").String(),
 				Alias:    alias,
 			})
 			lock.Unlock()
-		}()
+		}(id, relations)
 
 	}
+	wait.Wait()
 
 	return staff, nil
 }

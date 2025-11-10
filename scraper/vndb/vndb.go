@@ -190,13 +190,26 @@ func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
 			}(),
 			Staff: func() []handler.StaffVo {
 				staffs := []handler.StaffVo{}
+				staffM := map[string]int{}
 				for _, staff := range res.Staff {
-					staffs = append(staffs, Staff2Staff(staff))
+					idx, ok := staffM[staff.ID]
+					if !ok {
+						staffs = append(staffs, Staff2Staff(staff))
+						staffM[staff.ID] = len(staffs) - 1
+					} else if r := TransfRelation(staff.Role); r != model.PRelationUnknown {
+						staffs[idx].Relation = append(staffs[idx].Relation, r)
+					}
 				}
 				for _, va := range res.VA {
-					staff := Staff2Staff(va.Staff)
-					staff.Relation = append(staff.Relation, model.PRelationCV)
-					staffs = append(staffs, staff)
+					idx, ok := staffM[va.Staff.ID]
+					if !ok {
+						staff := Staff2Staff(va.Staff)
+						staff.Relation = append(staff.Relation, model.PRelationCV)
+						staffs = append(staffs, staff)
+						staffM[va.Staff.ID] = len(staffs) - 1
+					} else {
+						staffs[idx].Relation = append(staffs[idx].Relation, model.PRelationCV)
+					}
 				}
 				return staffs
 			}(),
