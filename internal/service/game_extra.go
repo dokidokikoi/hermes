@@ -83,13 +83,10 @@ func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta
 		o = opt
 		n = node
 	}()
-	for i := range param.Tags {
-		param.Tags[i] = strings.ToLower(param.Tags[i])
-	}
 	tmpdb := data.GetDataFactory().Tag().ListComplexDB(ctx, &model.Tag{}, &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
-				Field:    "LOWER(name)",
+				Field:    "name",
 				Operator: meta.IN,
 				Value:    param.Tags,
 			},
@@ -203,6 +200,13 @@ func GameWhereNodeBrand(ctx context.Context, param handler.GameListReq, node *me
 			},
 		},
 	}
+	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
+		Method:         meta.INNER_JOIN,
+		Table:          model.Game{}.TableName(),
+		JoinTable:      model.GameBrands{}.TableName(),
+		TableField:     "id",
+		JoinTableField: "game_id",
+	})
 	return
 }
 func GameWhereNodeSizeRange(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {

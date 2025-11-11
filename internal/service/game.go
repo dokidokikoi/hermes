@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -724,6 +725,15 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 	for _, s := range ss {
 		sVos = append(sVos, handler.Person2Vo(*s, prMap[s.ID]))
 	}
+	sort.Slice(g.Tags, func(i, j int) bool {
+		if g.Tags[j].Lang == "zh" {
+			return false
+		} else if g.Tags[j].Lang == "ja" && g.Tags[i].Lang != "zh" {
+			return false
+		} else {
+			return true
+		}
+	})
 	return tools.GetPtr(handler.Game2Vo(*g, cVos, sVos)), nil
 }
 
@@ -733,7 +743,7 @@ func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *me
 	if opt == nil {
 		opt = meta.NewListOption(nil, meta.WithPage(param.Page), meta.WithPageSize(param.PageSize))
 	}
-	opt.GetOption.Preload = append(opt.GetOption.Preload, []string{"Tags", "Category", "Series"}...)
+	opt.GetOption.Preload = append(opt.GetOption.Preload, []string{"Tags", "Category", "Series", "Brands"}...)
 	for _, f := range gwfs {
 		node, opt = f(ctx, param, node, opt)
 	}
@@ -747,6 +757,18 @@ func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *me
 	}
 	gvos := make([]handler.GameVo, 0, len(gs))
 	for _, g := range gs {
+		sort.Slice(g.Tags, func(i, j int) bool {
+			if g.Tags[j].Lang == "zh" {
+				return false
+			} else if g.Tags[j].Lang == "ja" && g.Tags[i].Lang != "zh" {
+				return false
+			} else {
+				return true
+			}
+		})
+		if len(g.Tags) > 10 {
+			g.Tags = g.Tags[:10]
+		}
 		gvos = append(gvos, handler.Game2Vo(*g, nil, nil))
 	}
 
