@@ -11,7 +11,7 @@ import (
 	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/model"
-	"izumi/tools"
+	"izumi/utils"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,6 +23,7 @@ import (
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -778,30 +779,30 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo) error {
 	}
 
 	if f(&g.Cover) {
-		g.Cover = tools.GetFileName(g.Cover)
+		g.Cover = utils.GetFileName(g.Cover)
 	}
 	for i := range g.Images {
 		if f(&g.Images[i]) {
-			g.Images[i] = tools.GetFileName(g.Images[i])
+			g.Images[i] = utils.GetFileName(g.Images[i])
 		}
 	}
 	for i := range cs {
 		if f(&cs[i].Cover) {
-			cs[i].Cover = tools.GetFileName(cs[i].Cover)
+			cs[i].Cover = utils.GetFileName(cs[i].Cover)
 		}
 		for j := range cs[i].Images {
 			if f(&cs[i].Images[j]) {
-				cs[i].Images[j] = tools.GetFileName(cs[i].Images[j])
+				cs[i].Images[j] = utils.GetFileName(cs[i].Images[j])
 			}
 		}
 	}
 	for i := range ss {
 		if f(&ss[i].Cover) {
-			ss[i].Cover = tools.GetFileName(ss[i].Cover)
+			ss[i].Cover = utils.GetFileName(ss[i].Cover)
 		}
 		for j := range ss[i].Images {
 			if f(&ss[i].Images[j]) {
-				ss[i].Images[j] = tools.GetFileName(ss[i].Images[j])
+				ss[i].Images[j] = utils.GetFileName(ss[i].Images[j])
 			}
 		}
 	}
@@ -821,12 +822,12 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo) error {
 					zaplog.L().Error("fetch file status code not 200", zap.Int("status code", rsp.StatusCode()))
 					return
 				}
-				path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(rsp.Bytes()), config.DataDir)
+				path, err := tools.SaveFileWithMd5Name(bytes.NewBuffer(rsp.Bytes()), config.DataDir, filepath.Ext(utils.GetFileName(url)))
 				if err != nil {
 					zaplog.L().Error("save file error", zap.Error(err))
 					return
 				}
-				p := tools.GetFileName(path)
+				p := utils.GetFileName(path)
 				for _, v := range vs {
 					*v = p
 				}
@@ -837,8 +838,8 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo) error {
 	zaplog.L().Info("images", zap.Any("data", images))
 	zaplog.L().Info("dir", zap.Any("name", config.DataDir))
 	for _, image := range images {
-		err := tools.Move(image, filepath.Join(config.DataDir, tools.GetFileName(image)))
-		if err != nil {
+		err := tools.Cp(image, filepath.Join(config.DataDir, utils.GetFileName(image)))
+		if err != nil && !errors.Is(err, os.ErrExist) {
 			zaplog.L().Error("rename file error", zap.String("file path", image), zap.Error(err))
 		}
 	}

@@ -7,7 +7,6 @@ import (
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
-	"izumi/tools"
 	"maps"
 	"mime/multipart"
 	"net/http"
@@ -20,7 +19,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -105,7 +104,7 @@ func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, erro
 
 			item := &scraper.SearchItem{
 				URl:         "https:" + s.Find("td.t-l").Eq(1).Find("a").AttrOr("href", ""),
-				Name:        comm_tools.TrimBlankChar(s.Find("td.t-l").Eq(1).Text()),
+				Name:        tools.TrimBlankChar(s.Find("td.t-l").Eq(1).Text()),
 				ScraperName: gg.name,
 			}
 

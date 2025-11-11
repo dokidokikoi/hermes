@@ -5,14 +5,13 @@ import (
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
-	"izumi/tools"
 	"maps"
 	"net/http"
 	"strconv"
 	"sync"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
@@ -82,7 +81,7 @@ func (b *Bangumi) SetProxy(proxy string) {
 }
 
 func (b *Bangumi) AbsUrl(uri string) string {
-	return comm_tools.AbsUrl(b.Domain, uri)
+	return tools.AbsUrl(b.Domain, uri)
 }
 
 func (b *Bangumi) Search(keyword string, page int) ([]*scraper.SearchItem, error) {

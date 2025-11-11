@@ -6,7 +6,8 @@ import (
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
-	"izumi/tools"
+	"izumi/utils"
+
 	"maps"
 	"net/http"
 	"net/url"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/dokidokikoi/go-common/tools"
 	"go.uber.org/zap"
 )
 
@@ -110,7 +111,7 @@ func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error
 		})
 	})
 
-	m := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+	m := utils.SaveBunchTmpFile(func(url string) ([]byte, error) {
 		return gc.DoReq(http.MethodGet, url, nil, nil)
 	}, urls)
 	for _, item := range items {
@@ -127,7 +128,7 @@ func (gc *GetChu) DoReq(method, uri string, header map[string]string, body inter
 	gc.Unlock()
 	maps.Copy(h, header)
 
-	query := comm_tools.GenQueryParams(body)
+	query := tools.GenQueryParams(body)
 	if query != "" {
 		uri += "?" + query
 	}
@@ -144,7 +145,7 @@ func (gc *GetChu) DoReq(method, uri string, header map[string]string, body inter
 }
 
 func (gc *GetChu) AbsUrl(uri string) string {
-	return comm_tools.AbsUrl(gc.Domain, uri)
+	return tools.AbsUrl(gc.Domain, uri)
 }
 
 func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
@@ -193,7 +194,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 
 		nameSet := map[string]int{}
 
-		title = comm_tools.TrimBlankChar(title)
+		title = tools.TrimBlankChar(title)
 		if strings.Contains(title, "ブランド") {
 			item.Brands = []*model.Brand{
 				{Name: content},
@@ -211,7 +212,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 					gc.logger.Error("jp 解码错误", zap.Error(err))
 					return
 				}
-				name = comm_tools.TrimBlankChar(name)
+				name = tools.TrimBlankChar(name)
 
 				if idx, ok := nameSet[name]; ok {
 					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationPainter)
@@ -230,7 +231,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 					gc.logger.Error("jp 解码错误", zap.Error(err))
 					return
 				}
-				name = comm_tools.TrimBlankChar(name)
+				name = tools.TrimBlankChar(name)
 
 				if idx, ok := nameSet[name]; ok {
 					item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter)
@@ -260,7 +261,7 @@ func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
 }
 
 func (gc *GetChu) GetItemName(node *goquery.Document) (string, error) {
-	return tools.Jp2Utf8([]byte(comm_tools.TrimBlankChar(node.Find("#soft-title").Text())))
+	return tools.Jp2Utf8([]byte(tools.TrimBlankChar(node.Find("#soft-title").Text())))
 }
 
 func (gc *GetChu) GetItemCover(node *goquery.Document, id string) (cover string, images []string, err error) {
@@ -268,7 +269,7 @@ func (gc *GetChu) GetItemCover(node *goquery.Document, id string) (cover string,
 
 	urls := []string{cover}
 	defer func() {
-		res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+		res := utils.SaveBunchTmpFile(func(url string) ([]byte, error) {
 			return gc.DoReq(http.MethodGet, url, nil, nil)
 		}, urls)
 
@@ -320,7 +321,7 @@ func (gc *GetChu) GetItemStory(node *goquery.Document) (string, error) {
 			return
 		}
 	})
-	return comm_tools.TrimBlankChar(story), nil
+	return tools.TrimBlankChar(story), nil
 }
 
 func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, []handler.StaffVo, error) {
@@ -343,18 +344,18 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				if err != nil {
 					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
-				name = comm_tools.TrimBlankChar(name)
+				name = tools.TrimBlankChar(name)
 				nameText, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) h2.chara-name").Text()))
 				if err != nil {
 					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
 				if name == "" {
-					name = comm_tools.TrimBlankChar(nameText)
+					name = tools.TrimBlankChar(nameText)
 				}
 				idx := strings.Index(nameText, "CV")
 				if idx > 0 && len(nameText) > idx+5 {
 					staff = append(staff, handler.StaffVo{
-						Name: comm_tools.TrimBlankChar(nameText[idx+5:]),
+						Name: tools.TrimBlankChar(nameText[idx+5:]),
 						Relation: model.PersonRelations{
 							model.PRelationCV,
 						},
@@ -364,7 +365,7 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				if err != nil {
 					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}
-				introduction = comm_tools.TrimBlankChar(introduction)
+				introduction = tools.TrimBlankChar(introduction)
 				image, _ := selection.Find("td:nth-child(3) a").Attr("href")
 				characters = append(characters, handler.CharacterVo{
 					Name:    name,
@@ -376,7 +377,7 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				urls = append(urls, gc.AbsUrl(image), gc.AbsUrl(avatar))
 			})
 
-			res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+			res := utils.SaveBunchTmpFile(func(url string) ([]byte, error) {
 				return gc.DoReq(http.MethodGet, url, nil, nil)
 			}, urls)
 			for i := range characters {

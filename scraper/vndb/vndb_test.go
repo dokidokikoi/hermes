@@ -2,11 +2,12 @@ package vndb
 
 import (
 	"encoding/json"
-	"izumi/tools"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/dokidokikoi/go-common/tools"
 )
 
 func init() {

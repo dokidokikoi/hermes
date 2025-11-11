@@ -2,12 +2,12 @@ package qbitorrent
 
 import (
 	"encoding/json"
-	"izumi/tools"
 	"net/http"
 	"strconv"
 	"strings"
 
 	commmon_errors "github.com/dokidokikoi/go-common/errors"
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/pkg/errors"
 )
 

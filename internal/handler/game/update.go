@@ -5,9 +5,9 @@ import (
 	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/model"
-	"izumi/tools"
 
 	"github.com/dokidokikoi/go-common/middleware"
+	"github.com/dokidokikoi/go-common/tools"
 )
 
 func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middleware.PreHandleOptions) (any, error) {

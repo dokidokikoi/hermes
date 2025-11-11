@@ -2,12 +2,11 @@ package bangumi
 
 import (
 	"izumi/model"
-	"izumi/tools"
 	"maps"
 
 	"github.com/pkg/errors"
 
-	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/dokidokikoi/go-common/tools"
 )
 
 func (b *Bangumi) DoReq(method, uri string, header map[string]string, body any) ([]byte, error) {
@@ -17,7 +16,7 @@ func (b *Bangumi) DoReq(method, uri string, header map[string]string, body any) 
 	b.RUnlock()
 	maps.Copy(h, header)
 
-	query := comm_tools.GenQueryParams(body)
+	query := tools.GenQueryParams(body)
 	if query != "" {
 		uri += "?" + query
 	}

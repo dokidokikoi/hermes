@@ -43,14 +43,14 @@ func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapO
 			var err error
 			defer func() {
 				wait.Done()
-				msg := "success"
+				success := true
 				if err != nil {
-					msg = "failed"
+					success = false
 				}
 				notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
 					Rid:     requestID,
 					Event:   constant.EVENT_SCRAPER_DETAIL,
-					Message: msg,
+					Success: success,
 					Data: map[string]any{
 						"name": s.GetName(),
 					},

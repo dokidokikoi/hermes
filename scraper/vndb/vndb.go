@@ -5,7 +5,6 @@ import (
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
-	"izumi/tools"
 	"maps"
 	"net/http"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )

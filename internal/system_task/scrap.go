@@ -12,7 +12,7 @@ import (
 	"izumi/scraper/bangumi"
 	"izumi/scraper/twodfan"
 	"izumi/scraper/vndb"
-	"izumi/tools"
+	"izumi/utils"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
@@ -148,13 +148,13 @@ func AutoScrap(t *model.SystemTask) {
 			tagM[t.Name] = struct{}{}
 		}
 		for i, c := range gVo.Characters {
-			name := tools.ToLowerNoSpace(c.Name)
+			name := utils.ToLowerNoSpace(c.Name)
 			if _, ok := characterM[name]; !ok {
 				characterM[name] = map[int]struct{}{}
 			}
 			characterM[name][i] = struct{}{}
 			for _, n := range c.Alias {
-				n := tools.ToLowerNoSpace(n)
+				n := utils.ToLowerNoSpace(n)
 				if _, ok := characterM[n]; !ok {
 					characterM[n] = map[int]struct{}{}
 				}
@@ -162,13 +162,13 @@ func AutoScrap(t *model.SystemTask) {
 			}
 		}
 		for i, s := range gVo.Staff {
-			name := tools.ToLowerNoSpace(s.Name)
+			name := utils.ToLowerNoSpace(s.Name)
 			if _, ok := staffM[name]; !ok {
 				staffM[name] = map[int]struct{}{}
 			}
 			staffM[name][i] = struct{}{}
 			for _, n := range s.Alias {
-				n := tools.ToLowerNoSpace(n)
+				n := utils.ToLowerNoSpace(n)
 				if _, ok := staffM[n]; !ok {
 					staffM[n] = map[int]struct{}{}
 				}
@@ -217,7 +217,7 @@ func AutoScrap(t *model.SystemTask) {
 			case bangumi.Name:
 				for _, i := range item {
 					for _, c := range i.Characters {
-						name := tools.ToLowerNoSpace(c.Name)
+						name := utils.ToLowerNoSpace(c.Name)
 						if m, ok := characterM[name]; ok && len(m) == 1 {
 							for k := range m {
 								gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Images...)
@@ -244,7 +244,7 @@ func AutoScrap(t *model.SystemTask) {
 						}
 					}
 					for _, s := range i.Staff {
-						name := tools.ToLowerNoSpace(s.Name)
+						name := utils.ToLowerNoSpace(s.Name)
 						if m, ok := staffM[name]; ok && len(m) == 1 {
 							for k := range m {
 								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
@@ -283,7 +283,7 @@ func AutoScrap(t *model.SystemTask) {
 			default:
 				for _, i := range item {
 					for _, c := range i.Characters {
-						name := tools.ToLowerNoSpace(c.Name)
+						name := utils.ToLowerNoSpace(c.Name)
 						if m, ok := characterM[name]; ok && len(m) == 1 {
 							for k := range m {
 								gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Images...)
@@ -310,7 +310,7 @@ func AutoScrap(t *model.SystemTask) {
 						}
 					}
 					for _, s := range i.Staff {
-						name := tools.ToLowerNoSpace(s.Name)
+						name := utils.ToLowerNoSpace(s.Name)
 						if m, ok := staffM[name]; ok && len(m) == 1 {
 							for k := range m {
 								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
@@ -362,5 +362,6 @@ func AutoScrap(t *model.SystemTask) {
 			result = err.Error()
 			return
 		}
+		result = gVo.Name
 	}()
 }

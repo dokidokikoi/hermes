@@ -46,16 +46,16 @@ func (h Handler) Search(ctx context.Context, input *handler.ScraperSearchReq, op
 }
 
 func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearchReq, s scraper.IGameScraper) {
-	var err error
+	var e error
 	defer func() {
-		msg := "success"
-		if err != nil {
-			msg = "failed"
+		success := true
+		if e != nil {
+			success = false
 		}
 		notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
 			Rid:     requestID,
 			Event:   constant.EVENT_SCRAPER_SEARCH,
-			Message: msg,
+			Success: success,
 			Data: map[string]any{
 				"name": s.GetName(),
 			},
@@ -67,6 +67,7 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 
 	param, err := json.Marshal(input)
 	if err != nil {
+		e = err
 		zaplog.L().Error("刮削参数序列化失败", zap.Any("param", input), zap.Error(err))
 		return
 	}
@@ -81,6 +82,7 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 	}
 	err = data.GetDataFactory().Task().Create(ctx, task, nil)
 	if err != nil {
+		e = err
 		zaplog.L().Error("刮削失败", zap.Any("param", input), zap.Error(err))
 		return
 	}
@@ -97,12 +99,14 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 	task.EndAt = time.Now()
 	task.Duration = int64(task.EndAt.Sub(task.StartAt).Seconds())
 	if err != nil {
+		e = err
 		task.Status = model.TaskStatusFailed
 		zaplog.L().Error("刮削失败", zap.Any("param", input), zap.Error(err))
 		return
 	}
 	data, err := json.Marshal(items)
 	if err != nil {
+		e = err
 		task.Status = model.TaskStatusFailed
 		zaplog.L().Error("刮削失败", zap.Any("param", input), zap.Error(err))
 		return

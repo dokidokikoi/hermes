@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"izumi/config"
 	"izumi/scraper/getchu"
-	"izumi/tools"
+
+	"izumi/utils"
 	"net/http"
 	"os"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/dokidokikoi/go-common/tools"
 )
 
 var getChuScraper *getchu.GetChu
@@ -138,7 +140,7 @@ func TestReq(t *testing.T) {
 }
 
 func TestGetImage(t *testing.T) {
-	res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+	res := utils.SaveBunchTmpFile(func(url string) ([]byte, error) {
 		return getChuScraper.DoReq(http.MethodGet, url, nil, nil)
 	}, []string{"https://www.getchu.com/brandnew/1273918/c1273918sample3.jpg"})
 

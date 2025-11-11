@@ -7,7 +7,7 @@ import (
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
-	"izumi/tools"
+	"izumi/utils"
 	"maps"
 	"net/http"
 	"net/url"
@@ -19,7 +19,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/dokidokikoi/go-common/tools"
 	"go.uber.org/zap"
 )
 
@@ -110,7 +110,7 @@ func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, err
 		})
 	})
 
-	m := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+	m := utils.SaveBunchTmpFile(func(url string) ([]byte, error) {
 		return tdf.DoReq(http.MethodGet, url, nil, nil)
 
 	}, images)
@@ -135,7 +135,7 @@ func (tdf *TwoDFan) DoReq(method, uri string, header map[string]string, body any
 }
 
 func (tdf *TwoDFan) AbsUrl(uri string) string {
-	return comm_tools.AbsUrl(tdf.Domain, uri)
+	return tools.AbsUrl(tdf.Domain, uri)
 }
 
 func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
@@ -220,7 +220,7 @@ func (tdf *TwoDFan) GetItemCover(node *goquery.Document) (string, []string, erro
 		if err != nil {
 			tdf.logger.Error("fetch iamge error", zap.String("url", url), zap.Error(err))
 		} else {
-			path, err := tools.SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
+			path, err := utils.SaveTmpFile(filepath.Ext(url), bytes.NewBuffer(data))
 			if err != nil {
 				tdf.logger.Error("fetch iamge error", zap.String("url", url), zap.Error(err))
 			} else {
@@ -308,7 +308,7 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 		f(root)
 	}
 
-	res := tools.SaveBunchTmpFile(func(url string) ([]byte, error) {
+	res := utils.SaveBunchTmpFile(func(url string) ([]byte, error) {
 		return tdf.DoReq(http.MethodGet, url, nil, nil)
 	}, images)
 	images = images[:0]
@@ -317,7 +317,7 @@ func (tdf *TwoDFan) GetItemStory(node *goquery.Document) (string, []string, erro
 		images = append(images, v)
 		s = strings.ReplaceAll(s, k, filepath.Join("/api/file", strings.TrimPrefix(v, config.TmpDir)))
 	}
-	s = comm_tools.TrimBlankChar(s)
+	s = tools.TrimBlankChar(s)
 
 	return s, images, nil
 }
@@ -368,7 +368,7 @@ func (tdf *TwoDFan) GetItemIssueDate(node *goquery.Document) (time.Time, error) 
 	var t time.Time
 	node.Find("#content div.control-group p.tags").Each(func(i int, s *goquery.Selection) {
 		if strings.Contains(s.Text(), "发售日期") {
-			t = tools.Str2Time(tools.DateExtarct(s.Text()))
+			t = tools.Str2Time(utils.DateExtarct(s.Text()))
 		}
 	})
 	return t, nil

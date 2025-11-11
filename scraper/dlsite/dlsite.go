@@ -7,7 +7,6 @@ import (
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
-	"izumi/tools"
 	"maps"
 	"net/http"
 	"net/url"
@@ -19,7 +18,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
-	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
@@ -118,7 +117,7 @@ func (ds *DlSite) DoReq(method, uri string, header map[string]string, body inter
 	ds.RUnlock()
 	maps.Copy(h, header)
 
-	query := comm_tools.GenQueryParams(body)
+	query := tools.GenQueryParams(body)
 	if query != "" {
 		uri += "?" + query
 	}
@@ -190,7 +189,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 	addStaffNameF := func(text string, rs []model.PersonRelation) {
 		names := strings.Split(text, "/")
 		for _, name := range names {
-			name = comm_tools.TrimBlankChar(name)
+			name = tools.TrimBlankChar(name)
 			if idx, ok := nameSet[name]; ok {
 				item.Staff[idx].Relation = append(item.Staff[idx].Relation, model.PRelationWriter)
 			} else {
@@ -224,7 +223,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 		} else {
 			s.Find("td").First().Find("a").Each(func(i int, s *goquery.Selection) {
 				item.Tags = append(item.Tags, &model.Tag{
-					Name: comm_tools.TrimBlankChar(s.Text()),
+					Name: tools.TrimBlankChar(s.Text()),
 				})
 			})
 		}
@@ -268,7 +267,7 @@ func (ds *DlSite) GetItemCover(node *goquery.Document) (string, []string, error)
 
 func (ds *DlSite) GetItemBrands(node *goquery.Document) ([]*model.Brand, error) {
 	return []*model.Brand{
-		{Name: comm_tools.TrimBlankChar(node.Find("#work_maker span.maker_name").Text())},
+		{Name: tools.TrimBlankChar(node.Find("#work_maker span.maker_name").Text())},
 	}, nil
 }
 
@@ -280,7 +279,7 @@ func (ds *DlSite) GetItemStory(node *goquery.Document) (string, error) {
 		story.WriteByte('\n')
 	})
 
-	return comm_tools.TrimBlankChar(story.String()), nil
+	return tools.TrimBlankChar(story.String()), nil
 }
 
 func (ds *DlSite) GetItemlink(node *goquery.Document, id string) ([]model.Link, error) {
@@ -336,7 +335,7 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				name.WriteByte(text[idx])
 			}
 		}
-		cName := comm_tools.TrimBlankChar(name.String())
+		cName := tools.TrimBlankChar(name.String())
 
 		idx = strings.Index(text, "（CV：")
 		name.Reset()
@@ -352,13 +351,13 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 		characters = append(characters, handler.CharacterVo{
 			Name:    cName,
 			Cover:   url,
-			Summary: comm_tools.TrimBlankChar(text),
+			Summary: tools.TrimBlankChar(text),
 			CV: handler.StaffVo{
-				Name: comm_tools.TrimBlankChar(name.String()),
+				Name: tools.TrimBlankChar(name.String()),
 			},
 		})
 		staff = append(staff, handler.StaffVo{
-			Name:     comm_tools.TrimBlankChar(name.String()),
+			Name:     tools.TrimBlankChar(name.String()),
 			Relation: []model.PersonRelation{model.PRelationCV},
 		})
 	})

@@ -13,7 +13,7 @@ var bangumiScraper scraper.IGameScraper
 func init() {
 	// zaplog.SetLogger(config.GetConfig().LogConfig)
 	bangumiScraper = bangumi.NewBangumi(map[string]string{
-		"Authorization": "Bearer a3mi4euoJlUYRjoedVNd55Dqj4tHVpIbgTMEoiHp",
+		"Authorization": "Bearer m5ZXizvkDdBId6JECCXqTUAd2ScucAAabW9eC3t2",
 		"User-Agent":    bangumi.DefaultHeader_UserAgent,
 	}, "")
 }

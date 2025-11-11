@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"izumi/config"
 	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/model"
-	"izumi/tools"
+	"izumi/utils"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -21,7 +22,7 @@ import (
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
-	comm_tools "github.com/dokidokikoi/go-common/tools"
+	"github.com/dokidokikoi/go-common/tools"
 	"go.uber.org/zap"
 )
 
@@ -39,7 +40,7 @@ var GameBasicSearchNode = []GameWhereNodeFunc{
 }
 
 func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
-	keyword := comm_tools.TrimBlankChar(param.Keyword)
+	keyword := tools.TrimBlankChar(param.Keyword)
 	if keyword != "" {
 		node.Next = &meta.WhereNode{
 			Conditions: []*meta.Condition{
@@ -388,8 +389,8 @@ func SaveHtmlImg(ctx context.Context, html string) (string, error) {
 				imagesM[src] = ""
 				images = append(images, src)
 			} else {
-				err := tools.Move(filepath.Join(config.TmpDir, strings.TrimPrefix("/api/file/", src)), filepath.Join(config.DataDir, tools.GetFileName(src)))
-				if err != nil {
+				err := tools.Cp(filepath.Join(config.TmpDir, strings.TrimPrefix("/api/file/", src)), filepath.Join(config.DataDir, utils.GetFileName(src)))
+				if err != nil && !errors.Is(err, os.ErrExist) {
 					zaplog.L().Error("rename file error", zap.String("file path", src), zap.Error(err))
 				}
 			}
@@ -413,12 +414,12 @@ func SaveHtmlImg(ctx context.Context, html string) (string, error) {
 				zaplog.L().Error("fetch file status code not 200", zap.Int("status code", rsp.StatusCode()))
 				return
 			}
-			path, err := tools.SaveFile(filepath.Ext(url), bytes.NewBuffer(rsp.Bytes()), config.DataDir)
+			path, err := tools.SaveFileWithMd5Name(bytes.NewBuffer(rsp.Bytes()), config.DataDir, filepath.Ext(utils.GetFileName(url)))
 			if err != nil {
 				zaplog.L().Error("save file error", zap.Error(err))
 				return
 			}
-			p := tools.GetFileName(path)
+			p := utils.GetFileName(path)
 			lock.Lock()
 			imagesM[url] = p
 			lock.Unlock()

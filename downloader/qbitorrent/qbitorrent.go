@@ -1,9 +1,9 @@
 package qbitorrent
 
 import (
-	"izumi/tools"
 	"net/http"
 
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/pkg/errors"
 )
 
