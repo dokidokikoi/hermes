@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/dokidokikoi/go-common/tools"
@@ -34,10 +33,10 @@ var (
 		"va.staff.id", "va.staff.description", "va.staff.gender", "va.staff.name",
 		"va.staff.original", "va.staff.extlinks.url", "va.staff.extlinks.label",
 		"va.character.id", "va.character.name", "va.character.original", "va.character.description",
-		"va.character.image.url", "va.character.blood_type", "va.character.aliases",
+		"va.character.image.url", "va.character.blood_type", "va.character.aliases", "va.character.vns.role",
 		"va.character.height", "va.character.weight", "va.character.bust", "va.character.waist",
 		"va.character.hips", "va.character.cup", "va.character.age", "va.character.birthday",
-		"va.character.gender", "va.character.traits.name", "va.character.traits.description",
+		"va.character.gender", "va.character.traits.name", "va.character.traits.description", "va.character.vns.spoiler",
 		"va.note", "extlinks.url", "extlinks.label",
 	}
 )
@@ -177,7 +176,7 @@ func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
 				}
 				return brands
 			}(),
-			IssueDate: time.Now(),
+			IssueDate: tools.Str2Time(res.Released),
 			Story:     res.Description,
 			Tags: func() []*model.Tag {
 				tags := []*model.Tag{}
@@ -196,7 +195,7 @@ func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
 					if !ok {
 						staffs = append(staffs, Staff2Staff(staff))
 						staffM[staff.ID] = len(staffs) - 1
-					} else if r := TransfRelation(staff.Role); r != model.PRelationUnknown {
+					} else if r := TransfPRelation(staff.Role); r != model.PRelationUnknown {
 						staffs[idx].Relation = append(staffs[idx].Relation, r)
 					}
 				}
@@ -214,9 +213,19 @@ func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
 				return staffs
 			}(),
 			Characters: func() []handler.CharacterVo {
-				characters := []handler.CharacterVo{}
+				characters1 := []handler.CharacterVo{}
+				characters2 := []handler.CharacterVo{}
+				spoilerM := map[string]struct{}{}
 				for _, va := range res.VA {
 					char := va.Character
+					spoiler := false
+					role := ""
+					for _, v := range char.VNS {
+						if v.ID == res.ID {
+							spoiler = v.Spoiler > 0
+							role = v.Role
+						}
+					}
 					c := handler.CharacterVo{
 						VNDBID: char.ID,
 						Name: func() string {
@@ -270,10 +279,21 @@ func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
 								return traits
 							}(),
 						},
+						Rlation: TransfCRelation(role),
 					}
-					characters = append(characters, c)
+					if spoiler {
+						characters2 = append(characters2, c)
+					} else {
+						characters1 = append(characters1, c)
+						spoilerM[c.Name] = struct{}{}
+					}
 				}
-				return characters
+				for _, c := range characters2 {
+					if _, ok := spoilerM[c.Name]; !ok {
+						characters1 = append(characters1, c)
+					}
+				}
+				return characters1
 			}(),
 			Links: func() []model.Link {
 				links := []model.Link{}

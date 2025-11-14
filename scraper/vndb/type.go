@@ -61,6 +61,11 @@ type Character struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 	} `json:"traits"`
+	VNS []struct {
+		ID      string `json:"id"`
+		Role    string `json:"role"`
+		Spoiler int    `json:"spoiler"`
+	} `json:"vns"`
 }
 
 type Staff struct {
@@ -108,7 +113,7 @@ func TransfGender(gender string) model.Gender {
 	}
 }
 
-func TransfRelation(role string) model.PersonRelation {
+func TransfPRelation(role string) model.PersonRelation {
 	switch role {
 	case "director", "editor":
 		return model.PRelationWriter
@@ -118,6 +123,17 @@ func TransfRelation(role string) model.PersonRelation {
 		return model.PRelationMusic
 	default:
 		return model.PRelationUnknown
+	}
+}
+
+func TransfCRelation(role string) model.CharacterRelation {
+	switch role {
+	case "main", "primary":
+		return model.CRelationMain
+	case "side":
+		return model.CRelationMinor
+	default:
+		return model.CRelationMob
 	}
 }
 
@@ -141,7 +157,7 @@ func Staff2Staff(staff Staff) handler.StaffVo {
 			return TransfGender(staff.Gender)
 		}(),
 		Relation: func() []model.PersonRelation {
-			return []model.PersonRelation{TransfRelation(staff.Role)}
+			return []model.PersonRelation{TransfPRelation(staff.Role)}
 		}(),
 	}
 }

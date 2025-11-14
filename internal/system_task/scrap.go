@@ -13,10 +13,12 @@ import (
 	"izumi/scraper/twodfan"
 	"izumi/scraper/vndb"
 	"izumi/utils"
+	"strings"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/dokidokikoi/go-common/notice"
+	"github.com/dokidokikoi/go-common/tools"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -137,12 +139,12 @@ func AutoScrap(t *model.SystemTask) {
 		delete(itemM, vndb.Name)
 
 		gVo := items[0].GameVo
-		aliasM := map[string]struct{}{}
+		aliasSet := tools.Set[string]{}
 		tagM := map[string]struct{}{}
 		characterM := map[string]map[int]struct{}{}
 		staffM := map[string]map[int]struct{}{}
 		for _, a := range gVo.Alias {
-			aliasM[a] = struct{}{}
+			aliasSet.Add(a)
 		}
 		for _, t := range gVo.Tags {
 			tagM[t.Name] = struct{}{}
@@ -179,8 +181,8 @@ func AutoScrap(t *model.SystemTask) {
 		for name, item := range itemM {
 			for _, i := range item {
 				for _, a := range i.Alias {
-					if _, ok := aliasM[a]; !ok {
-						gVo.Alias = append(gVo.Alias, a)
+					if ok := aliasSet.Contains(a); !ok {
+						aliasSet.Add(a)
 					}
 				}
 				for _, t := range i.Tags {
@@ -194,7 +196,15 @@ func AutoScrap(t *model.SystemTask) {
 				if len(gVo.Brands) == 0 {
 					gVo.Brands = append(gVo.Brands, i.Brands...)
 				}
-				if gVo.Category == nil || gVo.Category.Name == "" {
+				if (gVo.Category == nil || gVo.Category.Name == "") && i.Category != nil && i.Category.Name != "" {
+					i.Category.Name = strings.ToUpper(i.Category.Name)
+					nameBuilder := strings.Builder{}
+					for _, r := range i.Category.Name {
+						if r >= rune('A') && r <= rune('Z') {
+							nameBuilder.WriteRune(r)
+						}
+					}
+					i.Category.Name = nameBuilder.String()
 					gVo.Category = i.Category
 				}
 				if gVo.IssueDate.IsZero() {
@@ -341,6 +351,7 @@ func AutoScrap(t *model.SystemTask) {
 				}
 			}
 		}
+		gVo.Alias = aliasSet.Slice()
 
 		staffs := []handler.StaffVo{}
 		for _, staff := range gVo.Staff {
