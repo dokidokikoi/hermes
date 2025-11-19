@@ -27,7 +27,7 @@ func (h Handler) LoadInfo(ctx context.Context, req *struct{}, op *middleware.Pre
 
 	var infos []service.PathInfo
 	for _, l := range sp.GameLibrary {
-		is, err := h.srv.Library().Ls(ctx, l, false)
+		is, err := h.srv.Library().Ls(ctx, l, false, true)
 		if err != nil {
 			if os.IsNotExist(err) {
 				op.SetMsg("game library not exist")

@@ -64,7 +64,7 @@ func StartLoad() {
 
 	srv := service.NewSrv(data.GetDataFactory())
 	for _, l := range sp.GameLibrary {
-		infos, err := srv.Library().Ls(context.Background(), l, false)
+		infos, err := srv.Library().Ls(context.Background(), l, false, true)
 		if err != nil {
 			zaplog.L().Error("get game library error", zap.Error(err))
 		}
