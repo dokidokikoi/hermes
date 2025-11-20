@@ -216,8 +216,13 @@ func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
 				characters1 := []handler.CharacterVo{}
 				characters2 := []handler.CharacterVo{}
 				spoilerM := map[string]struct{}{}
+				characterM := map[string]struct{}{}
 				for _, va := range res.VA {
 					char := va.Character
+					if _, ok := characterM[char.ID]; ok {
+						continue
+					}
+					characterM[char.ID] = struct{}{}
 					spoiler := false
 					role := ""
 					for _, v := range char.VNS {

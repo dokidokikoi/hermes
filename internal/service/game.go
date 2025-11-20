@@ -697,6 +697,22 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		cVos = append(cVos, handler.Character2Vo(*c, crMap[c.ID], nil))
 	}
 
+	sort.Slice(cVos, func(i, j int) bool {
+		if cVos[i].Rlation == model.CRelationMain {
+			return true
+		}
+		if cVos[j].Rlation == model.CRelationMain {
+			return false
+		}
+		if cVos[i].Rlation == model.CRelationMinor {
+			return true
+		}
+		if cVos[j].Rlation == model.CRelationMinor {
+			return false
+		}
+		return true
+	})
+
 	// staff
 	var sVos []handler.StaffVo
 	gss, err := gsrv.store.GameStaff().List(ctx, &model.GameStaff{GameID: g.ID}, nil)

@@ -9,12 +9,13 @@ import (
 	"izumi/internal/service"
 	"izumi/model"
 	"izumi/scraper"
-	"izumi/scraper/bangumi"
+	"izumi/scraper/dlsite"
 	"izumi/scraper/twodfan"
 	"izumi/scraper/vndb"
 	"izumi/utils"
 	"strings"
 
+	"github.com/abadojack/whatlanggo"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/dokidokikoi/go-common/notice"
@@ -139,13 +140,10 @@ func AutoScrap(t *model.SystemTask) {
 		delete(itemM, vndb.Name)
 
 		gVo := items[0].GameVo
-		aliasSet := tools.Set[string]{}
+		aliasSet := tools.NewSet(gVo.Alias...)
 		tagM := map[string]struct{}{}
 		characterM := map[string]map[int]struct{}{}
 		staffM := map[string]map[int]struct{}{}
-		for _, a := range gVo.Alias {
-			aliasSet.Add(a)
-		}
 		for _, t := range gVo.Tags {
 			tagM[t.Name] = struct{}{}
 		}
@@ -178,12 +176,10 @@ func AutoScrap(t *model.SystemTask) {
 
 			}
 		}
-		for name, item := range itemM {
+		for _, item := range itemM {
 			for _, i := range item {
 				for _, a := range i.Alias {
-					if ok := aliasSet.Contains(a); !ok {
-						aliasSet.Add(a)
-					}
+					aliasSet.Add(a)
 				}
 				for _, t := range i.Tags {
 					if _, ok := tagM[t.Name]; !ok {
@@ -212,6 +208,10 @@ func AutoScrap(t *model.SystemTask) {
 				}
 				if gVo.Story == "" {
 					gVo.Story = i.Story
+				} else if i.Story != "" {
+					if needReplace(gVo.Story, i.Story) {
+						gVo.Story = i.Story
+					}
 				}
 				if gVo.DlCode == "" {
 					gVo.DlCode = i.DlCode
@@ -222,136 +222,90 @@ func AutoScrap(t *model.SystemTask) {
 				if gVo.Price == "" {
 					gVo.Price = i.Price
 				}
-			}
-			switch name {
-			case bangumi.Name:
-				for _, i := range item {
-					for _, c := range i.Characters {
-						name := utils.ToLowerNoSpace(c.Name)
-						if m, ok := characterM[name]; ok && len(m) == 1 {
-							for k := range m {
-								gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Images...)
-								if c.Cover != "" {
-									gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Cover)
-								}
-								if gVo.Characters[k].Gender == model.UnKnown {
-									gVo.Characters[k].Gender = c.Gender
-								}
-								if gVo.Characters[k].Rlation == "" {
-									gVo.Characters[k].Rlation = c.Rlation
-								}
-								if c.Summary != "" {
+				for _, c := range i.Characters {
+					name := utils.ToLowerNoSpace(c.Name)
+					if m, ok := characterM[name]; ok && len(m) == 1 {
+						for k := range m {
+							gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Images...)
+							if c.Cover != "" {
+								gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Cover)
+							}
+							if gVo.Characters[k].Gender == model.UnKnown {
+								gVo.Characters[k].Gender = c.Gender
+							}
+							if gVo.Characters[k].Rlation == "" {
+								gVo.Characters[k].Rlation = c.Rlation
+							}
+							if gVo.Characters[k].Summary == "" {
+								gVo.Characters[k].Summary = c.Summary
+							} else if c.Summary != "" {
+								if needReplace(gVo.Characters[k].Summary, c.Summary) {
 									gVo.Characters[k].Summary = c.Summary
 								}
 							}
-						} else {
-							_, ok := characterM[name]
-							if !ok {
-								characterM[name] = map[int]struct{}{}
-							}
-							characterM[name][len(gVo.Characters)] = struct{}{}
-							gVo.Characters = append(gVo.Characters, c)
 						}
-					}
-					for _, s := range i.Staff {
-						name := utils.ToLowerNoSpace(s.Name)
-						if m, ok := staffM[name]; ok && len(m) == 1 {
-							for k := range m {
-								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
-								if s.Cover != "" {
-									gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Cover)
-								}
-								gVo.Staff[k].Links = append(gVo.Staff[k].Links, s.Links...)
-								if gVo.Staff[k].Gender == model.UnKnown {
-									gVo.Staff[k].Gender = s.Gender
-								}
-								if len(gVo.Staff[k].Relation) == 0 {
-									gVo.Staff[k].Relation = s.Relation
-								}
-								if s.Summary != "" {
-									gVo.Staff[k].Summary = s.Summary
-								}
-
-							}
-						} else {
-							_, ok := staffM[name]
-							if !ok {
-								staffM[name] = map[int]struct{}{}
-							}
-							staffM[name][len(gVo.Staff)] = struct{}{}
-							gVo.Staff = append(gVo.Staff, s)
+					} else {
+						_, ok := characterM[name]
+						if !ok {
+							characterM[name] = map[int]struct{}{}
 						}
+						characterM[name][len(gVo.Characters)] = struct{}{}
+						gVo.Characters = append(gVo.Characters, c)
 					}
 				}
-			case twodfan.Name:
-				for _, i := range item {
-					if i.Story != "" {
-						gVo.Story = i.Story
-					}
-				}
-				fallthrough
-			default:
-				for _, i := range item {
-					for _, c := range i.Characters {
-						name := utils.ToLowerNoSpace(c.Name)
-						if m, ok := characterM[name]; ok && len(m) == 1 {
-							for k := range m {
-								gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Images...)
-								if c.Cover != "" {
-									gVo.Characters[k].Images = append(gVo.Characters[k].Images, c.Cover)
-								}
-								if gVo.Characters[k].Gender == model.UnKnown {
-									gVo.Characters[k].Gender = c.Gender
-								}
-								if gVo.Characters[k].Rlation == "" {
-									gVo.Characters[k].Rlation = c.Rlation
-								}
-								if gVo.Characters[k].Summary != "" {
-									gVo.Characters[k].Summary = c.Summary
-								}
+				for _, s := range i.Staff {
+					name := utils.ToLowerNoSpace(s.Name)
+					if m, ok := staffM[name]; ok && len(m) == 1 {
+						for k := range m {
+							gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
+							if s.Cover != "" {
+								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Cover)
 							}
-						} else {
-							_, ok := characterM[name]
-							if !ok {
-								characterM[name] = map[int]struct{}{}
+							gVo.Staff[k].Links = append(gVo.Staff[k].Links, s.Links...)
+							if gVo.Staff[k].Gender == model.UnKnown {
+								gVo.Staff[k].Gender = s.Gender
 							}
-							characterM[name][len(gVo.Characters)] = struct{}{}
-							gVo.Characters = append(gVo.Characters, c)
-						}
-					}
-					for _, s := range i.Staff {
-						name := utils.ToLowerNoSpace(s.Name)
-						if m, ok := staffM[name]; ok && len(m) == 1 {
-							for k := range m {
-								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
-								if s.Cover != "" {
-									gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Cover)
-								}
-								gVo.Staff[k].Links = append(gVo.Staff[k].Links, s.Links...)
-								if gVo.Staff[k].Gender == model.UnKnown {
-									gVo.Staff[k].Gender = s.Gender
-								}
-								if len(gVo.Staff[k].Relation) == 0 {
-									gVo.Staff[k].Relation = s.Relation
-								}
-								if gVo.Staff[k].Summary != "" {
+							if len(gVo.Staff[k].Relation) == 0 {
+								gVo.Staff[k].Relation = s.Relation
+							}
+							if gVo.Staff[k].Summary != "" {
+								gVo.Staff[k].Summary = s.Summary
+							} else if s.Summary != "" {
+								if needReplace(gVo.Staff[k].Summary, s.Summary) {
 									gVo.Staff[k].Summary = s.Summary
 								}
+							}
 
-							}
-						} else {
-							_, ok := staffM[name]
-							if !ok {
-								staffM[name] = map[int]struct{}{}
-							}
-							staffM[name][len(gVo.Staff)] = struct{}{}
-							gVo.Staff = append(gVo.Staff, s)
 						}
+					} else {
+						_, ok := staffM[name]
+						if !ok {
+							staffM[name] = map[int]struct{}{}
+						}
+						staffM[name][len(gVo.Staff)] = struct{}{}
+						gVo.Staff = append(gVo.Staff, s)
 					}
 				}
 			}
 		}
 		gVo.Alias = aliasSet.Slice()
+
+		if vs, ok := itemM[dlsite.Name]; ok {
+			for _, v := range vs {
+				if v.Story != "" {
+					gVo.Story = v.Story
+					break
+				}
+			}
+		}
+		if vs, ok := itemM[twodfan.Name]; ok {
+			for _, v := range vs {
+				if v.Story != "" {
+					gVo.Story = v.Story
+					break
+				}
+			}
+		}
 
 		staffs := []handler.StaffVo{}
 		for _, staff := range gVo.Staff {
@@ -375,4 +329,28 @@ func AutoScrap(t *model.SystemTask) {
 		}
 		result = gVo.Name
 	}()
+}
+
+func needReplace(src, dst string) bool {
+	srcLang := whatlanggo.DetectLang(src).Iso6391()
+	dstlang := whatlanggo.DetectLang(dst).Iso6391()
+	if srcLang == "zh" {
+		if dstlang == "zh" {
+			return len(src) < len(dst)
+		}
+		return false
+	}
+	if dstlang == "zh" {
+		return true
+	}
+	if srcLang == "ja" {
+		if dstlang == "ja" {
+			return len(src) < len(dst)
+		}
+		return false
+	}
+	if dstlang == "ja" {
+		return true
+	}
+	return false
 }

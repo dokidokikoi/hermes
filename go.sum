@@ -62,6 +62,10 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dokidokikoi/go-common v0.0.0-20251111071510-d3e0b5d41549 h1:BP65ulrdRy0M/mldf4XwPuATC+hQwZs+cNHVgNf2u98=
 github.com/dokidokikoi/go-common v0.0.0-20251111071510-d3e0b5d41549/go.mod h1:0VeqrSKEdPtAlWsgqe9IkoAwgwWHzy6MeF4Arnb5TEQ=
+github.com/dokidokikoi/go-common v0.0.0-20251115120246-754ccf560408 h1:irFhwIbMu9gMg1osu4rSlnSda92Heb+elVuJggGLeJ0=
+github.com/dokidokikoi/go-common v0.0.0-20251115120246-754ccf560408/go.mod h1:0VeqrSKEdPtAlWsgqe9IkoAwgwWHzy6MeF4Arnb5TEQ=
+github.com/dokidokikoi/go-common v0.0.0-20251115120501-2ae9dfe1002e h1:IToXE7SSzW+v0i5l0CSBTimihEr28SJgVQhYFeelFxw=
+github.com/dokidokikoi/go-common v0.0.0-20251115120501-2ae9dfe1002e/go.mod h1:0VeqrSKEdPtAlWsgqe9IkoAwgwWHzy6MeF4Arnb5TEQ=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=

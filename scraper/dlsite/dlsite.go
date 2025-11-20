@@ -34,8 +34,9 @@ const (
 )
 
 var (
-	DlSiteDomain    = "https://www.dlsite.com/"
-	DlSiteSearchUrl = []string{"https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/keyword/", "keyword", "/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/order%5B0%5D/trend/options_and_or/and/per_page/30/page/", "page", "/from/fs.header"}
+	DlSiteDomain = "https://www.dlsite.com/"
+	// DlSiteSearchUrl = []string{"https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/keyword/", "keyword", "/work_category%5B0%5D/doujin/work_category%5B1%5D/books/work_category%5B2%5D/pc/work_category%5B3%5D/app/order%5B0%5D/trend/options_and_or/and/per_page/30/page/", "page", "/from/fs.header"}
+	DlSiteSearchUrl = []string{"https://www.dlsite.com/maniax/fsr/=/language/jp/sex_category%5B0%5D/male/keyword/", "keyword", "/ana_flg/all/order%5B0%5D/trend/work_type_category%5B0%5D/game/work_type_category_name%5B0%5D/%E3%82%B2%E3%83%BC%E3%83%A0/options_and_or/and/options%5B0%5D/JPN/options%5B1%5D/CHI_HANS/options%5B2%5D/CHI_HANT/options%5B3%5D/NM/options_name%5B0%5D/%E6%97%A5%E6%9C%AC%E8%AA%9E%E4%BD%9C%E5%93%81/options_name%5B1%5D/%E7%B0%A1%E4%BD%93%E5%AD%97%E4%BD%9C%E5%93%81/options_name%5B2%5D/%E7%B9%81%E4%BD%93%E5%AD%97%E4%BD%9C%E5%93%81/options_name%5B3%5D/%E8%A8%80%E8%AA%9E%E4%B8%8D%E5%95%8F%E4%BD%9C%E5%93%81/per_page/30/page/", "page", "/show_type/1/from/fs.detail"}
 	DlSitePriceUrl  = "https://www.dlsite.com/pro/product/info/ajax?product_id=%s&cdn_cache_min=1"
 	DlSiteVedioApi  = "https://chobit.cc/api/v1/dlsite/embed?workno=%s&_=%d"
 )
@@ -78,11 +79,15 @@ func (ds *DlSite) SetProxy(proxy string) {
 }
 
 func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
-	DlSiteSearchUrl[1] = keyword
+	DlSiteSearchUrl[1] = strings.TrimSpace(keyword)
 	DlSiteSearchUrl[3] = strconv.Itoa(page)
-	url := strings.Join(DlSiteSearchUrl, "")
+	uri := strings.Join(DlSiteSearchUrl, "")
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, err
+	}
 
-	data, err := ds.DoReq(http.MethodGet, url, nil, nil)
+	data, err := ds.DoReq(http.MethodGet, u.String(), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -93,14 +98,14 @@ func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error
 	}
 
 	var items []*scraper.SearchItem
-	root.Find("#search_result_img_box li.search_result_img_box_inner").Each(func(i int, s *goquery.Selection) {
-		url := s.Find("dl dt a img").First().AttrOr("src", "")
+	root.Find("#search_result_list table.n_worklist tr").Each(func(i int, s *goquery.Selection) {
+		url := s.Find("div.work_thumb a img").First().AttrOr("src", "")
 		if !strings.HasPrefix(url, "https:") {
 			url = "https:" + url
 		}
 		items = append(items, &scraper.SearchItem{
-			Name:  s.Find("dd.work_name a").Text(),
-			URl:   s.Find("dl dt a").First().AttrOr("href", ""),
+			Name:  s.Find("dt.work_name a").AttrOr("title", ""),
+			URl:   s.Find("dt.work_name a").First().AttrOr("href", ""),
 			Cover: url,
 
 			ScraperName: ds.name,
@@ -272,14 +277,12 @@ func (ds *DlSite) GetItemBrands(node *goquery.Document) ([]*model.Brand, error) 
 }
 
 func (ds *DlSite) GetItemStory(node *goquery.Document) (string, error) {
-	story := bytes.Buffer{}
-	node.Find("div.work_parts_container").Each(func(i int, s *goquery.Selection) {
-		html, _ := s.Html()
-		story.WriteString(html)
-		story.WriteByte('\n')
-	})
+	story, err := node.Find("div.work_parts_container").Html()
+	if err != nil {
+		return "", err
+	}
 
-	return tools.TrimBlankChar(story.String()), nil
+	return tools.TrimBlankChar(story), nil
 }
 
 func (ds *DlSite) GetItemlink(node *goquery.Document, id string) ([]model.Link, error) {

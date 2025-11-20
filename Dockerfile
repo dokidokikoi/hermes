@@ -18,23 +18,28 @@ RUN go env -w GOPROXY='https://goproxy.cn,direct' && go mod tidy && CGO_ENABLED=
 
 FROM nginx:1.27-alpine
 
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories && \ 
+    apk update && apk add --no-cache supervisor libc6-compat
+
 # 拷贝前端静态资源
 COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 
 # 拷贝 Nginx 配置
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
+RUN mkdir -p /data/db /app/log && chmod -R 777 /var/cache/nginx /var/run /var/log/nginx /run
+
 WORKDIR /app
 
 # 拷贝 Go 后端可执行文件
 COPY --from=backend-builder /app/backend/server ./
 
-RUN mkdir -p /data/db /app/log
-
 # 设置环境变量
 ENV GIN_MODE=release
 ENV IZUMI_DATA_DIR=/data/izumi
 
-EXPOSE 80
+COPY supervisor/supervisor.conf /etc/supervisor.d/izumi.conf
 
-CMD ["/bin/sh", "-c", "./server > ./log/stdout.log 2>&1 & nginx -g 'daemon off;'"]
+EXPOSE 8888
+
+CMD ["supervisord", "-c", "/etc/supervisor.d/izumi.conf"]

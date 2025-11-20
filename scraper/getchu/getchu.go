@@ -353,13 +353,22 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 					name = tools.TrimBlankChar(nameText)
 				}
 				idx := strings.Index(nameText, "CV")
+				var s handler.StaffVo
 				if idx > 0 && len(nameText) > idx+5 {
-					staff = append(staff, handler.StaffVo{
+					s = handler.StaffVo{
 						Name: tools.TrimBlankChar(nameText[idx+5:]),
 						Relation: model.PersonRelations{
 							model.PRelationCV,
 						},
-					})
+					}
+					staff = append(staff, s)
+				}
+				startIdx := strings.Index(nameText, "（")
+				endIdx := strings.Index(nameText, "）")
+				alias := ""
+				if startIdx > 0 && endIdx > startIdx {
+					alias = tools.TrimBlankChar(nameText[startIdx+3 : endIdx])
+					name = tools.TrimBlankChar(nameText[:startIdx])
 				}
 				introduction, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) dd").Text()))
 				if err != nil {
@@ -369,9 +378,11 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				image, _ := selection.Find("td:nth-child(3) a").Attr("href")
 				characters = append(characters, handler.CharacterVo{
 					Name:    name,
+					Alias:   []string{alias},
 					Summary: introduction,
 					Cover:   gc.AbsUrl(avatar),
 					Images:  []string{gc.AbsUrl(image)},
+					CV:      s,
 				})
 
 				urls = append(urls, gc.AbsUrl(image), gc.AbsUrl(avatar))
