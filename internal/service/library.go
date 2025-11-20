@@ -7,12 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
-
-	gocache "github.com/patrickmn/go-cache"
 )
-
-var libraryCache = *gocache.New(time.Minute, time.Hour)
 
 type PathInfo struct {
 	Path  string     `json:"path"`
@@ -21,7 +16,7 @@ type PathInfo struct {
 }
 
 type ILibrary interface {
-	Ls(ctx context.Context, path string, onlyNoScrap bool) ([]PathInfo, error)
+	Ls(ctx context.Context, path string, onlyNoScrap bool, cache bool) ([]PathInfo, error)
 }
 
 var _ ILibrary = (*library)(nil)
@@ -30,10 +25,18 @@ type library struct {
 	store db.IStore
 }
 
-func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool) ([]PathInfo, error) {
-	ls, ok := libraryCache.Get(path)
-	if ok {
-		return ls.([]PathInfo), nil
+func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool, cache bool) ([]PathInfo, error) {
+	if cache {
+		defer func() {
+			select {
+			case libraryCacheChan <- path:
+			default:
+			}
+		}()
+		ls, ok := libraryCache.Get(path)
+		if ok {
+			return filterLibrary(ls.([]PathInfo), onlyNoScrap), nil
+		}
 	}
 
 	paths, err := os.ReadDir(path)
@@ -44,14 +47,6 @@ func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool) ([]P
 	for _, p := range paths {
 		if strings.HasPrefix(p.Name(), ".") {
 			continue
-		}
-		if onlyNoScrap {
-			if !p.IsDir() {
-				continue
-			}
-			if _, err := os.Stat(filepath.Join(path, p.Name(), "info.json")); err == nil {
-				continue
-			}
 		}
 		child := []PathInfo{}
 		if p.IsDir() {
@@ -67,14 +62,14 @@ func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool) ([]P
 					Path:  filepath.Join(path, p.Name(), cp.Name()),
 					IsDir: p.IsDir(),
 				})
-				sort.Slice(child, func(i, j int) bool {
-					if child[i].IsDir == child[j].IsDir {
-						return strings.Compare(strings.ToLower(child[i].Path), strings.ToLower(child[j].Path)) <= 0
-					} else {
-						return child[i].IsDir
-					}
-				})
 			}
+			sort.Slice(child, func(i, j int) bool {
+				if child[i].IsDir == child[j].IsDir {
+					return strings.Compare(strings.ToLower(child[i].Path), strings.ToLower(child[j].Path)) <= 0
+				} else {
+					return child[i].IsDir
+				}
+			})
 		}
 		result = append(result, PathInfo{
 			Path:  filepath.Join(path, p.Name()),
@@ -91,8 +86,26 @@ func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool) ([]P
 		}
 	})
 
-	libraryCache.SetDefault(path, result)
-	return result, nil
+	return filterLibrary(result, onlyNoScrap), nil
+}
+
+func filterLibrary(libs []PathInfo, onlyNoScrap bool) []PathInfo {
+	if !onlyNoScrap {
+		return libs
+	}
+	res := []PathInfo{}
+	for _, l := range libs {
+		if !l.IsDir {
+			continue
+		}
+		for _, c := range l.Child {
+			if filepath.Base(c.Path) == "info.json" {
+				continue
+			}
+			res = append(res, c)
+		}
+	}
+	return res
 }
 
 func NewLibrary(store db.IStore) *library {

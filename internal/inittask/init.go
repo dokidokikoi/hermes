@@ -19,6 +19,7 @@ func Init() {
 	if err != nil {
 		panic(err)
 	}
+	service.StartLibraryCache()
 
 	systemtask.StartDownload()
 	systemtask.StartLoad()
