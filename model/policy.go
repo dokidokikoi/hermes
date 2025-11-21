@@ -17,7 +17,7 @@ func (Policy) TableName() string {
 	return "policies"
 }
 
-func Parse[T SystemPolicy | PlatformPolicy | LanguagePolicy | ScraperPolicy](str string) (*T, error) {
+func Parse[T SystemPolicy | PlatformPolicy | LanguagePolicy | ScraperPolicy | UserPolicy](str string) (*T, error) {
 	t := new(T)
 	err := json.Unmarshal([]byte(str), t)
 	if err != nil {
@@ -54,4 +54,16 @@ type ScraperSubPolicy struct {
 
 func (ScraperPolicy) Key() string {
 	return "scraper"
+}
+
+type PlayList struct {
+	Name  string  `gorm:"type:varchar(32)"`
+	Games []*Game `gorm:"many2many:play_list_game;" json:"games"`
+}
+type UserPolicy struct {
+	PlayList []PlayList `json:"play_list"`
+}
+
+func (UserPolicy) Key() string {
+	return "user"
 }

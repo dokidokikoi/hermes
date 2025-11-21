@@ -35,6 +35,7 @@ func Install(r gin.IRouter) {
 		gG.POST("/download", middleware.PreHandle(gH.DownloadInfo))
 		gG.POST("/download_all", middleware.PreHandle(gH.DownloadAllInfo))
 		gG.POST("/load_all", middleware.PreHandle(gH.LoadInfo))
+		gG.GET("/brief", middleware.PreHandle(gH.GetBrief))
 	}
 
 	sH := scraper.NewHandler()
