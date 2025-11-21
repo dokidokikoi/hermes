@@ -300,6 +300,12 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 					return err
 				}
 			}
+			pRelationM := tools.NewSet(staff.Relation...)
+			if pRelationM.Contains(model.PRelationUnknown) && pRelationM.Size() > 1 {
+				pRelationM.Remove(model.PRelationUnknown)
+			}
+			staff.Relation = pRelationM.Slice()
+
 			gameStaff = append(gameStaff, &model.GameStaff{
 				PersonID:  s.ID,
 				GameID:    g.ID,

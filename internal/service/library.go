@@ -60,7 +60,7 @@ func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool, cach
 				}
 				child = append(child, PathInfo{
 					Path:  filepath.Join(path, p.Name(), cp.Name()),
-					IsDir: p.IsDir(),
+					IsDir: cp.IsDir(),
 				})
 			}
 			sort.Slice(child, func(i, j int) bool {

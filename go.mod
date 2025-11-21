@@ -7,7 +7,6 @@ toolchain go1.24.4
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/abadojack/whatlanggo v1.0.1
-	github.com/dokidokikoi/go-common v0.0.0-20251119103849-1766e32bb301
 	github.com/gin-gonic/gin v1.8.2
 	github.com/google/uuid v1.6.0
 	github.com/pkg/errors v0.9.1
@@ -17,6 +16,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/dokidokikoi/go-common v0.0.0-20251121105330-cbb0ece1af54 // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
