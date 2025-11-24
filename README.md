@@ -15,6 +15,8 @@
 
 ---
 
+<div align="center"><a href="/doc/ZH.md">>>>简体中文<<<</a></div>
+
 ## ✨ Features
 
 ### 🧩 Built-in Metadata Scrapers
@@ -38,7 +40,8 @@ Fetch and manage:
 
 ### 🔁 Local Game Library Integration
 - Automatically save scraped metadata into your game directory  
-- Import existing metadata from game folders  
+- Import existing metadata from game folders 
+- No rename or delete behavior 
 
 ### 🔍 Search Functionality
 Search across supported sites and your local database.
@@ -80,4 +83,4 @@ docker-compose up -d
 ```
 
 Then open:
-👉 http://localhost:8080
+👉 http://localhost:8888
