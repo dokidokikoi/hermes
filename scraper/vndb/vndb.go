@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/dokidokikoi/go-common/tools"
@@ -77,14 +78,25 @@ func (v *VNDB) SetProxy(proxy string) {
 }
 
 func (v *VNDB) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
-	data, err := v.DoReq(http.MethodPost, VNDBSearchUri, nil, map[string]any{
-		"filters": []any{
-			"search", "=", keyword,
-		},
-		"fields":  strings.Join(SearchFields, ","),
-		"results": 20,
-		"page":    page,
-	})
+	var (
+		err  error = errors.New("")
+		cnt  int
+		data []byte
+	)
+	for ; err != nil && cnt < 4; cnt++ {
+		data, err = v.DoReq(http.MethodPost, VNDBSearchUri, nil, map[string]any{
+			"filters": []any{
+				"search", "=", keyword,
+			},
+			"fields":  strings.Join(SearchFields, ","),
+			"results": 20,
+			"page":    page,
+		})
+		if err != nil {
+			zaplog.L().With(zap.Int("retry", cnt)).Error("vndb search error", zap.Error(err))
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -113,12 +125,23 @@ func (v *VNDB) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 }
 
 func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
-	data, err := v.DoReq(http.MethodPost, VNDBSearchUri, nil, map[string]any{
-		"filters": []any{
-			"id", "=", uri,
-		},
-		"fields": strings.Join(DetailFields, ","),
-	})
+	var (
+		err  error = errors.New("")
+		cnt  int
+		data []byte
+	)
+	for ; err != nil && cnt < 4; cnt++ {
+		data, err = v.DoReq(http.MethodPost, VNDBSearchUri, nil, map[string]any{
+			"filters": []any{
+				"id", "=", uri,
+			},
+			"fields": strings.Join(DetailFields, ","),
+		})
+		if err != nil {
+			zaplog.L().With(zap.Int("retry", cnt)).Error("vndb search error", zap.Error(err))
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +324,7 @@ func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
 				return characters1
 			}(),
 			Links: func() []model.Link {
-				links := []model.Link{}
+				links := []model.Link{{Name: Name, Url: "https://vndb.org/" + uri}}
 				for _, item := range res.ExtLinks {
 					links = append(links, Link2Link(item))
 				}

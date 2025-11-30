@@ -94,16 +94,17 @@ func filterLibrary(libs []PathInfo, onlyNoScrap bool) []PathInfo {
 		return libs
 	}
 	res := []PathInfo{}
+loop:
 	for _, l := range libs {
 		if !l.IsDir {
 			continue
 		}
 		for _, c := range l.Child {
 			if filepath.Base(c.Path) == "info.json" {
-				continue
+				continue loop
 			}
-			res = append(res, c)
 		}
+		res = append(res, l)
 	}
 	return res
 }

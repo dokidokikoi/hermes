@@ -57,6 +57,7 @@ type GameVo struct {
 	OtherInfo     string              `json:"other_info"`
 	Staff         []StaffVo           `json:"staff"`
 	CreatedAt     time.Time           `json:"created_at"`
+	UpdatedAt     time.Time           `json:"updated_at"`
 	DownloadInfos model.DownloadInfos `json:"download_info"`
 
 	// 仅用于 info 文件
@@ -117,6 +118,7 @@ func Game2Vo(game model.Game, characters []CharacterVo, staff []StaffVo) GameVo 
 		Links:      game.Links,
 		Staff:      staff,
 		CreatedAt:  game.CreatedAt,
+		UpdatedAt:  game.UpdatedAt,
 	}
 }
 

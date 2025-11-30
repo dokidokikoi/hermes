@@ -81,7 +81,7 @@ func (gg *GGBases) SetProxy(proxy string) {
 }
 
 func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
-	data, err := gg.DoReq(http.MethodGet, fmt.Sprintf(gg.SearchUri, page-1, keyword), map[string]string{
+	data, err := gg.DoReq(http.MethodGet, fmt.Sprintf(gg.SearchUri, page-1, strings.ReplaceAll(strings.TrimSpace(keyword), " ", "+")), map[string]string{
 		"Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
 	}, nil)
 	if err != nil {

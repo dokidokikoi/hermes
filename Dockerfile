@@ -1,4 +1,4 @@
-FROM node:20-alpine AS frontend-builder
+FROM docker.m.daocloud.io/node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories && \ 
@@ -8,7 +8,7 @@ RUN npm install -g pnpm
 RUN pnpm install
 RUN pnpm run build
 
-FROM golang:1.24-alpine AS backend-builder
+FROM docker.m.daocloud.io/golang:1.24-alpine AS backend-builder
 
 RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories && \ 
     apk update && apk add --no-cache build-base sqlite-dev
@@ -16,7 +16,7 @@ WORKDIR /app/backend
 COPY ./ ./
 RUN go env -w GOPROXY='https://goproxy.cn,direct' && go mod tidy && CGO_ENABLED=1 go build -ldflags="-linkmode external -extldflags '-static'" -o server .
 
-FROM nginx:1.27-alpine
+FROM docker.m.daocloud.io/nginx:1.27-alpine
 
 RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories && \ 
     apk update && apk add --no-cache supervisor libc6-compat

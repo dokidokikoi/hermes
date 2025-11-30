@@ -72,9 +72,8 @@ func DownloadTask(gs []*model.Game, t *model.SystemTask) {
 				zaplog.L().Error("downloadInfo", zap.Error(err))
 			}
 			notice.HubIns.SendBroadcast(constant.TOPIC_INFO_FILE, notice.NoticeResponse{
-				Rid:     uuid.NewString(),
-				Event:   constant.EVENT_INFO_FILE_DOWNLOAD,
-				Success: err == nil,
+				Rid:   uuid.NewString(),
+				Event: constant.EVENT_INFO_FILE_DOWNLOADING,
 				Message: func() string {
 					if err != nil {
 						return err.Error()
@@ -88,6 +87,11 @@ func DownloadTask(gs []*model.Game, t *model.SystemTask) {
 				},
 			})
 		}
+		notice.HubIns.SendBroadcast(constant.TOPIC_INFO_FILE, notice.NoticeResponse{
+			Rid:     uuid.NewString(),
+			Event:   constant.EVENT_INFO_FILE_DOWNLOAD,
+			Success: true,
+		})
 	}()
 
 }

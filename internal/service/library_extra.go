@@ -22,12 +22,11 @@ func StartLibraryCache() {
 	db := data.GetDataFactory()
 	srv := NewLibrary(db)
 
-	err := DoSetCache(srv)
-	if err != nil {
-		zaplog.L().With(zap.String("fn", "StartLibraryCache")).Error("set cache error", zap.Error(err))
-	}
-
 	go func() {
+		err := DoSetCache(srv)
+		if err != nil {
+			zaplog.L().With(zap.String("fn", "StartLibraryCache")).Error("set cache error", zap.Error(err))
+		}
 		for {
 			select {
 			case <-ticker.C:

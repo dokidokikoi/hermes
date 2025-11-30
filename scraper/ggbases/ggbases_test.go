@@ -16,6 +16,9 @@ import (
 var ggBasesScraper *ggbases.GGBases
 
 func init() {
+	os.Setenv("https_proxy", "socks5://127.0.0.1:20170")
+	os.Setenv("http_proxy", "socks5://127.0.0.1:20170")
+	os.Setenv("all_proxy", "socks5://127.0.0.1:20170")
 	scraper := ggbases.NewGGBases(map[string]string{
 		"User-Agent":      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
 		"Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
@@ -26,7 +29,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := ggBasesScraper.Search("彼女", 1)
+	items, err := ggBasesScraper.Search("Agent mirai", 1)
 	if err != nil {
 		panic(err)
 	}

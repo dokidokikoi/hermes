@@ -14,6 +14,7 @@ import (
 	"izumi/scraper/vndb"
 	"izumi/utils"
 	"strings"
+	"time"
 
 	"github.com/abadojack/whatlanggo"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -257,10 +258,12 @@ func AutoScrap(t *model.SystemTask) {
 					name := utils.ToLowerNoSpace(s.Name)
 					if m, ok := staffM[name]; ok && len(m) == 1 {
 						for k := range m {
-							gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
-							if s.Cover != "" {
+							if gVo.Staff[k].Cover == "" {
+								gVo.Staff[k].Cover = s.Cover
+							} else if s.Cover != "" {
 								gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Cover)
 							}
+							gVo.Staff[k].Images = append(gVo.Staff[k].Images, s.Images...)
 							gVo.Staff[k].Links = append(gVo.Staff[k].Links, s.Links...)
 							if gVo.Staff[k].Gender == model.UnKnown {
 								gVo.Staff[k].Gender = s.Gender
@@ -317,8 +320,13 @@ func AutoScrap(t *model.SystemTask) {
 			}
 		}
 		gVo.Staff = staffs
+		gVo.Images = tools.NewSet(gVo.Images...).Slice()
+		if items, ok := itemM[twodfan.Name]; ok && len(items) > 0 && items[0].Story != "" {
+			gVo.Story = items[0].Story
+		}
 
-		err = service.NewGame(data.GetDataFactory()).UpsertFull(context.Background(), &gVo, &model.GameInstance{
+		srv := service.NewGame(data.GetDataFactory())
+		err = srv.UpsertFull(context.Background(), &gVo, &model.GameInstance{
 			Path:    t.Param.Path,
 			Version: t.Param.Version,
 		})
@@ -328,6 +336,13 @@ func AutoScrap(t *model.SystemTask) {
 			return
 		}
 		result = gVo.Name
+
+		go func() {
+			err = srv.DownloadInfo(context.Background(), gVo.ID, time.Now())
+			if err != nil {
+				zaplog.L().With(zap.Uint("game id", gVo.ID)).Error("downloadInfo", zap.Error(err))
+			}
+		}()
 	}()
 }
 

@@ -79,7 +79,7 @@ func (ds *DlSite) SetProxy(proxy string) {
 }
 
 func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
-	DlSiteSearchUrl[1] = strings.TrimSpace(keyword)
+	DlSiteSearchUrl[1] = strings.ReplaceAll(strings.TrimSpace(keyword), " ", "+")
 	DlSiteSearchUrl[3] = strconv.Itoa(page)
 	uri := strings.Join(DlSiteSearchUrl, "")
 	u, err := url.Parse(uri)

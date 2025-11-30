@@ -16,7 +16,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/dokidokikoi/go-common v0.0.0-20251121105330-cbb0ece1af54 // indirect
+	github.com/dokidokikoi/go-common v0.0.0-20251129182436-161e910817fc // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect

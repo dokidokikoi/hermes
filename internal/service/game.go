@@ -1198,7 +1198,14 @@ func (gsrv *game) DownloadInfo(ctx context.Context, gameID uint, t time.Time) er
 		if !info.IsDir() {
 			continue
 		}
-		if t.Before(info.ModTime()) {
+		infoPath := filepath.Join(i.Path, "info.json")
+		info, err = os.Stat(infoPath)
+		if err != nil && !os.IsNotExist(err) {
+			zaplog.From(ctx).Error("os.Stat", zap.Error(err))
+			continue
+		}
+		if info != nil &&
+			(t.Before(info.ModTime()) || (!gVo.UpdatedAt.IsZero() && gVo.UpdatedAt.Before(info.ModTime()))) {
 			continue
 		}
 		err = cpGameAllImages(zaplog.From(ctx), i.Path, gVo)
@@ -1206,11 +1213,11 @@ func (gsrv *game) DownloadInfo(ctx context.Context, gameID uint, t time.Time) er
 			zaplog.From(ctx).Error("cpGameAllImages", zap.Error(err))
 			continue
 		}
-		f, err := os.OpenFile(filepath.Join(i.Path, "info.json"), os.O_WRONLY, 0666)
+		f, err := os.OpenFile(infoPath, os.O_WRONLY, 0666)
 		if err != nil {
 			if os.IsNotExist(err) {
 				err = nil
-				f, err = os.Create(filepath.Join(i.Path, "info.json"))
+				f, err = os.Create(infoPath)
 			}
 			if err != nil {
 				zaplog.From(ctx).Error("Open", zap.Error(err))

@@ -76,7 +76,7 @@ func (gc *GetChu) SetProxy(proxy string) {
 }
 
 func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
-	keyword, err := tools.Utf82Jp([]byte(keyword))
+	keyword, err := tools.Utf82Jp([]byte(strings.ReplaceAll(strings.TrimSpace(keyword), " ", ",")))
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +370,8 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 					alias = tools.TrimBlankChar(nameText[startIdx+3 : endIdx])
 					name = tools.TrimBlankChar(nameText[:startIdx])
 				}
-				introduction, err := tools.Jp2Utf8([]byte(selection.Find("td:nth-child(2) dd").Text()))
+				text, _ := selection.Find("td:nth-child(2) dd").Html()
+				introduction, err := tools.Jp2Utf8([]byte(text))
 				if err != nil {
 					gc.logger.With(zap.Error(err)).Error("tools.Jp2Utf8")
 				}

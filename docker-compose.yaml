@@ -10,19 +10,27 @@ services:
       http_proxy: socks5://192.168.1.4:20170
       https_proxy: socks5://192.168.1.4:20170
       all_proxy: socks5://192.168.1.4:20170
+    # user: "1000:1000"
     ports:
-      - "8888:80"
+      - "8888:8888"
     volumes:
       - ./data/db/:/data/db
-      - ./data/izumu:/data/izumi
+      - ./data/izumi:/data/izumi
       - ./log:/app/log # optional
-      - nfs-library-zd:/library/zd
+      # - nfs-library-zd:/library/zd
+      - smb-library-tg:/library/tg
     restart: always
 
 volumes:
-  nfs-library-zd:
+  # nfs-library-zd:
+  #   driver: local
+  #   driver_opts:
+  #     type: nfs
+  #     o: "addr=192.168.1.75,rw,nolock,soft"
+  #     device: :/mnt/warehouse/warehouse/Games/zd/
+  smb-library-tg:
     driver: local
     driver_opts:
-      type: nfs
-      o: "addr=192.168.1.75,rw,nolock,soft"
-      device: :/mnt/warehouse/warehouse/Games/zd/
+      type: cifs
+      o: "username=doki,password=doki,iocharset=utf8"
+      device: //192.168.1.19/telegram

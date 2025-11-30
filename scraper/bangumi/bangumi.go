@@ -8,10 +8,13 @@ import (
 	"maps"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/dokidokikoi/go-common/tools"
+	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )
@@ -90,11 +93,22 @@ func (b *Bangumi) Search(keyword string, page int) ([]*scraper.SearchItem, error
 			Nsfw: true,
 			Type: []int{SubjectTypeGame},
 		},
-		Keyword: keyword,
+		Keyword: strings.ReplaceAll(strings.TrimSpace(keyword), " ", "+"),
 		Limit:   defaultPageSize,
 		Offset:  (page - 1) * defaultPageSize,
 	}
-	data, err := b.DoReq(http.MethodPost, b.SearchUri, nil, param)
+	var (
+		err  error = errors.New("")
+		cnt  int
+		data []byte
+	)
+	for ; err != nil && cnt < 4; cnt++ {
+		data, err = b.DoReq(http.MethodPost, b.SearchUri, nil, param)
+		if err != nil {
+			zaplog.L().With(zap.Int("retry", cnt)).Error("bangumi search error", zap.Error(err))
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

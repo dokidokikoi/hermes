@@ -74,7 +74,7 @@ func (tdf *TwoDFan) SetProxy(proxy string) {
 func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 	u := ""
 	if page > 1 {
-		u = fmt.Sprintf(tdf.SearchUri, fmt.Sprintf("/page/%d", page), keyword)
+		u = fmt.Sprintf(tdf.SearchUri, fmt.Sprintf("/page/%d", page), strings.ReplaceAll(strings.TrimSpace(keyword), " ", "+"))
 	} else {
 		u = fmt.Sprintf(tdf.SearchUri, "", keyword)
 	}
