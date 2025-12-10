@@ -37,6 +37,7 @@ func (lsrv *library) Ls(ctx context.Context, path string, onlyNoScrap bool, cach
 		if ok {
 			return filterLibrary(ls.([]PathInfo), onlyNoScrap), nil
 		}
+		return nil, nil
 	}
 
 	paths, err := os.ReadDir(path)

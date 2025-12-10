@@ -7,6 +7,8 @@ type Series struct {
 	Name      string    `gorm:"type:varchar(255);unique" json:"name"`
 	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
+
+	Games int64 `gorm:"->"`
 }
 
 func (Series) TableName() string {

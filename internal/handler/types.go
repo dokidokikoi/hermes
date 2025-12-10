@@ -285,3 +285,10 @@ type LsReq struct {
 	Path        string `form:"path"`
 	OnlyNoScrap bool   `form:"only_no_scrap"`
 }
+
+type SeriesVo struct {
+	ID        uint      `json:"id"`
+	Name      string    `json:"name"`
+	Games     int64     `json:"games"`
+	CreatedAt time.Time `json:"created_at"`
+}
