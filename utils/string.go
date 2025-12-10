@@ -9,5 +9,6 @@ func EqualFoldNoSpace(a, b string) bool {
 }
 
 func ToLowerNoSpace(s string) string {
-	return strings.ToLower(strings.ReplaceAll(s, " ", ""))
+	replacer := strings.NewReplacer(" ", "", "\u3000", "")
+	return strings.ToLower((replacer.Replace(s)))
 }

@@ -42,7 +42,7 @@ type IGame interface {
 	UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance, proccess func(step int)) error
 
 	Search(ctx context.Context, param handler.GameListReq, opt *meta.ListOption, gwfs ...GameWhereNodeFunc) (int64, []handler.GameVo, error)
-	SaveFiles(ctx context.Context, g *handler.GameVo) error
+	SaveFiles(ctx context.Context, g *handler.GameVo, process ...func(total int)) error
 
 	Load(ctx context.Context, gVo *handler.GameVo, path string) error
 	DownloadInfo(ctx context.Context, gameID uint, t time.Time) error
@@ -55,11 +55,14 @@ type game struct {
 }
 
 func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance, proccess func(step int)) error {
-	err := gsrv.SaveFiles(ctx, gVo)
+	err := gsrv.SaveFiles(ctx, gVo, func(total int) {
+		step := 4000 / total
+		proccess(step)
+	})
 	if err != nil {
 		return err
 	}
-	proccess(30)
+
 	db := gsrv.store
 	if gVo.VNDBID != "" {
 		g, err := db.Game().Get(ctx, &model.Game{VNDBID: gVo.VNDBID}, &meta.GetOption{Include: []string{"ID"}})
@@ -798,7 +801,7 @@ func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *me
 	return total, gvos, nil
 }
 
-func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo) error {
+func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo, process ...func(total int)) error {
 	cs := g.Characters
 	ss := g.Staff
 	images := []string{}
@@ -875,6 +878,9 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo) error {
 				p := utils.GetFileName(path)
 				for _, v := range vs {
 					*v = p
+				}
+				if len(process) > 0 {
+					process[0](len(url))
 				}
 				time.Sleep(time.Millisecond * 50)
 			}

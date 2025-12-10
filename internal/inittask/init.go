@@ -25,4 +25,5 @@ func Init() {
 
 	systemtask.StartDownload()
 	systemtask.StartLoad()
+	systemtask.StartAutoScrap()
 }

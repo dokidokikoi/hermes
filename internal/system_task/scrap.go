@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/abadojack/whatlanggo"
+	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/dokidokikoi/go-common/notice"
@@ -39,32 +40,14 @@ func StartAutoScrap() {
 	if len(ts) == 0 {
 		return
 	}
-	err = data.GetDataFactory().SystemTask().UpdateByWhere(
-		context.Background(),
-		&meta.WhereNode{
-			Conditions: []*meta.Condition{
-				{
-					Field:    "id",
-					Operator: meta.NOTEQUAL,
-					Value:    ts[0].ID,
-				},
-			},
-		},
-		&model.SystemTask{
-			State: model.SystemTaskStateCanceled,
-		},
-		nil,
-	)
-	if err != nil {
-		zaplog.L().Error("system update error", zap.Error(err))
+
+	for _, t := range ts {
+		AutoScrap(t)
 	}
-
-	AutoScrap(ts[0])
-
 }
 
 func AutoScrap(t *model.SystemTask) {
-	go func() {
+	gopool.CtxGo(context.Background(), func() {
 		var result string
 		var e error
 		defer func() {
@@ -107,8 +90,8 @@ func AutoScrap(t *model.SystemTask) {
 
 		var (
 			proccess int32
-			total    int32 = 100
-			step     int32 = int32(50 / len(t.Param.ScrapObjs))
+			total    int32 = 10000
+			step     int32 = int32(5000 / len(t.Param.ScrapObjs))
 		)
 		ctxWithCancel, cancel := context.WithCancel(context.TODO())
 		defer func() {
@@ -385,7 +368,7 @@ func AutoScrap(t *model.SystemTask) {
 				zaplog.L().With(zap.Uint("game id", gVo.ID)).Error("downloadInfo", zap.Error(err))
 			}
 		}()
-	}()
+	})
 }
 
 func needReplace(src, dst string) bool {

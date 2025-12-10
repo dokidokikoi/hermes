@@ -39,6 +39,24 @@ func StartDownload() {
 					Value:    ts[0].ID,
 				},
 			},
+			Next: &meta.WhereNode{
+				Conditions: []*meta.Condition{
+					{
+						Field:    "state",
+						Operator: meta.EQUAL,
+						Value:    model.SystemTaskStateRunning,
+					},
+				},
+				Next: &meta.WhereNode{
+					Conditions: []*meta.Condition{
+						{
+							Field:    "type",
+							Operator: meta.EQUAL,
+							Value:    model.SystemTaskTypeDownload,
+						},
+					},
+				},
+			},
 		},
 		&model.SystemTask{
 			State: model.SystemTaskStateCanceled,
