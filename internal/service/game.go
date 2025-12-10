@@ -39,7 +39,7 @@ type IGame interface {
 	CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error
 	UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error
 	GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error)
-	UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance) error
+	UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance, proccess func(step int)) error
 
 	Search(ctx context.Context, param handler.GameListReq, opt *meta.ListOption, gwfs ...GameWhereNodeFunc) (int64, []handler.GameVo, error)
 	SaveFiles(ctx context.Context, g *handler.GameVo) error
@@ -54,11 +54,12 @@ type game struct {
 	store db.IStore
 }
 
-func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance) error {
+func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance, proccess func(step int)) error {
 	err := gsrv.SaveFiles(ctx, gVo)
 	if err != nil {
 		return err
 	}
+	proccess(30)
 	db := gsrv.store
 	if gVo.VNDBID != "" {
 		g, err := db.Game().Get(ctx, &model.Game{VNDBID: gVo.VNDBID}, &meta.GetOption{Include: []string{"ID"}})

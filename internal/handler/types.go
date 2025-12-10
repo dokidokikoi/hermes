@@ -8,7 +8,7 @@ import (
 
 type GameListReq struct {
 	Keyword        string      `json:"keyword"`
-	Tags           []string    `json:"tags"`
+	TagIDs         []uint      `json:"tags"`
 	Series         uint        `json:"series"`
 	Category       uint        `json:"category"`
 	Staff          uint        `json:"staff"`

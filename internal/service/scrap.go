@@ -8,6 +8,7 @@ import (
 	"izumi/db/data"
 	"izumi/model"
 	"izumi/scraper/event"
+	"izumi/utils"
 	"sync"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 )
 
 type IScrap interface {
-	Scrap(ctx context.Context, requestID string, objs []model.ScrapObj) (*sync.WaitGroup, error)
+	Scrap(ctx context.Context, requestID string, objs []model.ScrapObj, afterHook ...func(scraperName string, success bool)) (*sync.WaitGroup, error)
 }
 
 var _ IScrap = (*scrap)(nil)
@@ -27,7 +28,7 @@ type scrap struct {
 	store db.IStore
 }
 
-func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapObj) (*sync.WaitGroup, error) {
+func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapObj, afterHook ...func(scraperName string, success bool)) (*sync.WaitGroup, error) {
 	wait := &sync.WaitGroup{}
 	for _, req := range objs {
 		_, err := data.GetDataFactory().Task().Get(ctx, &model.Task{RequestID: requestID, Param: req.Url}, nil)
@@ -47,14 +48,17 @@ func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapO
 				if err != nil {
 					success = false
 				}
-				notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
+				notice.HubIns.SendBroadcast("", notice.NoticeResponse{
 					Rid:     requestID,
-					Event:   constant.EVENT_SCRAPER_DETAIL,
+					Event:   utils.ConcatEvent(constant.TOPIC_SCRAPER, constant.EVENT_SCRAPER_DETAIL),
 					Success: success,
 					Data: map[string]any{
 						"name": s.GetName(),
 					},
 				})
+				if len(afterHook) > 0 {
+					afterHook[0](s.GetName(), success)
+				}
 			}()
 
 			task := &model.Task{

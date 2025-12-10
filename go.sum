@@ -60,12 +60,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dokidokikoi/go-common v0.0.0-20251119103849-1766e32bb301 h1:A/mzmkkRN53XD8oWe+SjkHLQJ1qjUt8Xrzrivmac3Vs=
-github.com/dokidokikoi/go-common v0.0.0-20251119103849-1766e32bb301/go.mod h1:0VeqrSKEdPtAlWsgqe9IkoAwgwWHzy6MeF4Arnb5TEQ=
-github.com/dokidokikoi/go-common v0.0.0-20251121105330-cbb0ece1af54 h1:FzUVrBfaNgjT6SgXawxXwfISEbpRIZBLFqXUUF8P0ZY=
-github.com/dokidokikoi/go-common v0.0.0-20251121105330-cbb0ece1af54/go.mod h1:0VeqrSKEdPtAlWsgqe9IkoAwgwWHzy6MeF4Arnb5TEQ=
-github.com/dokidokikoi/go-common v0.0.0-20251129182436-161e910817fc h1:T3u7KdzchN+71siEb9X9rCKMRdNPSn0oetTglQe7pK0=
-github.com/dokidokikoi/go-common v0.0.0-20251129182436-161e910817fc/go.mod h1:0VeqrSKEdPtAlWsgqe9IkoAwgwWHzy6MeF4Arnb5TEQ=
+github.com/dokidokikoi/go-common v0.0.0-20251210084144-f5b5f1e1dc54 h1:m5TNvz7r3riupcY3WAfzKMXAheE7Z364jsFbA46N3xI=
+github.com/dokidokikoi/go-common v0.0.0-20251210084144-f5b5f1e1dc54/go.mod h1:0VeqrSKEdPtAlWsgqe9IkoAwgwWHzy6MeF4Arnb5TEQ=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=

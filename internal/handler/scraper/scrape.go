@@ -26,6 +26,7 @@ type AutoScrapeReq struct {
 	Objs    []model.ScrapObj `json:"objs"`
 	Path    string           `json:"path"`
 	Version string           `json:"version"`
+	Name    string           `json:"name"`
 }
 
 func (h Handler) AutoScrape(ctx context.Context, input *AutoScrapeReq, op *middleware.PreHandleOptions) (string, error) {
@@ -36,6 +37,7 @@ func (h Handler) AutoScrape(ctx context.Context, input *AutoScrapeReq, op *middl
 			ScrapObjs: input.Objs,
 			Path:      input.Path,
 			Version:   input.Version,
+			Name:      input.Name,
 		},
 	}
 	err := data.GetDataFactory().SystemTask().Create(ctx, t, nil)

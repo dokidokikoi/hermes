@@ -14,6 +14,7 @@ import (
 	"izumi/scraper/vndb"
 	"izumi/utils"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/abadojack/whatlanggo"
@@ -81,9 +82,9 @@ func AutoScrap(t *model.SystemTask) {
 				zaplog.L().Error("system update error", zap.Error(err))
 			}
 
-			err = notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
+			err = notice.HubIns.SendBroadcast("", notice.NoticeResponse{
 				Rid:     uuid.NewString(),
-				Event:   constant.EVENT_SCRAPER_AUTOSCRAP,
+				Event:   utils.ConcatEvent(constant.TOPIC_SCRAPER, constant.EVENT_SCRAPER_AUTOSCRAP),
 				Success: e == nil,
 				Message: result,
 			})
@@ -104,8 +105,47 @@ func AutoScrap(t *model.SystemTask) {
 			return
 		}
 
+		var (
+			proccess int32
+			total    int32 = 100
+			step     int32 = int32(50 / len(t.Param.ScrapObjs))
+		)
+		ctxWithCancel, cancel := context.WithCancel(context.TODO())
+		defer func() {
+			cancel()
+			notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+				Rid:   uuid.NewString(),
+				Event: utils.ConcatEvent(constant.TOPIC_SCRAPER, constant.EVENT_SCRAPER_AUTOSCRAPING),
+				Data: map[string]any{
+					"task_id":  t.ID,
+					"proccess": total,
+					"total":    total,
+				},
+			})
+		}()
+		go func() {
+			ticker := time.NewTicker(time.Millisecond * 500)
+			for {
+				select {
+				case <-ticker.C:
+					notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+						Rid:   uuid.NewString(),
+						Event: utils.ConcatEvent(constant.TOPIC_SCRAPER, constant.EVENT_SCRAPER_AUTOSCRAPING),
+						Data: map[string]any{
+							"task_id":  t.ID,
+							"proccess": atomic.LoadInt32(&proccess),
+							"total":    total,
+						},
+					})
+				case <-ctxWithCancel.Done():
+					return
+				}
+			}
+		}()
 		requestID := uuid.NewString()
-		wait, err := service.NewScrap(data.GetDataFactory()).Scrap(context.Background(), requestID, t.Param.ScrapObjs)
+		wait, err := service.NewScrap(data.GetDataFactory()).Scrap(context.Background(), requestID, t.Param.ScrapObjs, func(scraperName string, success bool) {
+			atomic.AddInt32(&proccess, step)
+		})
 		if err != nil {
 			e = err
 			result = err.Error()
@@ -329,6 +369,8 @@ func AutoScrap(t *model.SystemTask) {
 		err = srv.UpsertFull(context.Background(), &gVo, &model.GameInstance{
 			Path:    t.Param.Path,
 			Version: t.Param.Version,
+		}, func(step int) {
+			atomic.AddInt32(&proccess, int32(step))
 		})
 		if err != nil {
 			e = err

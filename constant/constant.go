@@ -11,9 +11,10 @@ const (
 )
 
 const (
-	EVENT_SCRAPER_SEARCH    = "search"
-	EVENT_SCRAPER_DETAIL    = "detail"
-	EVENT_SCRAPER_AUTOSCRAP = "autoscrap"
+	EVENT_SCRAPER_SEARCH       = "search"
+	EVENT_SCRAPER_DETAIL       = "detail"
+	EVENT_SCRAPER_AUTOSCRAP    = "autoscrap"
+	EVENT_SCRAPER_AUTOSCRAPING = "autoscraping"
 
 	EVENT_INFO_FILE_DOWNLOAD    = "download"
 	EVENT_INFO_FILE_DOWNLOADING = "downloading"

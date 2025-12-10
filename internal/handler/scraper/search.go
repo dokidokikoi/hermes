@@ -9,6 +9,7 @@ import (
 	"izumi/model"
 	"izumi/scraper"
 	"izumi/scraper/event"
+	"izumi/utils"
 	"time"
 
 	"github.com/dokidokikoi/go-common/middleware"
@@ -52,9 +53,9 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 		if e != nil {
 			success = false
 		}
-		notice.HubIns.SendBroadcast(constant.TOPIC_SCRAPER, notice.NoticeResponse{
+		notice.HubIns.SendBroadcast("", notice.NoticeResponse{
 			Rid:     requestID,
-			Event:   constant.EVENT_SCRAPER_SEARCH,
+			Event:   utils.ConcatEvent(constant.TOPIC_SCRAPER, constant.EVENT_SCRAPER_SEARCH),
 			Success: success,
 			Data: map[string]any{
 				"name": s.GetName(),

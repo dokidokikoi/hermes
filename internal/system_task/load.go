@@ -3,13 +3,16 @@ package systemtask
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"izumi/constant"
 	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/internal/service"
 	"izumi/model"
+	"izumi/utils"
 	"os"
 	"path/filepath"
+	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
@@ -73,6 +76,7 @@ func StartLoad() {
 }
 
 func LoadTask(infos []service.PathInfo, t *model.SystemTask) {
+	rid := uuid.NewString()
 	go func() {
 		defer func() {
 			err := data.GetDataFactory().SystemTask().Update(context.Background(), &model.SystemTask{
@@ -82,28 +86,64 @@ func LoadTask(infos []service.PathInfo, t *model.SystemTask) {
 			if err != nil {
 				zaplog.L().Error("system update error", zap.Error(err))
 			}
+			notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+				Rid:     rid,
+				Event:   utils.ConcatEvent(constant.TOPIC_INFO_FILE, constant.EVENT_INFO_FILE_LOAD),
+				Success: true,
+			})
+		}()
+		var (
+			path     string
+			proccess int
+			total    = len(infos)
+			message  string
+		)
+		ctxWithCancel, cancel := context.WithCancel(context.TODO())
+		defer func() {
+			cancel()
+			notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+				Rid:     rid,
+				Event:   utils.ConcatEvent(constant.TOPIC_INFO_FILE, constant.EVENT_INFO_FILE_LOADING),
+				Success: true,
+				Data: map[string]any{
+					"task_id":  t.ID,
+					"proccess": total,
+					"total":    total,
+				},
+			})
+		}()
+		go func() {
+			ticker := time.NewTicker(time.Millisecond * 500)
+			for {
+				select {
+				case <-ticker.C:
+					notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+						Rid:     rid,
+						Event:   utils.ConcatEvent(constant.TOPIC_INFO_FILE, constant.EVENT_INFO_FILE_LOADING),
+						Success: message == "",
+						Message: message,
+						Data: map[string]any{
+							"task_id":  t.ID,
+							"path":     path,
+							"proccess": proccess,
+							"total":    total,
+						},
+					})
+				case <-ctxWithCancel.Done():
+					return
+				}
+			}
 		}()
 		for i, info := range infos {
 			err := load(context.Background(), info)
 			if err != nil {
 				zaplog.L().Error("load info file failed", zap.String("path", info.Path), zap.Error(err))
+				message = fmt.Sprintf("load '%s' error", info.Path)
+			} else {
+				message = ""
 			}
-			notice.HubIns.SendBroadcast(constant.TOPIC_INFO_FILE, notice.NoticeResponse{
-				Rid:     uuid.NewString(),
-				Event:   constant.EVENT_INFO_FILE_LOAD,
-				Success: err == nil,
-				Message: func() string {
-					if err != nil {
-						return err.Error()
-					}
-					return ""
-				}(),
-				Data: map[string]any{
-					"task_id":  t.ID,
-					"path":     info.Path,
-					"proccess": i + 1,
-				},
-			})
+			proccess = i + 1
+			path = info.Path
 		}
 	}()
 }

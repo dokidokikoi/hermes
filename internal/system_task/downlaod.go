@@ -2,10 +2,13 @@ package systemtask
 
 import (
 	"context"
+	"fmt"
 	"izumi/constant"
 	"izumi/db/data"
 	"izumi/internal/service"
 	"izumi/model"
+	"izumi/utils"
+	"time"
 
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	meta "github.com/dokidokikoi/go-common/meta/option"
@@ -55,6 +58,7 @@ func StartDownload() {
 }
 
 func DownloadTask(gs []*model.Game, t *model.SystemTask) {
+	rid := uuid.NewString()
 	go func() {
 		defer func() {
 			err := data.GetDataFactory().SystemTask().Update(context.Background(), &model.SystemTask{
@@ -64,34 +68,65 @@ func DownloadTask(gs []*model.Game, t *model.SystemTask) {
 			if err != nil {
 				zaplog.L().Error("system update error", zap.Error(err))
 			}
+			notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+				Rid:     rid,
+				Event:   utils.ConcatEvent(constant.TOPIC_INFO_FILE, constant.EVENT_INFO_FILE_DOWNLOAD),
+				Success: true,
+			})
+		}()
+		var (
+			gid      uint
+			proccess int
+			total    = len(gs)
+			message  string
+		)
+		ctxWithCancel, cancel := context.WithCancel(context.TODO())
+		defer func() {
+			cancel()
+			notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+				Rid:     uuid.NewString(),
+				Event:   utils.ConcatEvent(constant.TOPIC_SCRAPER, constant.EVENT_INFO_FILE_DOWNLOADING),
+				Success: true,
+				Data: map[string]any{
+					"task_id":  t.ID,
+					"proccess": total,
+					"total":    total,
+				},
+			})
+		}()
+		go func() {
+			ticker := time.NewTicker(time.Millisecond * 500)
+			for {
+				select {
+				case <-ticker.C:
+					notice.HubIns.SendBroadcast("", notice.NoticeResponse{
+						Rid:     rid,
+						Event:   utils.ConcatEvent(constant.TOPIC_INFO_FILE, constant.EVENT_INFO_FILE_DOWNLOADING),
+						Success: message == "",
+						Message: message,
+						Data: map[string]any{
+							"task_id":  t.ID,
+							"game_id":  gid,
+							"proccess": proccess,
+							"total":    total,
+						},
+					})
+				case <-ctxWithCancel.Done():
+					return
+				}
+			}
 		}()
 		srv := service.NewGame(data.GetDataFactory())
 		for i, g := range gs {
 			err := srv.DownloadInfo(context.Background(), g.ID, t.CreatedAt)
 			if err != nil {
 				zaplog.L().Error("downloadInfo", zap.Error(err))
+				message = fmt.Sprintf("download '%s' error", g.Name)
+			} else {
+				message = ""
 			}
-			notice.HubIns.SendBroadcast(constant.TOPIC_INFO_FILE, notice.NoticeResponse{
-				Rid:   uuid.NewString(),
-				Event: constant.EVENT_INFO_FILE_DOWNLOADING,
-				Message: func() string {
-					if err != nil {
-						return err.Error()
-					}
-					return ""
-				}(),
-				Data: map[string]any{
-					"task_id":  t.ID,
-					"game_id":  g.ID,
-					"proccess": i + 1,
-				},
-			})
+			proccess = i + 1
+			gid = g.ID
 		}
-		notice.HubIns.SendBroadcast(constant.TOPIC_INFO_FILE, notice.NoticeResponse{
-			Rid:     uuid.NewString(),
-			Event:   constant.EVENT_INFO_FILE_DOWNLOAD,
-			Success: true,
-		})
 	}()
-
 }

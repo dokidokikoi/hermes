@@ -50,7 +50,7 @@ func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
 				{
-					Field:    "text",
+					Field:    "alias",
 					Operator: meta.LIKE,
 					Value:    fmt.Sprintf("%%%s%%", keyword),
 				},
@@ -75,7 +75,7 @@ func GameWhereNodeKeyword(ctx context.Context, param handler.GameListReq, node *
 	return node, opt
 }
 func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {
-	if len(param.Tags) < 1 {
+	if len(param.TagIDs) < 1 {
 		return node, opt
 	}
 
@@ -83,38 +83,30 @@ func GameWhereNodeTag(ctx context.Context, param handler.GameListReq, node *meta
 		o = opt
 		n = node
 	}()
-	tmpdb := data.GetDataFactory().Tag().ListComplexDB(ctx, &model.Tag{}, &meta.WhereNode{
-		Conditions: []*meta.Condition{
-			{
-				Field:    "name",
-				Operator: meta.IN,
-				Value:    param.Tags,
-			},
-		},
-	}, nil)
-	db := data.GetDataFactory().GameTag().ListDB(ctx, &model.GameTag{}, &meta.ListOption{
-		GetOption: meta.GetOption{
-			Join: []*meta.Join{
+	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
+		Method:         meta.INNER_JOIN,
+		Table:          model.Game{}.TableName(),
+		JoinTable:      model.GameTag{}.TableName(),
+		TableField:     "id",
+		JoinTableField: "game_id",
+		JoinTableCondition: []meta.Condition{{
+			Field:    "tag_id",
+			Operator: meta.IN,
+			Value:    param.TagIDs,
+		}},
+	})
+	opt.Group = meta.Group{
+		Fields: []string{"id"},
+		Having: &meta.WhereNode{
+			Conditions: []*meta.Condition{
 				{
-					Method:          meta.INNER_JOIN,
-					Table:           model.GameTag{}.TableName(),
-					InnerQuery:      tmpdb,
-					InnerQueryAlias: "t1",
-					TableField:      "tag_id",
-					JoinTableField:  "id",
+					Field:    "COUNT(DISTINCT tag_id)",
+					Operator: meta.EQUAL,
+					Value:    len(param.TagIDs),
 				},
 			},
-			Select: []string{"DISTINCT \"game_tag\".\"game_id\""},
 		},
-	})
-	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
-		Method:          meta.INNER_JOIN,
-		Table:           model.Game{}.TableName(),
-		InnerQuery:      db,
-		InnerQueryAlias: "game_tag",
-		TableField:      "id",
-		JoinTableField:  "game_id",
-	})
+	}
 	return
 }
 func GameWhereNodeCharacter(ctx context.Context, param handler.GameListReq, node *meta.WhereNode, opt *meta.ListOption) (n *meta.WhereNode, o *meta.ListOption) {

@@ -34,6 +34,7 @@ type SystemTaskParam struct {
 	ScrapObjs []ScrapObj `json:"objs"`
 	Path      string     `json:"path"`
 	Version   string     `json:"version"`
+	Name      string     `json:"name"`
 }
 
 func (p *SystemTaskParam) Scan(src any) error {
@@ -66,7 +67,7 @@ type SystemTask struct {
 	Param     SystemTaskParam `gorm:"json" json:"param"`
 	Result    string          `json:"result"`
 	CreatedAt time.Time       `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt time.Time       `gorm:"autoUpdateTime:milli"`
+	UpdatedAt time.Time       `gorm:"autoUpdateTime:milli" json:"updated_at"`
 }
 
 func (SystemTask) TableName() string {

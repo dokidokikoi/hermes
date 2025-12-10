@@ -5,12 +5,14 @@ import (
 	"izumi/db/data"
 	"izumi/model"
 
-	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/dokidokikoi/go-common/middleware"
+	"github.com/dokidokikoi/go-common/query"
 )
 
 type ListReq struct {
-	Type model.SystemTaskType `form:"type"`
+	query.PageQuery
+	Type  model.SystemTaskType  `form:"type"`
+	State model.SystemTaskState `form:"state"`
 }
 
 type ListResponse struct {
@@ -18,9 +20,11 @@ type ListResponse struct {
 }
 
 func (h *Handler) List(ctx context.Context, input *ListReq, op *middleware.PreHandleOptions) (*ListResponse, error) {
+	input.Order = "id desc"
 	ts, err := data.GetDataFactory().SystemTask().List(ctx, &model.SystemTask{
-		Type: input.Type,
-	}, &meta.ListOption{Order: "id desc", Page: 1, PageSize: 5})
+		Type:  input.Type,
+		State: input.State,
+	}, input.GetListOption())
 	if err != nil {
 		return nil, err
 	}
