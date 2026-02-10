@@ -258,7 +258,7 @@ func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
 func (ds *DlSite) GetItemCover(node *goquery.Document) (string, []string, error) {
 	images := []string{}
 	node.Find("div.product-slider div.product-slider-data div").Each(func(i int, s *goquery.Selection) {
-		url := s.AttrOr("data-src", "")
+		url := strings.TrimSpace(s.AttrOr("data-src", ""))
 		if !strings.HasPrefix(url, "https:") {
 			url = "https:" + url
 		}
@@ -322,7 +322,7 @@ func (ds *DlSite) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 	characters := []handler.CharacterVo{}
 	staff := []handler.StaffVo{}
 	node.Find("div.work_parts_container div.work_parts.type_multiimages .work_parts_area .work_parts_multiimage li.work_parts_multiimage_item").Each(func(i int, s *goquery.Selection) {
-		url := s.Find(".image a").AttrOr("href", "")
+		url := strings.TrimSpace(s.Find(".image a").AttrOr("href", ""))
 		if !strings.HasPrefix(url, "https:") {
 			url = "https:" + url
 		}
