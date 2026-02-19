@@ -101,7 +101,7 @@ func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error
 	root.Find("#search_result_list table.n_worklist tr").Each(func(i int, s *goquery.Selection) {
 		url := s.Find("div.work_thumb a img").First().AttrOr("src", "")
 		if !strings.HasPrefix(url, "https:") {
-			url = "https:" + url
+			url = "https:" + strings.TrimSpace(url)
 		}
 		items = append(items, &scraper.SearchItem{
 			Name:  s.Find("dt.work_name a").AttrOr("title", ""),
