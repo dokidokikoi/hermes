@@ -260,7 +260,7 @@ func (ds *DlSite) GetItemCover(node *goquery.Document) (string, []string, error)
 	node.Find("div.product-slider div.product-slider-data div").Each(func(i int, s *goquery.Selection) {
 		url := strings.TrimSpace(s.AttrOr("data-src", ""))
 		if !strings.HasPrefix(url, "https:") {
-			url = "https:" + url
+			url = "https:" + strings.TrimSpace(url)
 		}
 		images = append(images, url)
 	})
