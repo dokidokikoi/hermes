@@ -327,7 +327,7 @@ func (gc *GetChu) GetItemStory(node *goquery.Document) (string, error) {
 func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterVo, []handler.StaffVo, error) {
 	var characters []handler.CharacterVo
 	var staff []handler.StaffVo
-	node.Find("div.tabletitle").Each(func(i int, selection *goquery.Selection) {
+	node.Find(".tabletitle").Each(func(i int, selection *goquery.Selection) {
 		title, err := tools.Jp2Utf8([]byte(selection.Text()))
 		if err != nil {
 			return
