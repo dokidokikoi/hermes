@@ -102,7 +102,12 @@ func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error
 			gc.logger.Error("jp encode err", zap.Error(err))
 		}
 		url := s.Find("#package_block a img").AttrOr("data-original", "")
-		urls = append(urls, url)
+		if !strings.Contains(url, "news/now.jpg") {
+			urls = append(urls, url)
+		} else {
+			url = ""
+		}
+
 		items = append(items, &scraper.SearchItem{
 			Name:        name,
 			URl:         gc.AbsUrl(s.Find("#package_block a").AttrOr("href", "")),
@@ -145,6 +150,9 @@ func (gc *GetChu) DoReq(method, uri string, header map[string]string, body inter
 }
 
 func (gc *GetChu) AbsUrl(uri string) string {
+	if strings.Contains(uri, "news/now.jpg") {
+		return ""
+	}
 	return tools.AbsUrl(gc.Domain, uri)
 }
 
@@ -267,7 +275,10 @@ func (gc *GetChu) GetItemName(node *goquery.Document) (string, error) {
 func (gc *GetChu) GetItemCover(node *goquery.Document, id string) (cover string, images []string, err error) {
 	cover = gc.AbsUrl(node.Find("#soft_table tr").First().Find("a").First().Find("img").AttrOr("src", ""))
 
-	urls := []string{cover}
+	urls := []string{}
+	if cover != "" {
+		urls = append(urls, cover)
+	}
 	defer func() {
 		res := utils.SaveBunchTmpFile(func(url string) ([]byte, error) {
 			return gc.DoReq(http.MethodGet, url, nil, nil)
@@ -297,9 +308,9 @@ func (gc *GetChu) GetItemCover(node *goquery.Document, id string) (cover string,
 	}
 
 	root.Find(".sample_table_cell").Each(func(i int, s *goquery.Selection) {
-		image := s.Find("a").AttrOr("href", "")
+		image := gc.AbsUrl(s.Find("a").AttrOr("href", ""))
 		if image != "" {
-			urls = append(urls, gc.AbsUrl(image))
+			urls = append(urls, image)
 		}
 	})
 
@@ -382,7 +393,6 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 					Alias:   []string{alias},
 					Summary: introduction,
 					Cover:   gc.AbsUrl(avatar),
-					Images:  []string{gc.AbsUrl(image)},
 					CV:      s,
 				})
 
