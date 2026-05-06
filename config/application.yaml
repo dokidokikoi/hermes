@@ -13,4 +13,12 @@ log:
     level_range: "[info,error)"
   - filename: ./log/error.log
     level_range: "[error,)"
+
+plugin:
+  lua:
+    enabled: true
+    script_dir: ./scraper/plugins
+    vm_pool_size: 10
+    hot_reload: true
+    execution_timeout: 30s
   

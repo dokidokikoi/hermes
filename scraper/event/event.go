@@ -8,8 +8,12 @@ import (
 	"izumi/scraper/dlsite"
 	"izumi/scraper/getchu"
 	"izumi/scraper/ggbases"
+	"izumi/scraper/plugin/lua"
 	"izumi/scraper/twodfan"
 	"izumi/scraper/vndb"
+
+	"go.uber.org/zap"
+	zaplog "github.com/dokidokikoi/go-common/log/zap"
 )
 
 var GameScraperConstructors = map[string]func(header map[string]string, proxy string) scraper.IGameScraper{
@@ -20,6 +24,9 @@ var GameScraperConstructors = map[string]func(header map[string]string, proxy st
 	twodfan.Name: twodfan.NewTwoDFan,
 	vndb.Name:    vndb.NewVNDB,
 }
+
+// LuaLoader is the Lua plugin loader
+var LuaLoader *lua.Loader
 
 var GameScraperMap = map[string]scraper.IGameScraper{
 	// bangumi.BangumiScraper.GetName(): bangumi.BangumiScraper,
@@ -82,4 +89,41 @@ var GameScraperPolicyMap = model.ScraperPolicy{
 			"User-Agent": vndb.DefaultHeader_UserAgent,
 		},
 	},
+}
+
+// InitLuaPlugins initializes the Lua plugin system
+func InitLuaPlugins() error {
+	if config.Cfg.PluginConfig.Lua.Enabled {
+		LuaLoader = lua.NewLoader(zaplog.L(), config.Cfg.PluginConfig.Lua.VMPoolSize, config.Cfg.PluginConfig.Lua.ExecutionTimeout)
+		if err := LuaLoader.LoadFromDir(config.Cfg.PluginConfig.Lua.ScriptDir); err != nil {
+			zaplog.L().Error("failed to load Lua plugins", zap.Error(err))
+			return err
+		}
+
+		// Start hot reload if enabled
+		if config.Cfg.PluginConfig.Lua.HotReload {
+			hotReload, err := lua.NewHotReload(LuaLoader, zaplog.L())
+			if err != nil {
+				zaplog.L().Error("failed to create hot reload", zap.Error(err))
+				return err
+			}
+			if err := hotReload.Start(); err != nil {
+				zaplog.L().Error("failed to start hot reload", zap.Error(err))
+				return err
+			}
+		}
+
+		// Register Lua plugins to the game scraper map
+		for name, luaScraper := range LuaLoader.GetAll() {
+			RegisterScraper(luaScraper)
+			GameScraperConstructors[name] = func(header map[string]string, proxy string) scraper.IGameScraper {
+				// Note: Lua scrapers are singletons, we just update their headers/proxy
+				luaScraper.SetHeader(header)
+				luaScraper.SetProxy(proxy)
+				return luaScraper
+			}
+		}
+		zaplog.L().Info("Lua plugins initialized", zap.Int("count", len(LuaLoader.GetNames())))
+	}
+	return nil
 }

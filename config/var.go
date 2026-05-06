@@ -17,6 +17,7 @@ var (
 	TmpDir           = filepath.Join(os.TempDir(), constant.PROJECT_NAME)
 	DataDir          = ""
 	DefaultRetryCnt  = 5
+	Cfg              *config
 )
 
 func init() {
