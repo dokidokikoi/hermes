@@ -34,7 +34,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := getChuScraper.Search("彼女", 1)
+	items, err := getChuScraper.SearchGame("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := getChuScraper.GetItem("https://www.getchu.com/soft.phtml?id=1273918")
+	item, err := getChuScraper.GetGameItem("https://www.getchu.com/soft.phtml?id=1273918")
 	if err != nil {
 		panic(err)
 	}

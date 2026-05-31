@@ -71,7 +71,7 @@ func (tdf *TwoDFan) SetProxy(proxy string) {
 	tdf.Unlock()
 }
 
-func (tdf *TwoDFan) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (tdf *TwoDFan) SearchGame(keyword string, page int) ([]*scraper.SearchItem, error) {
 	u := ""
 	if page > 1 {
 		u = fmt.Sprintf(tdf.SearchUri, fmt.Sprintf("/page/%d", page), strings.ReplaceAll(strings.TrimSpace(keyword), " ", "+"))
@@ -138,7 +138,7 @@ func (tdf *TwoDFan) AbsUrl(uri string) string {
 	return tools.AbsUrl(tdf.Domain, uri)
 }
 
-func (tdf *TwoDFan) GetItem(uri string) (*scraper.GameItem, error) {
+func (tdf *TwoDFan) GetGameItem(uri string) (*scraper.GameItem, error) {
 	data, err := tdf.DoReq(http.MethodGet, uri, nil, nil)
 	if err != nil {
 		return nil, err

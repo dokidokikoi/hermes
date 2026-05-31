@@ -29,7 +29,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := ggBasesScraper.Search("Agent mirai", 1)
+	items, err := ggBasesScraper.SearchGame("Agent mirai", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +54,7 @@ func TestReq(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := ggBasesScraper.GetItem("https://ggbases.dlgal.com/view.so?id=125945")
+	item, err := ggBasesScraper.GetGameItem("https://ggbases.dlgal.com/view.so?id=125945")
 	if err != nil {
 		panic(err)
 	}

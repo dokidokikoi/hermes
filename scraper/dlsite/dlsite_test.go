@@ -33,7 +33,7 @@ func init() {
 }
 
 func TestSearch(t *testing.T) {
-	items, err := dlSiteScraper.Search("Agent mirai", 1)
+	items, err := dlSiteScraper.SearchGame("Agent mirai", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -115,7 +115,7 @@ func TestGetItemlinks(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	item, err := dlSiteScraper.GetItem("https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html")
+	item, err := dlSiteScraper.GetGameItem("https://www.dlsite.com/pro/work/=/product_id/VJ01001190.html")
 	if err != nil {
 		panic(err)
 	}

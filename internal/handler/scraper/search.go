@@ -96,7 +96,7 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 		}
 	}()
 
-	items, err := s.Search(input.Keyword, input.Page)
+	items, err := s.SearchGame(input.Keyword, input.Page)
 	task.EndAt = time.Now()
 	task.Duration = int64(task.EndAt.Sub(task.StartAt).Seconds())
 	if err != nil {

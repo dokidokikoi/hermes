@@ -1,15 +1,100 @@
 package model
 
-import "time"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
+const (
+	NS_RECLASS   = "reclass"
+	NS_LANUGAGE  = "language"
+	NS_PARODY    = "parody"
+	NS_CHARACTER = "character"
+	NS_GROUP     = "group"
+	NS_ARTIST    = "artist"
+	NS_COSPLAYER = "cosplayer"
+	NS_MALE      = "male"
+	NS_FEMALE    = "female"
+	NS_MIXED     = "mixed"
+	NS_OTHER     = "other"
+	NS_LOCATION  = "location"
+
+	NS_RECLASS_ABBR   = "r"
+	NS_LANUGAGE_ABBR  = "l"
+	NS_PARODY_ABBR    = "p"
+	NS_CHARACTER_ABBR = "c"
+	NS_GROUP_ABBR     = "g"
+	NS_ARTIST_ABBR    = "a"
+	NS_COSPLAYER_ABBR = "cos"
+	NS_MALE_ABBR      = "m"
+	NS_FEMALE_ABBR    = "f"
+	NS_MIXED_ABBR     = "x"
+	NS_OTHER_ABBR     = "o"
+	NS_LOCATION_ABBR  = "loc"
+)
 
 type Tag struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	Name      string    `gorm:"type:varchar(255);unique" json:"name"`
+	NS        string    `grom:"type:varchar(16);uniqueIndex:uk_tag" json:"ns"`
+	Key       string    `gorm:"type:varchar(64);uniqueIndex:uk_tag" json:"key"`
+	Name      string    `gorm:"type:varchar(255);" json:"name"`
+	Intro     string    `grom:"type:varchar(512);" json:"intro"`
 	Lang      string    `gorm:"type:varchar(10);" json:"lang"`
+	Extra     TagExtra  `gorm:"type:json" json:"extra"`
 	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
 
 func (Tag) TableName() string {
 	return "tags"
+}
+
+type TagExtra struct {
+	Plat string `json:"plat"`
+	ID   string `json:"id"`
+}
+
+func (a *TagExtra) scanBytes(src []byte) error {
+	return json.Unmarshal(src, a)
+}
+
+// Scan implements the sql.Scanner interface.
+func (a *TagExtra) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case []byte:
+		return a.scanBytes(src)
+	case string:
+		return a.scanBytes([]byte(src))
+	case nil:
+		*a = TagExtra{}
+		return nil
+	}
+
+	return fmt.Errorf("cannot convert %T to Link", src)
+}
+
+// Value implements the driver.Valuer interface.
+func (a *TagExtra) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+
+	data, err := json.Marshal(a)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+type DecidedTag struct {
+	Plat  string `gorm:"type:varchar(32);primaryKey" json:"plat"`
+	RelID string `grom:"type:varchar(128);promaryKey" json:"rel_id"`
+	TagID uint   `json:"tag_id"`
+}
+
+func (TagExtra) TableName() string {
+	return "decided_tag"
 }

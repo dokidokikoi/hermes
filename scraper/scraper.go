@@ -7,7 +7,6 @@ import (
 type GameItem struct {
 	handler.GameVo
 	ScraperName string `json:"scraper_name"`
-	// AllImages   []string `json:"all_images"`
 }
 
 type SearchItem struct {
@@ -21,8 +20,23 @@ type SearchItem struct {
 }
 
 type IGameScraper interface {
-	GetItem(url string) (*GameItem, error)
-	Search(keyword string, page int) ([]*SearchItem, error)
+	GetGameItem(url string) (*GameItem, error)
+	SearchGame(keyword string, page int) ([]*SearchItem, error)
+
+	GetName() string
+	SetHeader(header map[string]string)
+	SetProxy(proxy string)
+}
+
+type ComicItem struct {
+	handler.GameVo
+	ScraperName string `json:"scraper_name"`
+}
+
+type IComicScraper interface {
+	GetComicItem(url string) (*GameItem, error)
+	SearchComic(keyword string, page int) ([]*SearchItem, error)
+
 	GetName() string
 	SetHeader(header map[string]string)
 	SetProxy(proxy string)

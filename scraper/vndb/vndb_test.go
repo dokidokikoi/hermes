@@ -16,7 +16,7 @@ func init() {
 }
 
 func Test_GetItem(t *testing.T) {
-	item, err := vndbScraper.GetItem("v2002")
+	item, err := vndbScraper.GetGameItem("v2002")
 	if err != nil {
 		t.Fatal(err)
 	}

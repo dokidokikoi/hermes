@@ -78,7 +78,7 @@ func (ds *DlSite) SetProxy(proxy string) {
 	ds.Unlock()
 }
 
-func (ds *DlSite) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (ds *DlSite) SearchGame(keyword string, page int) ([]*scraper.SearchItem, error) {
 	DlSiteSearchUrl[1] = strings.ReplaceAll(strings.TrimSpace(keyword), " ", "+")
 	DlSiteSearchUrl[3] = strconv.Itoa(page)
 	uri := strings.Join(DlSiteSearchUrl, "")
@@ -141,7 +141,7 @@ func (ds *DlSite) DoReq(method, uri string, header map[string]string, body inter
 	return rsp.Bytes(), nil
 }
 
-func (ds *DlSite) GetItem(uri string) (*scraper.GameItem, error) {
+func (ds *DlSite) GetGameItem(uri string) (*scraper.GameItem, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err

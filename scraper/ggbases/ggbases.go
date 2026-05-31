@@ -80,7 +80,7 @@ func (gg *GGBases) SetProxy(proxy string) {
 	gg.Unlock()
 }
 
-func (gg *GGBases) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (gg *GGBases) SearchGame(keyword string, page int) ([]*scraper.SearchItem, error) {
 	data, err := gg.DoReq(http.MethodGet, fmt.Sprintf(gg.SearchUri, page-1, strings.ReplaceAll(strings.TrimSpace(keyword), " ", "+")), map[string]string{
 		"Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
 	}, nil)
@@ -139,7 +139,7 @@ func (gg *GGBases) DoReq(method, uri string, header map[string]string, body inte
 	return rsp.Bytes(), nil
 }
 
-func (gg *GGBases) GetItem(uri string) (*scraper.GameItem, error) {
+func (gg *GGBases) GetGameItem(uri string) (*scraper.GameItem, error) {
 	// 防止同时请求
 	gg.getitemChan <- struct{}{}
 	go func() {

@@ -77,7 +77,7 @@ func (v *VNDB) SetProxy(proxy string) {
 	v.Unlock()
 }
 
-func (v *VNDB) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (v *VNDB) SearchGame(keyword string, page int) ([]*scraper.SearchItem, error) {
 	var (
 		err  error = errors.New("")
 		cnt  int
@@ -124,7 +124,7 @@ func (v *VNDB) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
 	return items, nil
 }
 
-func (v *VNDB) GetItem(uri string) (*scraper.GameItem, error) {
+func (v *VNDB) GetGameItem(uri string) (*scraper.GameItem, error) {
 	var (
 		err  error = errors.New("")
 		cnt  int

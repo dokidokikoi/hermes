@@ -81,7 +81,7 @@ func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapO
 					return
 				}
 			}()
-			item, err := s.GetItem(req.Url)
+			item, err := s.GetGameItem(req.Url)
 			task.EndAt = time.Now()
 			task.Duration = int64(task.EndAt.Sub(task.StartAt).Seconds())
 			if err != nil {

@@ -75,7 +75,7 @@ func (gc *GetChu) SetProxy(proxy string) {
 	gc.RUnlock()
 }
 
-func (gc *GetChu) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (gc *GetChu) SearchGame(keyword string, page int) ([]*scraper.SearchItem, error) {
 	keyword, err := tools.Utf82Jp([]byte(strings.ReplaceAll(strings.TrimSpace(keyword), " ", ",")))
 	if err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ func (gc *GetChu) AbsUrl(uri string) string {
 	return tools.AbsUrl(gc.Domain, uri)
 }
 
-func (gc *GetChu) GetItem(uri string) (*scraper.GameItem, error) {
+func (gc *GetChu) GetGameItem(uri string) (*scraper.GameItem, error) {
 	data, err := gc.DoReq(http.MethodGet, uri, nil, nil)
 	if err != nil {
 		return nil, err

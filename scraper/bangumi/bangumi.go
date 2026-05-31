@@ -87,7 +87,7 @@ func (b *Bangumi) AbsUrl(uri string) string {
 	return tools.AbsUrl(b.Domain, uri)
 }
 
-func (b *Bangumi) Search(keyword string, page int) ([]*scraper.SearchItem, error) {
+func (b *Bangumi) SearchGame(keyword string, page int) ([]*scraper.SearchItem, error) {
 	param := SearchParam{
 		Filter: SearchParamFilter{
 			Nsfw: true,
@@ -135,7 +135,7 @@ func (b *Bangumi) Search(keyword string, page int) ([]*scraper.SearchItem, error
 	return items, nil
 }
 
-func (b *Bangumi) GetItem(uri string) (*scraper.GameItem, error) {
+func (b *Bangumi) GetGameItem(uri string) (*scraper.GameItem, error) {
 	data, err := b.DoReq(http.MethodGet, uri, nil, nil)
 	if err != nil {
 		return nil, err

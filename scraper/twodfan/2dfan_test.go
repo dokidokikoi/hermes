@@ -29,7 +29,7 @@ func init() {
 }
 
 func TestTwoDFan_GetItem(t *testing.T) {
-	item, err := twoDFanScraper.GetItem("https://2dfan.com/subjects/15193")
+	item, err := twoDFanScraper.GetGameItem("https://2dfan.com/subjects/15193")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -38,7 +38,7 @@ func TestTwoDFan_GetItem(t *testing.T) {
 }
 
 func TestTwoDFan_Search(t *testing.T) {
-	items, err := twoDFanScraper.Search("彼女", 1)
+	items, err := twoDFanScraper.SearchGame("彼女", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +64,7 @@ func TestMain(t *testing.T) {
 }
 
 func TestTwoDFan_GetItemName(t *testing.T) {
-	items, err := twoDFanScraper.Search("ボクの彼女", 1)
+	items, err := twoDFanScraper.SearchGame("ボクの彼女", 1)
 	if err != nil {
 		panic(err)
 	}
