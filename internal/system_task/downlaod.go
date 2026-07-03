@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"izumi/constant"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/service"
 	"izumi/model"
 	"izumi/utils"
@@ -18,7 +18,7 @@ import (
 )
 
 func StartDownload() {
-	ts, err := data.GetDataFactory().SystemTask().List(context.Background(), &model.SystemTask{
+	ts, err := db.GetStore().SystemTask().List(context.Background(), &model.SystemTask{
 		Type:  model.SystemTaskTypeDownload,
 		State: model.SystemTaskStateRunning,
 	}, &meta.ListOption{Order: "id desc"})
@@ -29,7 +29,7 @@ func StartDownload() {
 	if len(ts) == 0 {
 		return
 	}
-	err = data.GetDataFactory().SystemTask().UpdateByWhere(
+	err = db.GetStore().SystemTask().UpdateByWhere(
 		context.Background(),
 		&meta.WhereNode{
 			Conditions: []*meta.Condition{
@@ -67,7 +67,7 @@ func StartDownload() {
 		zaplog.L().Error("system update error", zap.Error(err))
 	}
 
-	gs, err := data.GetDataFactory().Game().List(context.Background(), &model.Game{}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
+	gs, err := db.GetStore().Game().List(context.Background(), &model.Game{}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
 	if err != nil {
 		zaplog.L().Error("list game error", zap.Error(err))
 		return
@@ -79,7 +79,7 @@ func DownloadTask(gs []*model.Game, t *model.SystemTask) {
 	rid := uuid.NewString()
 	go func() {
 		defer func() {
-			err := data.GetDataFactory().SystemTask().Update(context.Background(), &model.SystemTask{
+			err := db.GetStore().SystemTask().Update(context.Background(), &model.SystemTask{
 				ID:    t.ID,
 				State: model.SystemTaskStateDone,
 			}, nil)
@@ -134,7 +134,7 @@ func DownloadTask(gs []*model.Game, t *model.SystemTask) {
 				}
 			}
 		}()
-		srv := service.NewGame(data.GetDataFactory())
+		srv := service.NewGame(db.GetStore())
 		for i, g := range gs {
 			err := srv.DownloadInfo(context.Background(), g.ID, t.CreatedAt)
 			if err != nil {

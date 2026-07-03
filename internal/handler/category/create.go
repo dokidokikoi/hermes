@@ -3,7 +3,7 @@ package category
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strings"
 
@@ -14,9 +14,9 @@ import (
 
 func (h Handler) Create(ctx context.Context, input *model.Category, op *middleware.PreHandleOptions) (uint, error) {
 	input.Name = strings.ToUpper(input.Name)
-	if err := data.GetDataFactory().Category().Create(ctx, input, nil); err != nil {
+	if err := db.GetStore().Category().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			category, err := data.GetDataFactory().Category().Get(ctx, &model.Category{Name: input.Name}, &meta.GetOption{})
+			category, err := db.GetStore().Category().Get(ctx, &model.Category{Name: input.Name}, &meta.GetOption{})
 			if err != nil {
 				return 0, err
 			}

@@ -2,7 +2,7 @@ package character
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 	"strconv"
@@ -17,12 +17,12 @@ func (h Handler) Get(ctx context.Context, req *struct{}, op *middleware.PreHandl
 	if err != nil {
 		return nil, err
 	}
-	c, err := data.GetDataFactory().Character().Get(ctx, &model.Character{ID: uint(id)}, nil)
+	c, err := db.GetStore().Character().Get(ctx, &model.Character{ID: uint(id)}, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	gs, err := data.GetDataFactory().Game().List(ctx, &model.Game{}, &meta.ListOption{
+	gs, err := db.GetStore().Game().List(ctx, &model.Game{}, &meta.ListOption{
 		GetOption: meta.GetOption{
 			Join: []*meta.Join{
 				{
@@ -69,12 +69,10 @@ func (h Handler) Get(ctx context.Context, req *struct{}, op *middleware.PreHandl
 			Alias:     c.CV.Alias,
 			Cover:     c.CV.Cover,
 			Images:    c.CV.Images,
-			Tags:      c.CV.Tags,
 			Summary:   c.CV.Summary,
 			Gender:    c.CV.Gender,
 			CreatedAt: c.CV.CreatedAt,
 		},
-		Tags:      c.Tags,
 		CreatedAt: c.CreatedAt,
 		Games:     cgvos,
 	}

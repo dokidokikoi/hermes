@@ -3,7 +3,7 @@ package series
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strings"
 
@@ -13,9 +13,9 @@ import (
 
 func (h Handler) Create(ctx context.Context, input *model.Series, op *middleware.PreHandleOptions) (uint, error) {
 	input.Name = strings.TrimSpace(input.Name)
-	if err := data.GetDataFactory().Series().Create(ctx, input, nil); err != nil {
+	if err := db.GetStore().Series().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			c, err := data.GetDataFactory().Series().Get(ctx, &model.Series{Name: input.Name}, nil)
+			c, err := db.GetStore().Series().Get(ctx, &model.Series{Name: input.Name}, nil)
 			if err != nil {
 				return 0, err
 			}

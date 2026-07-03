@@ -192,9 +192,8 @@ func (v *VNDB) GetGameItem(uri string) (*scraper.GameItem, error) {
 						links = append(links, Link2Link(extLink))
 					}
 					brands = append(brands, &model.Brand{
-						VNDBID: dev.ID,
-						Name:   dev.Name,
-						Links:  links,
+						Name:  dev.Name,
+						Links: links,
 					})
 				}
 				return brands

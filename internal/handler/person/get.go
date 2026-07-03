@@ -2,7 +2,7 @@ package person
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 	"strconv"
@@ -16,7 +16,7 @@ func (h Handler) Get(ctx context.Context, req *struct{}, op *middleware.PreHandl
 	if err != nil {
 		return nil, err
 	}
-	c, err := data.GetDataFactory().Person().Get(ctx, &model.Person{ID: uint(id)}, nil)
+	c, err := db.GetStore().Person().Get(ctx, &model.Person{ID: uint(id)}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,6 @@ func (h Handler) Get(ctx context.Context, req *struct{}, op *middleware.PreHandl
 		Summary:   c.Summary,
 		Cover:     c.Cover,
 		Images:    c.Images,
-		Tags:      c.Tags,
 		CreatedAt: c.CreatedAt,
 	}
 

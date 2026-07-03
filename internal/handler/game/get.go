@@ -2,7 +2,7 @@ package game
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
@@ -28,7 +28,7 @@ type GetInsRequest struct {
 }
 
 func (h Handler) GetIns(ctx context.Context, req *GetInsRequest, op *middleware.PreHandleOptions) ([]*model.GameInstance, error) {
-	gIns, err := data.GetDataFactory().GameInstance().List(ctx, &model.GameInstance{GameID: req.ID}, nil)
+	gIns, err := db.GetStore().GameInstance().List(ctx, &model.GameInstance{GameID: req.ID}, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,7 @@ package game
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/service"
 	systemtask "izumi/internal/system_task"
 	"izumi/model"
@@ -16,7 +16,7 @@ type LoadInfoResponse struct {
 }
 
 func (h Handler) LoadInfo(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (any, error) {
-	p, err := data.GetDataFactory().Policy().Get(ctx, &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
+	p, err := db.GetStore().Policy().Get(ctx, &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (h Handler) LoadInfo(ctx context.Context, req *struct{}, op *middleware.Pre
 		Type:  model.SystemTaskTypeLoad,
 		State: model.SystemTaskStateRunning,
 	}
-	err = data.GetDataFactory().SystemTask().Create(ctx, t, nil)
+	err = db.GetStore().SystemTask().Create(ctx, t, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,7 @@ package character
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strings"
 
@@ -12,25 +12,7 @@ import (
 )
 
 func (h Handler) Update(ctx context.Context, input *model.Character, op *middleware.PreHandleOptions) (any, error) {
-	tx := data.GetDataFactory().Transaction().Begin()
-	err := tx.CharacterTag().Delete(ctx, &model.CharacterTag{CharacterID: input.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return nil, err
-	}
-
-	tags := []*model.CharacterTag{}
-	for _, tag := range input.Tags {
-		tags = append(tags, &model.CharacterTag{
-			CharacterID: input.ID,
-			TagID:       tag.ID,
-		})
-	}
-	err = tx.CharacterTag().Creates(ctx, tags, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return nil, err
-	}
+	tx := db.GetStore().Transaction().Begin()
 
 	input.Name = strings.TrimSpace(input.Name)
 	if err := tx.Character().Update(ctx, input, nil); err != nil {

@@ -3,7 +3,7 @@ package category
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strings"
 
@@ -13,7 +13,7 @@ import (
 
 func (h Handler) Update(ctx context.Context, req *model.Category, op *middleware.PreHandleOptions) (any, error) {
 	req.Name = strings.TrimSpace(strings.ToUpper(req.Name))
-	if err := data.GetDataFactory().Category().Update(ctx, req, nil); err != nil {
+	if err := db.GetStore().Category().Update(ctx, req, nil); err != nil {
 		if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
 			return nil, err
 		}

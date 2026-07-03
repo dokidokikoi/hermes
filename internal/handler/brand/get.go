@@ -2,7 +2,7 @@ package brand
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strconv"
 
@@ -15,7 +15,7 @@ func (h Handler) Get(ctx context.Context, input struct{}, op *middleware.PreHand
 	if err != nil {
 		return nil, err
 	}
-	brand, err := data.GetDataFactory().Brand().Get(ctx, &model.Brand{ID: uint(id)}, nil)
+	brand, err := db.GetStore().Brand().Get(ctx, &model.Brand{ID: uint(id)}, nil)
 	if err != nil {
 		return nil, err
 	}

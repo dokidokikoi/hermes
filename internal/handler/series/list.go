@@ -2,7 +2,7 @@ package series
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
@@ -44,7 +44,7 @@ func (h Handler) List(ctx context.Context, req *ListRequest, op *middleware.PreH
 		opt.PageSize = req.PageSize
 	}
 
-	list, err := data.GetDataFactory().Series().List(ctx, &model.Series{}, opt)
+	list, err := db.GetStore().Series().List(ctx, &model.Series{}, opt)
 	if err != nil {
 		return nil, err
 	}

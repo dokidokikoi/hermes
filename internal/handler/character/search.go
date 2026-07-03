@@ -40,12 +40,10 @@ func (h Handler) Search(ctx context.Context, input *handler.CharacterSearchReq, 
 				Alias:     list[i].CV.Alias,
 				Cover:     list[i].CV.Cover,
 				Images:    list[i].CV.Images,
-				Tags:      list[i].CV.Tags,
 				Summary:   list[i].CV.Summary,
 				Gender:    list[i].CV.Gender,
 				CreatedAt: list[i].CV.CreatedAt,
 			},
-			Tags:      list[i].Tags,
 			CreatedAt: list[i].CreatedAt,
 		}
 	}

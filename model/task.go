@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/datatypes"
+)
 
 const (
 	TaskStatusWait int8 = iota
@@ -31,4 +35,26 @@ type Task struct {
 
 func (Task) TableName() string {
 	return "tasks"
+}
+
+type UndecidedGameStatus string
+
+const (
+	UndecidedGameStatusWait     UndecidedGameStatus = "wait"
+	UndecidedGameStatusAccepted UndecidedGameStatus = "accepted"
+	UndecidedGameStatusRejected UndecidedGameStatus = "rejected"
+)
+
+type UndecidedGame struct {
+	UUID    string                    `gorm:"type:varchar(100);primaryKey" json:"uuid"`
+	Path    string                    `gorm:"type:varchar(255)" json:"path"`
+	TaskIDs datatypes.JSONSlice[uint] `gorm:"type:jsonb" json:"task_ids"`
+	Status  UndecidedGameStatus       `gorm:"type:varchar(32)" json:"status"`
+
+	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
+}
+
+func (UndecidedGame) TableName() string {
+	return "undecided_games"
 }

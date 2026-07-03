@@ -2,7 +2,7 @@ package game
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
@@ -38,7 +38,7 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middlewa
 }
 
 func (h Handler) UpdateIns(ctx context.Context, input *model.GameInstance, op *middleware.PreHandleOptions) (any, error) {
-	err := data.GetDataFactory().GameInstance().Update(ctx, input, nil)
+	err := db.GetStore().GameInstance().Update(ctx, input, nil)
 	if err != nil {
 		return nil, err
 	}

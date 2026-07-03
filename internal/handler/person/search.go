@@ -33,7 +33,6 @@ func (h Handler) Search(ctx context.Context, input *handler.PersonListReq, op *m
 			Alias:     list[i].Alias,
 			Cover:     list[i].Cover,
 			Images:    list[i].Images,
-			Tags:      list[i].Tags,
 			Summary:   list[i].Summary,
 			Gender:    list[i].Gender,
 			CreatedAt: list[i].CreatedAt,

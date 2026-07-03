@@ -2,7 +2,7 @@ package game
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	systemtask "izumi/internal/system_task"
 	"izumi/model"
 	"time"
@@ -25,7 +25,7 @@ func (h Handler) DownloadInfo(ctx context.Context, input *DownloadInfoReq, op *m
 }
 
 func (h Handler) DownloadAllInfo(ctx context.Context, input *struct{}, op *middleware.PreHandleOptions) (any, error) {
-	gs, err := data.GetDataFactory().Game().List(ctx, &model.Game{}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
+	gs, err := db.GetStore().Game().List(ctx, &model.Game{}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (h Handler) DownloadAllInfo(ctx context.Context, input *struct{}, op *middl
 		State:     model.SystemTaskStateRunning,
 		CreatedAt: time.Now(),
 	}
-	err = data.GetDataFactory().SystemTask().Create(ctx, t, nil)
+	err = db.GetStore().SystemTask().Create(ctx, t, nil)
 	if err != nil {
 		return nil, err
 	}

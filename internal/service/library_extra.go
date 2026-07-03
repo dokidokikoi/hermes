@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"time"
 
@@ -19,7 +19,7 @@ var (
 
 func StartLibraryCache() {
 	ticker := time.NewTicker(time.Hour)
-	db := data.GetDataFactory()
+	db := db.GetStore()
 	srv := NewLibrary(db)
 
 	go func() {
@@ -45,7 +45,7 @@ func StartLibraryCache() {
 }
 
 func DoSetCache(srv ILibrary) error {
-	p, err := data.GetDataFactory().Policy().Get(context.Background(), &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
+	p, err := db.GetStore().Policy().Get(context.Background(), &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,7 @@ package tag
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"sort"
 
@@ -16,7 +16,7 @@ type ListResponse struct {
 }
 
 func (h Handler) List(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (*ListResponse, error) {
-	list, err := data.GetDataFactory().Tag().List(ctx, &model.Tag{}, &meta.ListOption{Order: "created_at desc"})
+	list, err := db.GetStore().Tag().List(ctx, &model.Tag{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
 		return nil, err
 	}

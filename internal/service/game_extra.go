@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 	"izumi/config"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/utils"
@@ -113,7 +113,7 @@ func GameWhereNodeCharacter(ctx context.Context, param handler.GameListReq, node
 	if param.Character == 0 {
 		return node, opt
 	}
-	db := data.GetDataFactory().GameCharacter().ListDB(ctx, &model.GameCharacter{CharacterID: param.Character}, nil)
+	db := db.GetStore().GameCharacter().ListDB(ctx, &model.GameCharacter{CharacterID: param.Character}, nil)
 	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
 		Method:          meta.INNER_JOIN,
 		Table:           model.Game{}.TableName(),
@@ -128,7 +128,7 @@ func GameWhereNodeStaff(ctx context.Context, param handler.GameListReq, node *me
 	if param.Staff == 0 {
 		return node, opt
 	}
-	db := data.GetDataFactory().GameStaff().ListDB(ctx, &model.GameStaff{PersonID: param.Staff}, nil)
+	db := db.GetStore().GameStaff().ListDB(ctx, &model.GameStaff{PersonID: param.Staff}, nil)
 	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
 		Method:          meta.INNER_JOIN,
 		Table:           model.Game{}.TableName(),
@@ -143,7 +143,7 @@ func GameWhereNodeSeries(ctx context.Context, param handler.GameListReq, node *m
 	if param.Series == 0 {
 		return node, opt
 	}
-	db := data.GetDataFactory().GameSeries().ListDB(ctx, &model.GameSeries{SeriesID: param.Series}, nil)
+	db := db.GetStore().GameSeries().ListDB(ctx, &model.GameSeries{SeriesID: param.Series}, nil)
 	opt.GetOption.Join = append(opt.GetOption.Join, &meta.Join{
 		Method:          meta.INNER_JOIN,
 		Table:           model.Game{}.TableName(),

@@ -2,7 +2,7 @@ package category
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strconv"
 
@@ -15,7 +15,7 @@ func (h Handler) Get(ctx context.Context, input struct{}, op *middleware.PreHand
 	if err != nil {
 		return nil, err
 	}
-	cate, err := data.GetDataFactory().Category().Get(ctx, &model.Category{ID: uint(id)}, nil)
+	cate, err := db.GetStore().Category().Get(ctx, &model.Category{ID: uint(id)}, nil)
 	if err != nil {
 		return nil, err
 	}

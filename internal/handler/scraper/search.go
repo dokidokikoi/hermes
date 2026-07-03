@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"izumi/constant"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
@@ -81,7 +81,7 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 		Status:      model.TaskStatusWait,
 		StartAt:     time.Now(),
 	}
-	err = data.GetDataFactory().Task().Create(ctx, task, nil)
+	err = db.GetStore().Task().Create(ctx, task, nil)
 	if err != nil {
 		e = err
 		zaplog.L().Error("刮削失败", zap.Any("param", input), zap.Error(err))
@@ -89,7 +89,7 @@ func DoSearch(ctx context.Context, requestID string, input handler.ScraperSearch
 	}
 
 	defer func() {
-		err = data.GetDataFactory().Task().Update(ctx, task, nil)
+		err = db.GetStore().Task().Update(ctx, task, nil)
 		if err != nil {
 			zaplog.L().Error("更新task失败", zap.Uint("task ID", task.ID), zap.Error(err))
 			return

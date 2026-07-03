@@ -2,7 +2,7 @@ package scraper
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	systemtask "izumi/internal/system_task"
 	"izumi/model"
@@ -40,7 +40,7 @@ func (h Handler) AutoScrape(ctx context.Context, input *AutoScrapeReq, op *middl
 			Name:      input.Name,
 		},
 	}
-	err := data.GetDataFactory().SystemTask().Create(ctx, t, nil)
+	err := db.GetStore().SystemTask().Create(ctx, t, nil)
 	if err != nil {
 		return "", err
 	}

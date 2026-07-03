@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/scraper"
@@ -14,7 +14,7 @@ import (
 )
 
 func (h Handler) Get(ctx context.Context, input *handler.ScraperGetReq, op *middleware.PreHandleOptions) (any, error) {
-	list, err := data.GetDataFactory().Task().List(ctx, &model.Task{RequestID: input.RequestID, Status: model.TaskStatusSucceed}, nil)
+	list, err := db.GetStore().Task().List(ctx, &model.Task{RequestID: input.RequestID, Status: model.TaskStatusSucceed}, nil)
 	if err != nil {
 		return nil, err
 	}

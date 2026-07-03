@@ -368,7 +368,7 @@ func (gc *GetChu) GetItemCharacter(node *goquery.Document) ([]handler.CharacterV
 				if idx > 0 && len(nameText) > idx+5 {
 					s = handler.StaffVo{
 						Name: tools.TrimBlankChar(nameText[idx+5:]),
-						Relation: model.PersonRelations{
+						Relation: []model.PersonRelation{
 							model.PRelationCV,
 						},
 					}

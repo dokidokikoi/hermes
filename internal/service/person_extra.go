@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
@@ -56,7 +56,7 @@ func PersonWhereNodeTag(ctx context.Context, param handler.PersonListReq, node *
 	defer func() {
 		o = opt
 	}()
-	db := data.GetDataFactory().PersonTag().ListComplexDB(ctx, &model.PersonTag{}, &meta.WhereNode{
+	db := db.GetStore().PersonTag().ListComplexDB(ctx, &model.PersonTag{}, &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
 				Field:    "tag_id",

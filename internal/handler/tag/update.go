@@ -3,7 +3,7 @@ package tag
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 
 	"github.com/abadojack/whatlanggo"
@@ -14,7 +14,7 @@ import (
 func (h Handler) Update(ctx context.Context, input *model.Tag, op *middleware.PreHandleOptions) (any, error) {
 	lang := whatlanggo.DetectLang(input.Name)
 	input.Lang = lang.Iso6391()
-	if err := data.GetDataFactory().Tag().Update(ctx, input, nil); err != nil {
+	if err := db.GetStore().Tag().Update(ctx, input, nil); err != nil {
 		if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
 			return nil, err
 		}

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
@@ -40,6 +41,39 @@ func (psrv *person) Search(ctx context.Context, param handler.PersonListReq, opt
 		return 0, nil, err
 	}
 	return total, cs, err
+}
+
+func (psrv *person) SearchExistPerson(ctx context.Context, relIds []string) (uint, error) {
+	if len(relIds) == 0 {
+		return 0, nil
+	}
+
+	jsonPair, _ := json.Marshal(relIds)
+	whereNode := &meta.WhereNode{
+		Conditions: []*meta.Condition{
+			{
+				Field:    "rel_ids",
+				Operator: "@>",
+				Value:    string(jsonPair),
+			},
+		},
+	}
+
+	ps, err := psrv.store.Person().ListComplex(
+		ctx,
+		&model.Person{},
+		whereNode,
+		&meta.ListOption{
+			PageSize: 1,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	if len(ps) == 0 {
+		return 0, nil
+	}
+	return ps[0].ID, nil
 }
 
 func NewPerson(store db.IStore) *person {

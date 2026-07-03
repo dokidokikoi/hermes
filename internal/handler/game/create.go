@@ -2,13 +2,12 @@ package game
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
 	"github.com/dokidokikoi/go-common/middleware"
 	"github.com/dokidokikoi/go-common/tools"
-	"github.com/google/uuid"
 )
 
 type CreateGameInstanceRequst struct {
@@ -28,7 +27,6 @@ type CreateGameRequest struct {
 
 func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middleware.PreHandleOptions) (uint, error) {
 	g := tools.GetPtr(handler.Vo2Game(input.Game))
-	g.UUID = uuid.NewString()
 
 	err := h.srv.Game().SaveFiles(ctx, &input.Game)
 	if err != nil {
@@ -73,15 +71,13 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 
 func (h Handler) CreateIns(ctx context.Context, input *CreateGameInstanceRequst, op *middleware.PreHandleOptions) (uint, error) {
 	gameIns := &model.GameInstance{
-		GameID:   input.GameID,
-		Version:  input.Version,
-		Path:     input.Path,
-		Size:     input.Size,
-		Language: input.Language,
-		Comment:  input.Comment,
-		Platform: input.Platform,
+		GameID:  input.GameID,
+		Version: input.Version,
+		Path:    input.Path,
+		Size:    input.Size,
+		Comment: input.Comment,
 	}
-	if err := data.GetDataFactory().GameInstance().Create(ctx, gameIns, nil); err != nil {
+	if err := db.GetStore().GameInstance().Create(ctx, gameIns, nil); err != nil {
 		return 0, err
 	}
 

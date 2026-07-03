@@ -3,7 +3,7 @@ package brand
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strings"
 
@@ -13,9 +13,9 @@ import (
 
 func (h Handler) Create(ctx context.Context, input *model.Brand, op *middleware.PreHandleOptions) (uint, error) {
 	input.Name = strings.TrimSpace(input.Name)
-	if err := data.GetDataFactory().Brand().Create(ctx, input, nil); err != nil {
+	if err := db.GetStore().Brand().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			c, err := data.GetDataFactory().Brand().Get(ctx, &model.Brand{Name: input.Name}, nil)
+			c, err := db.GetStore().Brand().Get(ctx, &model.Brand{Name: input.Name}, nil)
 			if err != nil {
 				return 0, err
 			}

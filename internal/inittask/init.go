@@ -3,7 +3,7 @@ package inittask
 import (
 	"context"
 	"izumi/config"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/service"
 	systemtask "izumi/internal/system_task"
 
@@ -15,7 +15,7 @@ func Init() {
 	config.SetConfig()
 	zaplog.SetLogger(config.GetConfig().LogConfig)
 	zaplog.L().With(zap.Any("config", config.GetConfig())).Info("")
-	db := data.GetDataFactory()
+	db := db.GetStore()
 
 	err := service.NewPolicy(db).PolicyEffect(context.Background())
 	if err != nil {

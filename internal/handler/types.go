@@ -36,8 +36,7 @@ type GameInlineVo struct {
 
 type GameVo struct {
 	ID            uint                `json:"id"`
-	UUID          string              `json:"uuid"`
-	VNDBID        string              `json:"vndb_id"`
+	RelIDs        []string            `json:"rel_ids"`
 	JanCode       string              `json:"jan_code"`
 	DlCode        string              `json:"dl_code"`
 	Name          string              `json:"name"`
@@ -70,10 +69,7 @@ type GameVo struct {
 func Vo2Game(game GameVo) model.Game {
 	return model.Game{
 		ID:       game.ID,
-		UUID:     strings.TrimSpace(game.UUID),
-		VNDBID:   strings.TrimSpace(game.VNDBID),
-		JanCode:  strings.TrimSpace(game.JanCode),
-		DlCode:   strings.TrimSpace(game.DlCode),
+		RelIDs:   game.RelIDs,
 		Name:     strings.TrimSpace(game.Name),
 		Alias:    game.Alias,
 		Cover:    game.Cover,
@@ -99,10 +95,6 @@ func Vo2Game(game GameVo) model.Game {
 func Game2Vo(game model.Game, characters []CharacterVo, staff []StaffVo) GameVo {
 	return GameVo{
 		ID:         game.ID,
-		UUID:       game.UUID,
-		VNDBID:     game.VNDBID,
-		JanCode:    game.JanCode,
-		DlCode:     game.DlCode,
 		Name:       game.Name,
 		Alias:      game.Alias,
 		Cover:      game.Cover,
@@ -124,8 +116,7 @@ func Game2Vo(game model.Game, characters []CharacterVo, staff []StaffVo) GameVo 
 
 type StaffVo struct {
 	ID        uint                   `json:"id"`
-	UUID      string                 `json:"uuid"`
-	VNDBID    string                 `json:"vndb_id"`
+	RelIDs    []string               `json:"rel_ids"`
 	Name      string                 `json:"name"`
 	Alias     []string               `json:"alias"`
 	Cover     string                 `json:"cover"`
@@ -141,13 +132,10 @@ type StaffVo struct {
 func Vo2Person(staff StaffVo) model.Person {
 	return model.Person{
 		ID:      staff.ID,
-		UUID:    staff.UUID,
-		VNDBID:  staff.VNDBID,
 		Name:    staff.Name,
 		Alias:   staff.Alias,
 		Cover:   staff.Cover,
 		Images:  staff.Images,
-		Tags:    staff.Tags,
 		Summary: staff.Summary,
 		Gender:  staff.Gender,
 		Links:   staff.Links,
@@ -157,13 +145,10 @@ func Vo2Person(staff StaffVo) model.Person {
 func Person2Vo(person model.Person, relation []model.PersonRelation) StaffVo {
 	return StaffVo{
 		ID:       person.ID,
-		UUID:     person.UUID,
-		VNDBID:   person.VNDBID,
 		Name:     person.Name,
 		Alias:    person.Alias,
 		Cover:    person.Cover,
 		Images:   person.Images,
-		Tags:     person.Tags,
 		Summary:  person.Summary,
 		Gender:   person.Gender,
 		Links:    person.Links,
@@ -173,8 +158,7 @@ func Person2Vo(person model.Person, relation []model.PersonRelation) StaffVo {
 
 type CharacterVo struct {
 	ID           uint                    `json:"id"`
-	UUID         string                  `json:"uuid"`
-	VNDBID       string                  `json:"vndb_id"`
+	RelIDs       []string                `json:"rel_ids"`
 	Name         string                  `json:"name"`
 	Alias        []string                `json:"alias"`
 	Gender       model.Gender            `json:"gender"`
@@ -193,8 +177,6 @@ type CharacterVo struct {
 func Vo2Character(character CharacterVo) model.Character {
 	return model.Character{
 		ID:           character.ID,
-		UUID:         character.UUID,
-		VNDBID:       character.VNDBID,
 		Name:         character.Name,
 		Alias:        character.Alias,
 		Gender:       character.Gender,
@@ -203,7 +185,6 @@ func Vo2Character(character CharacterVo) model.Character {
 		Images:       character.Images,
 		CV:           Vo2Person(character.CV),
 		PersonID:     character.CV.ID,
-		Tags:         character.Tags,
 		Weight:       character.Weight,
 		PersonalInfo: character.PersonalInfo,
 	}
@@ -212,8 +193,6 @@ func Vo2Character(character CharacterVo) model.Character {
 func Character2Vo(character model.Character, relation model.CharacterRelation, games []CharacterGameVo) CharacterVo {
 	return CharacterVo{
 		ID:           character.ID,
-		UUID:         character.UUID,
-		VNDBID:       character.VNDBID,
 		Name:         character.Name,
 		Alias:        character.Alias,
 		Gender:       character.Gender,
@@ -222,7 +201,6 @@ func Character2Vo(character model.Character, relation model.CharacterRelation, g
 		Cover:        character.Cover,
 		Images:       character.Images,
 		CV:           Person2Vo(character.CV, nil),
-		Tags:         character.Tags,
 		CreatedAt:    character.CreatedAt,
 		Weight:       character.Weight,
 		PersonalInfo: character.PersonalInfo,

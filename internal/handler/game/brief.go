@@ -2,7 +2,7 @@ package game
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
@@ -16,7 +16,7 @@ type GetBriefRequest struct {
 }
 
 func (h Handler) GetBrief(ctx context.Context, req *GetBriefRequest, op *middleware.PreHandleOptions) (resp []*handler.GameVo, e error) {
-	res, err := data.GetDataFactory().Game().ListComplex(ctx, &model.Game{}, &meta.WhereNode{
+	res, err := db.GetStore().Game().ListComplex(ctx, &model.Game{}, &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
 				Field:    "id",

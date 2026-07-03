@@ -2,7 +2,7 @@ package brand
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
@@ -15,7 +15,7 @@ type ListResponse struct {
 }
 
 func (h Handler) List(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (any, error) {
-	list, err := data.GetDataFactory().Brand().List(ctx, &model.Brand{}, &meta.ListOption{Order: "created_at desc"})
+	list, err := db.GetStore().Brand().List(ctx, &model.Brand{}, &meta.ListOption{Order: "created_at desc"})
 	if err != nil {
 		return nil, err
 	}

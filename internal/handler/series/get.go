@@ -2,7 +2,7 @@ package series
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 	"strconv"
 
@@ -15,7 +15,7 @@ func (h Handler) Get(ctx context.Context, input struct{}, op *middleware.PreHand
 	if err != nil {
 		return nil, err
 	}
-	series, err := data.GetDataFactory().Series().Get(ctx, &model.Series{ID: uint(id)}, nil)
+	series, err := db.GetStore().Series().Get(ctx, &model.Series{ID: uint(id)}, nil)
 	if err != nil {
 		return nil, err
 	}

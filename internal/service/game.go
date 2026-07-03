@@ -3,12 +3,11 @@ package service
 import (
 	"bytes"
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io"
 	"izumi/config"
 	"izumi/db"
-	"izumi/db/data"
 	"izumi/internal/handler"
 	"izumi/model"
 	"izumi/utils"
@@ -20,12 +19,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/abadojack/whatlanggo"
+	"github.com/lib/pq"
+	"github.com/pkg/errors"
+
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
 	"github.com/dokidokikoi/go-common/tools"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -64,29 +64,30 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 	}
 
 	db := gsrv.store
-	if gVo.VNDBID != "" {
-		g, err := db.Game().Get(ctx, &model.Game{VNDBID: gVo.VNDBID}, &meta.GetOption{Include: []string{"ID"}})
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if g != nil {
-			gVo.ID = g.ID
+	if gVo.ID == 0 {
+		gVo.ID, err = gsrv.SearchExistGame(ctx, gVo.RelIDs)
+		if err != nil {
+			return errors.Wrap(err, "gsrv.SearchExistGame()")
 		}
 	}
+
 	g := tools.GetPtr(handler.Vo2Game(*gVo))
-	if gVo.Category != nil && gVo.Category.Name != "" {
-		c, err := db.Category().Get(ctx, &model.Category{Name: gVo.Category.Name}, &meta.GetOption{Include: []string{"ID"}})
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if c == nil {
-			err = db.Category().Create(ctx, gVo.Category, nil)
-			if err != nil {
+	// 处理category
+	{
+		if gVo.Category != nil && gVo.Category.Name != "" {
+			c, err := db.Category().Get(ctx, &model.Category{Name: gVo.Category.Name}, &meta.GetOption{Include: []string{"ID"}})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
-			g.CategoryID = gVo.Category.ID
-		} else {
-			g.CategoryID = c.ID
+			if c == nil {
+				err = db.Category().Create(ctx, gVo.Category, nil)
+				if err != nil {
+					return err
+				}
+				g.CategoryID = gVo.Category.ID
+			} else {
+				g.CategoryID = c.ID
+			}
 		}
 	}
 	{
@@ -100,7 +101,6 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 				return err
 			}
 		} else {
-			g.UUID = uuid.New().String()
 			err := db.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{clause.Associations}})
 			if err != nil {
 				return err
@@ -207,32 +207,16 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 	}
 	if len(gVo.Tags) > 0 {
 		gameTags := []*model.GameTag{}
+		tagSrv := NewTag(gsrv.store)
 		for _, tag := range gVo.Tags {
-			t, err := db.Tag().Get(ctx, &model.Tag{Name: tag.Name}, &meta.GetOption{Include: []string{"ID"}})
-			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			err := tagSrv.CreateL(ctx, tag)
+			if err != nil {
 				return err
 			}
-			if t == nil {
-				lang := whatlanggo.DetectLang(tag.Name)
-				if lang.Iso6391() == "zh" || lang.Iso6391() == "ja" {
-					tag.Lang = lang.Iso6391()
-				} else {
-					tag.Lang = "en"
-				}
-				err = db.Tag().Create(ctx, tag, nil)
-				if err != nil {
-					return err
-				}
-				gameTags = append(gameTags, &model.GameTag{
-					GameID: g.ID,
-					TagID:  tag.ID,
-				})
-			} else {
-				gameTags = append(gameTags, &model.GameTag{
-					GameID: g.ID,
-					TagID:  t.ID,
-				})
-			}
+			gameTags = append(gameTags, &model.GameTag{
+				GameID: g.ID,
+				TagID:  tag.ID,
+			})
 		}
 		tx := db.Transaction().Begin()
 		err := tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil)
@@ -255,26 +239,31 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 	if len(gVo.Staff) > 0 {
 		gameStaff := []*model.GameStaff{}
 		for _, staff := range gVo.Staff {
-			if staff.VNDBID != "" {
-				s, err := db.Person().Get(ctx, &model.Person{VNDBID: staff.VNDBID}, &meta.GetOption{Include: []string{"ID"}})
-				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			if len(staff.RelIDs) > 0 {
+				persons, err := db.Person().ListComplex(
+					ctx,
+					&model.Person{},
+					&meta.WhereNode{Conditions: []*meta.Condition{
+						{
+							Field:    "rel_ids",
+							Operator: meta.PG_OVERLAP,
+							Value:    pq.Array(staff.RelIDs),
+						},
+					}},
+					&meta.ListOption{GetOption: meta.GetOption{Include: []string{"ID"}}})
+				if err != nil {
 					return err
 				}
-				if s != nil {
-					staff.ID = s.ID
+				if len(persons) > 0 {
+					staff.ID = persons[0].ID
 				}
 			}
 			if staff.ID == 0 {
-				list, err := data.GetDataFactory().Person().ListComplex(
+				list, err := db.Person().ListComplex(
 					ctx,
 					&model.Person{},
 					&meta.WhereNode{
 						Conditions: []*meta.Condition{
-							{
-								Field:    "vndb_id",
-								Operator: meta.EQUAL,
-								Value:    "",
-							},
 							{
 								Field:    "name",
 								Operator: meta.EQUAL,
@@ -288,17 +277,15 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 				}
 				if len(list) > 0 {
 					staff.ID = list[0].ID
-					staff.UUID = list[0].UUID
 				}
 			}
-			s := tools.GetPtr(handler.Vo2Person(staff))
+			s := tools.Ptr(handler.Vo2Person(staff))
 			if staff.ID != 0 {
 				err := db.Person().Update(ctx, s, nil)
 				if err != nil {
 					return err
 				}
 			} else {
-				s.UUID = uuid.New().String()
 				err := db.Person().Create(ctx, s, nil)
 				if err != nil {
 					return err
@@ -337,16 +324,22 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 	if len(gVo.Characters) > 0 {
 		gameCharacters := []*model.GameCharacter{}
 		for _, char := range gVo.Characters {
-			if char.VNDBID != "" {
-				c, err := db.Character().Get(ctx, &model.Character{VNDBID: char.VNDBID}, &meta.GetOption{Include: []string{"ID"}})
+			if len(char.RelIDs) > 0 {
+				cs, err := db.Character().ListComplex(ctx, &model.Character{}, &meta.WhereNode{Conditions: []*meta.Condition{
+					{
+						Field:    "rel_ids",
+						Operator: meta.PG_OVERLAP,
+						Value:    pq.Array(char.RelIDs),
+					},
+				}}, &meta.ListOption{GetOption: meta.GetOption{Include: []string{"ID"}}})
 				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 					return err
 				}
-				if c != nil {
-					char.ID = c.ID
+				if len(cs) > 0 {
+					char.ID = cs[0].ID
 				}
 			}
-			c := tools.GetPtr(handler.Vo2Character(char))
+			c := tools.Ptr(handler.Vo2Character(char))
 			if char.CV.Name != "" {
 				c.PersonID = staffM[char.CV.Name]
 			}
@@ -356,7 +349,6 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 					return err
 				}
 			} else {
-				c.UUID = uuid.New().String()
 				err := db.Character().Create(ctx, c, &meta.CreateOption{Omit: []string{clause.Associations}})
 				if err != nil {
 					return err
@@ -442,7 +434,6 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 		if c.Character.ID != 0 {
 			charactersUpdate = append(charactersUpdate, c.Character)
 		} else {
-			c.Character.UUID = uuid.NewString()
 			charactersCreate = append(charactersCreate, c.Character)
 		}
 	}
@@ -484,7 +475,6 @@ func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 	staffUpdate := []*model.Person{}
 	for _, s := range ss {
 		if s.Person.ID == 0 {
-			s.Person.UUID = uuid.NewString()
 			staffCreate = append(staffCreate, s.Person)
 		} else {
 			staffUpdate = append(staffUpdate, s.Person)
@@ -584,7 +574,6 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 		if c.Character.ID != 0 {
 			charactersUpdate = append(charactersUpdate, c.Character)
 		} else {
-			c.Character.UUID = uuid.NewString()
 			charactersCreate = append(charactersCreate, c.Character)
 		}
 	}
@@ -621,7 +610,6 @@ func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCh
 	staffUpdate := []*model.Person{}
 	for _, s := range ss {
 		if s.Person.ID == 0 {
-			s.Person.UUID = uuid.NewString()
 			staffCreate = append(staffCreate, s.Person)
 		} else {
 			staffUpdate = append(staffUpdate, s.Person)
@@ -729,7 +717,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 	if err != nil {
 		return nil, err
 	}
-	prMap := map[uint]model.PersonRelations{}
+	prMap := map[uint][]model.PersonRelation{}
 	pIDs := []uint{}
 	for _, gs := range gss {
 		prMap[gs.PersonID] = gs.Relations
@@ -760,7 +748,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 			return true
 		}
 	})
-	return tools.GetPtr(handler.Game2Vo(*g, cVos, sVos)), nil
+	return tools.Ptr(handler.Game2Vo(*g, cVos, sVos)), nil
 }
 
 func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *meta.ListOption, gwfs ...GameWhereNodeFunc) (int64, []handler.GameVo, error) {
@@ -900,7 +888,7 @@ func (gsrv *game) SaveFiles(ctx context.Context, g *handler.GameVo, process ...f
 }
 
 func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e error) {
-	db := data.GetDataFactory()
+	db := db.GetStore()
 	cate, err := db.Category().Get(ctx, &model.Category{Name: gVo.Category.Name}, &meta.GetOption{Select: []string{"ID"}})
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -969,7 +957,7 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	charactersCreate := []*model.Character{}
 	charactersUpdate := []*model.Character{}
 	for _, character := range gVo.Characters {
-		c := tools.GetPtr(handler.Vo2Character(character))
+		c := tools.Ptr(handler.Vo2Character(character))
 		cs = append(cs, &model.GameCharacter{
 			Character: c,
 			Relation:  character.Rlation,
@@ -996,7 +984,7 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	staffCreate := []*model.Person{}
 	staffUpdate := []*model.Person{}
 	for _, staff := range gVo.Staff {
-		s := tools.GetPtr(handler.Vo2Person(staff))
+		s := tools.Ptr(handler.Vo2Person(staff))
 		ss = append(ss, &model.GameStaff{
 			Person:    s,
 			Relations: staff.Relation,
@@ -1061,7 +1049,7 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 		return errors.Join(errs...)
 	}
 
-	g := tools.GetPtr(handler.Vo2Game(*gVo))
+	g := tools.Ptr(handler.Vo2Game(*gVo))
 	gRsp, err := tx.Game().Get(ctx, &model.Game{ID: gVo.ID}, &meta.GetOption{Select: []string{"ID", "UUID"}})
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1075,12 +1063,11 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 			}
 			if gVo.Version != "" {
 				err = tx.GameInstance().Create(ctx, &model.GameInstance{
-					GameID:   g.ID,
-					Version:  gVo.Version,
-					Path:     path,
-					Size:     gVo.Size,
-					Language: gVo.Language,
-					Comment:  gVo.Comment,
+					GameID:  g.ID,
+					Version: gVo.Version,
+					Path:    path,
+					Size:    gVo.Size,
+					Comment: gVo.Comment,
 				}, nil)
 				if err != nil {
 					return err
@@ -1092,12 +1079,11 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 				return err
 			}
 			err = tx.GameInstance().Update(ctx, &model.GameInstance{
-				GameID:   g.ID,
-				Version:  gVo.Version,
-				Path:     path,
-				Size:     gVo.Size,
-				Language: gVo.Language,
-				Comment:  gVo.Comment,
+				GameID:  g.ID,
+				Version: gVo.Version,
+				Path:    path,
+				Size:    gVo.Size,
+				Comment: gVo.Comment,
 			}, nil)
 			if err != nil {
 				return err
@@ -1185,7 +1171,7 @@ func (gsrv *game) DownloadInfo(ctx context.Context, gameID uint, t time.Time) er
 	if err != nil {
 		return err
 	}
-	ins, err := data.GetDataFactory().
+	ins, err := db.GetStore().
 		GameInstance().List(ctx, &model.GameInstance{GameID: gameID}, nil)
 	if err != nil {
 		return err
@@ -1234,7 +1220,6 @@ func (gsrv *game) DownloadInfo(ctx context.Context, gameID uint, t time.Time) er
 		defer f.Close()
 
 		gVo.Version = i.Version
-		gVo.Language = i.Language
 		gVo.Comment = i.Comment
 		gVo.Size = i.Size
 		err = downloadInfo(gVo, f)
@@ -1244,6 +1229,39 @@ func (gsrv *game) DownloadInfo(ctx context.Context, gameID uint, t time.Time) er
 	}
 
 	return nil
+}
+
+func (gsrv *game) SearchExistGame(ctx context.Context, relIds []string) (uint, error) {
+	if len(relIds) == 0 {
+		return 0, nil
+	}
+
+	jsonPair, _ := json.Marshal(relIds)
+	whereNode := &meta.WhereNode{
+		Conditions: []*meta.Condition{
+			{
+				Field:    "rel_ids",
+				Operator: meta.PG_CONTAIN,
+				Value:    string(jsonPair),
+			},
+		},
+	}
+
+	games, err := gsrv.store.Game().ListComplex(
+		ctx,
+		&model.Game{},
+		whereNode,
+		&meta.ListOption{
+			PageSize: 1,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	if len(games) == 0 {
+		return 0, nil
+	}
+	return games[0].ID, nil
 }
 
 func NewGame(store db.IStore) *game {

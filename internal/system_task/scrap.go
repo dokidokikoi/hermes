@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"izumi/constant"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/internal/service"
 	"izumi/model"
@@ -29,7 +29,7 @@ import (
 )
 
 func StartAutoScrap() {
-	ts, err := data.GetDataFactory().SystemTask().List(context.Background(), &model.SystemTask{
+	ts, err := db.GetStore().SystemTask().List(context.Background(), &model.SystemTask{
 		Type:  model.SystemTaskTypeScrap,
 		State: model.SystemTaskStateRunning,
 	}, &meta.ListOption{Order: "id desc"})
@@ -56,7 +56,7 @@ func AutoScrap(t *model.SystemTask) {
 				zaplog.L().Error("system scrap task error", zap.Error(e))
 				state = model.SystemTaskStateFailed
 			}
-			err := data.GetDataFactory().SystemTask().Update(context.Background(), &model.SystemTask{
+			err := db.GetStore().SystemTask().Update(context.Background(), &model.SystemTask{
 				ID:     t.ID,
 				State:  state,
 				Result: result,
@@ -126,7 +126,7 @@ func AutoScrap(t *model.SystemTask) {
 			}
 		}()
 		requestID := uuid.NewString()
-		wait, err := service.NewScrap(data.GetDataFactory()).Scrap(context.Background(), requestID, t.Param.ScrapObjs, func(scraperName string, success bool) {
+		wait, err := service.NewScrap(db.GetStore()).Scrap(context.Background(), requestID, t.Param.ScrapObjs, func(scraperName string, success bool) {
 			atomic.AddInt32(&proccess, step)
 		})
 		if err != nil {
@@ -136,7 +136,7 @@ func AutoScrap(t *model.SystemTask) {
 		}
 		wait.Wait()
 
-		list, err := data.GetDataFactory().Task().List(context.Background(), &model.Task{
+		list, err := db.GetStore().Task().List(context.Background(), &model.Task{
 			RequestID: requestID,
 			Status:    model.TaskStatusSucceed,
 		}, nil)
@@ -348,7 +348,7 @@ func AutoScrap(t *model.SystemTask) {
 			gVo.Story = items[0].Story
 		}
 
-		srv := service.NewGame(data.GetDataFactory())
+		srv := service.NewGame(db.GetStore())
 		err = srv.UpsertFull(context.Background(), &gVo, &model.GameInstance{
 			Path:    t.Param.Path,
 			Version: t.Param.Version,

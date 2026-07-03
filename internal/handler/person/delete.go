@@ -3,7 +3,7 @@ package person
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 
 	"github.com/dokidokikoi/go-common/middleware"
@@ -21,7 +21,7 @@ func (h Handler) Del(ctx context.Context, req *DelRequest, op *middleware.PreHan
 		})
 	}
 
-	errs := data.GetDataFactory().Person().DeleteCollection(ctx, PersonIDs, nil)
+	errs := db.GetStore().Person().DeleteCollection(ctx, PersonIDs, nil)
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}

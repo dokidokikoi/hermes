@@ -1,7 +1,7 @@
 package brand
 
 import (
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/service"
 )
 
@@ -10,5 +10,5 @@ type Handler struct {
 }
 
 func NewHandler() Handler {
-	return Handler{srv: service.NewSrv(data.GetDataFactory())}
+	return Handler{srv: service.NewSrv(db.GetStore())}
 }

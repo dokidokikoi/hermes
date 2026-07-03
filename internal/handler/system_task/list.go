@@ -2,7 +2,7 @@ package system_task
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 
 	"github.com/dokidokikoi/go-common/middleware"
@@ -21,7 +21,7 @@ type ListResponse struct {
 
 func (h *Handler) List(ctx context.Context, input *ListReq, op *middleware.PreHandleOptions) (*ListResponse, error) {
 	input.Order = "id desc"
-	ts, err := data.GetDataFactory().SystemTask().List(ctx, &model.SystemTask{
+	ts, err := db.GetStore().SystemTask().List(ctx, &model.SystemTask{
 		Type:  input.Type,
 		State: input.State,
 	}, input.GetListOption())

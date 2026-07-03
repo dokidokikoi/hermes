@@ -2,7 +2,7 @@ package game
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
@@ -17,11 +17,11 @@ type PanelResp struct {
 }
 
 func (h *Handler) Panel(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (*PanelResp, error) {
-	games, err := data.GetDataFactory().Game().Count(ctx, &model.Game{}, nil)
+	games, err := db.GetStore().Game().Count(ctx, &model.Game{}, nil)
 	if err != nil {
 		return nil, err
 	}
-	p, err := data.GetDataFactory().Policy().Get(context.Background(), &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
+	p, err := db.GetStore().Policy().Get(context.Background(), &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -37,11 +37,11 @@ func (h *Handler) Panel(ctx context.Context, req *struct{}, op *middleware.PreHa
 		}
 		localGames += int64(len(infos))
 	}
-	tags, err := data.GetDataFactory().Tag().Count(ctx, &model.Tag{}, nil)
+	tags, err := db.GetStore().Tag().Count(ctx, &model.Tag{}, nil)
 	if err != nil {
 		return nil, err
 	}
-	usedTags, err := data.GetDataFactory().GameTag().Count(ctx, &model.GameTag{}, &meta.GetOption{
+	usedTags, err := db.GetStore().GameTag().Count(ctx, &model.GameTag{}, &meta.GetOption{
 		Group: meta.Group{
 			Fields: []string{"tag_id"},
 		},

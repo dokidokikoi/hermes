@@ -2,7 +2,7 @@ package policy
 
 import (
 	"context"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 
 	"github.com/dokidokikoi/go-common/middleware"
@@ -12,7 +12,7 @@ import (
 type ListRequest struct{}
 
 func (h Handler) List(ctx context.Context, req *ListRequest, op *middleware.PreHandleOptions) (gin.H, error) {
-	ps, err := data.GetDataFactory().Policy().List(ctx, &model.Policy{}, nil)
+	ps, err := db.GetStore().Policy().List(ctx, &model.Policy{}, nil)
 	if err != nil {
 		return nil, err
 	}

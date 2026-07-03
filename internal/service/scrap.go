@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"izumi/constant"
 	"izumi/db"
-	"izumi/db/data"
 	"izumi/model"
 	"izumi/scraper/event"
 	"izumi/utils"
@@ -31,7 +30,7 @@ type scrap struct {
 func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapObj, afterHook ...func(scraperName string, success bool)) (*sync.WaitGroup, error) {
 	wait := &sync.WaitGroup{}
 	for _, req := range objs {
-		_, err := data.GetDataFactory().Task().Get(ctx, &model.Task{RequestID: requestID, Param: req.Url}, nil)
+		_, err := db.GetStore().Task().Get(ctx, &model.Task{RequestID: requestID, Param: req.Url}, nil)
 		if err == nil {
 			continue
 		}
@@ -69,13 +68,13 @@ func (s *scrap) Scrap(ctx context.Context, requestID string, objs []model.ScrapO
 				Status:      model.TaskStatusWait,
 				StartAt:     time.Now(),
 			}
-			err = data.GetDataFactory().Task().Create(ctx, task, nil)
+			err = db.GetStore().Task().Create(ctx, task, nil)
 			if err != nil {
 				zaplog.L().Error("创建任务失败", zap.Error(err))
 				return
 			}
 			defer func() {
-				err := data.GetDataFactory().Task().Update(ctx, task, nil)
+				err := db.GetStore().Task().Update(ctx, task, nil)
 				if err != nil {
 					zaplog.L().Error("更新任务失败", zap.Error(err))
 					return

@@ -3,7 +3,7 @@ package policy
 import (
 	"context"
 	"encoding/json"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
@@ -30,7 +30,7 @@ func (h Handler) Update(ctx context.Context, input *handler.UpdateProxyReq, op *
 		h.srv.Policy().ScraperPolicyEffect(ctx, t)
 	}
 
-	err := data.GetDataFactory().Policy().UpdateByWhere(ctx, &meta.WhereNode{
+	err := db.GetStore().Policy().UpdateByWhere(ctx, &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
 				Field:    "key",

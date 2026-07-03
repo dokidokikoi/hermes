@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/model"
 
@@ -58,7 +58,7 @@ func CharacterWhereNodeTag(ctx context.Context, param handler.CharacterSearchReq
 	defer func() {
 		o = opt
 	}()
-	db := data.GetDataFactory().CharacterTag().ListComplexDB(ctx, &model.CharacterTag{}, &meta.WhereNode{
+	db := db.GetStore().CharacterTag().ListComplexDB(ctx, &model.CharacterTag{}, &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
 				Field:    "tag_id",

@@ -3,7 +3,7 @@ package tag
 import (
 	"context"
 	"errors"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/model"
 
 	"github.com/abadojack/whatlanggo"
@@ -18,9 +18,9 @@ func (h Handler) Create(ctx context.Context, input *model.Tag, op *middleware.Pr
 	} else {
 		input.Lang = "en"
 	}
-	if err := data.GetDataFactory().Tag().Create(ctx, input, nil); err != nil {
+	if err := db.GetStore().Tag().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			c, err := data.GetDataFactory().Tag().Get(ctx, &model.Tag{Name: input.Name}, nil)
+			c, err := db.GetStore().Tag().Get(ctx, &model.Tag{Name: input.Name}, nil)
 			if err != nil {
 				return 0, err
 			}

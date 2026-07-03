@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"izumi/config"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal"
 	"izumi/internal/inittask"
 	"log"
@@ -61,7 +61,7 @@ func main() {
 		// 关闭数据库连接
 		func() {
 			zaplog.L().Debug("close database")
-			if err := data.Close(); err != nil {
+			if err := db.Close(); err != nil {
 				zaplog.L().Error("db close error", zap.Error(err))
 			}
 		},

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"izumi/constant"
-	"izumi/db/data"
+	"izumi/db"
 	"izumi/internal/handler"
 	"izumi/internal/service"
 	"izumi/model"
@@ -22,7 +22,7 @@ import (
 )
 
 func StartLoad() {
-	ts, err := data.GetDataFactory().SystemTask().List(context.Background(), &model.SystemTask{
+	ts, err := db.GetStore().SystemTask().List(context.Background(), &model.SystemTask{
 		Type:  model.SystemTaskTypeLoad,
 		State: model.SystemTaskStateRunning,
 	}, &meta.ListOption{Order: "id desc"})
@@ -33,7 +33,7 @@ func StartLoad() {
 	if len(ts) == 0 {
 		return
 	}
-	err = data.GetDataFactory().SystemTask().UpdateByWhere(
+	err = db.GetStore().SystemTask().UpdateByWhere(
 		context.Background(),
 		&meta.WhereNode{
 			Conditions: []*meta.Condition{
@@ -72,7 +72,7 @@ func StartLoad() {
 		return
 	}
 
-	p, err := data.GetDataFactory().Policy().Get(context.Background(), &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
+	p, err := db.GetStore().Policy().Get(context.Background(), &model.Policy{Key: model.SystemPolicy{}.Key()}, nil)
 	if err != nil {
 		zaplog.L().Error("get system policy error", zap.Error(err))
 		return
@@ -83,7 +83,7 @@ func StartLoad() {
 		return
 	}
 
-	srv := service.NewSrv(data.GetDataFactory())
+	srv := service.NewSrv(db.GetStore())
 	for _, l := range sp.GameLibrary {
 		infos, err := srv.Library().Ls(context.Background(), l, false, true)
 		if err != nil {
@@ -97,7 +97,7 @@ func LoadTask(infos []service.PathInfo, t *model.SystemTask) {
 	rid := uuid.NewString()
 	go func() {
 		defer func() {
-			err := data.GetDataFactory().SystemTask().Update(context.Background(), &model.SystemTask{
+			err := db.GetStore().SystemTask().Update(context.Background(), &model.SystemTask{
 				ID:    t.ID,
 				State: model.SystemTaskStateDone,
 			}, nil)
@@ -183,5 +183,5 @@ func load(ctx context.Context, info service.PathInfo) error {
 		return err
 	}
 
-	return service.NewGame(data.GetDataFactory()).Load(ctx, gVo, info.Path)
+	return service.NewGame(db.GetStore()).Load(ctx, gVo, info.Path)
 }
