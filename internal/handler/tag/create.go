@@ -6,18 +6,11 @@ import (
 	"izumi/db"
 	"izumi/model"
 
-	"github.com/abadojack/whatlanggo"
 	"github.com/dokidokikoi/go-common/middleware"
 	"gorm.io/gorm"
 )
 
 func (h Handler) Create(ctx context.Context, input *model.Tag, op *middleware.PreHandleOptions) (uint, error) {
-	lang := whatlanggo.DetectLang(input.Name)
-	if lang.Iso6391() == "zh" || lang.Iso6391() == "ja" {
-		input.Lang = lang.Iso6391()
-	} else {
-		input.Lang = "en"
-	}
 	if err := db.GetStore().Tag().Create(ctx, input, nil); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			c, err := db.GetStore().Tag().Get(ctx, &model.Tag{Name: input.Name}, nil)

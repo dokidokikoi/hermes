@@ -176,6 +176,7 @@ func (gc *GetChu) GetGameItem(uri string) (*scraper.GameItem, error) {
 	if id == "" {
 		return nil, errors.Errorf("id not found, uri: %s", uri)
 	}
+	item.RelIDs = append(item.RelIDs, fmt.Sprintf("%s:%s", Name, id))
 
 	item.Cover, item.Images, err = gc.GetItemCover(root, id)
 	if err != nil {

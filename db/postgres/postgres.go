@@ -43,7 +43,7 @@ func NewStore() *Store {
 		panic(err)
 	}
 
-	return &Store{DB: dbIns}
+	return &Store{DB: dbIns.Debug()}
 }
 
 // Begin 开始事务

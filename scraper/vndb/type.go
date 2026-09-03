@@ -139,7 +139,7 @@ func TransfCRelation(role string) model.CharacterRelation {
 
 func Staff2Staff(staff Staff) handler.StaffVo {
 	return handler.StaffVo{
-		VNDBID: staff.ID,
+		RelIDs: []string{Name + ":" + staff.ID},
 		Name: func() string {
 			if staff.Original != "" {
 				return staff.Original

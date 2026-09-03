@@ -10,9 +10,10 @@ import (
 type SystemTaskType string
 
 const (
-	SystemTaskTypeDownload SystemTaskType = "download"
-	SystemTaskTypeLoad     SystemTaskType = "load"
-	SystemTaskTypeScrap    SystemTaskType = "scrap"
+	SystemTaskTypeDownload    SystemTaskType = "download"
+	SystemTaskTypeLoad        SystemTaskType = "load"
+	SystemTaskTypeScrap       SystemTaskType = "scrap"
+	SystemTaskTypeDetectScrap SystemTaskType = "detect_scrap"
 )
 
 type SystemTaskState string

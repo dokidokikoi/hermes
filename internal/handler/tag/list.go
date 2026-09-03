@@ -4,34 +4,48 @@ import (
 	"context"
 	"izumi/db"
 	"izumi/model"
-	"sort"
 
 	meta "github.com/dokidokikoi/go-common/meta/option"
 	"github.com/dokidokikoi/go-common/middleware"
 )
+
+type ListRequest struct {
+	Ns       string `form:"ns"`
+	Key      string `form:"key"`
+	Page     int    `form:"page"`
+	PageSize int    `form:"page_size"`
+}
 
 type ListResponse struct {
 	List  []*model.Tag `json:"list"`
 	Total int64        `json:"total"`
 }
 
-func (h Handler) List(ctx context.Context, req *struct{}, op *middleware.PreHandleOptions) (*ListResponse, error) {
-	list, err := db.GetStore().Tag().List(ctx, &model.Tag{}, &meta.ListOption{Order: "created_at desc"})
+func (h Handler) List(ctx context.Context, req *ListRequest, op *middleware.PreHandleOptions) (*ListResponse, error) {
+	list, err := db.GetStore().Tag().List(
+		ctx,
+		&model.Tag{NS: req.Ns, Key: req.Key},
+		meta.NewListOption(
+			[]string{},
+			meta.WithOrderBy("created_at desc"),
+			meta.WithPage(req.Page),
+			meta.WithPageSize(req.PageSize),
+		))
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(list, func(i, j int) bool {
-		if list[j].Lang == "zh" {
-			return false
-		} else if list[j].Lang == "ja" && list[i].Lang != "zh" {
-			return false
-		} else {
-			return true
-		}
-	})
+
+	total, err := db.GetStore().Tag().Count(
+		ctx,
+		&model.Tag{NS: req.Ns, Key: req.Key},
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return &ListResponse{
 		List:  list,
-		Total: int64(len(list)),
+		Total: total,
 	}, nil
 }

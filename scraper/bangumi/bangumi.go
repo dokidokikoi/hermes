@@ -186,6 +186,9 @@ func (b *Bangumi) GetGameItem(uri string) (*scraper.GameItem, error) {
 		}
 	}
 	id := strconv.Itoa(int(gjson.GetBytes(data, "id").Int()))
+	if id != "" {
+		item.RelIDs = append(item.RelIDs, fmt.Sprintf("%s:%s", Name, id))
+	}
 	item.Characters, item.Staff, err = b.GetItemCharacters(id)
 	if err != nil {
 		b.logger.Error("get characters error", zap.String("scraper", b.name), zap.Error(err))
@@ -232,6 +235,7 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, []h
 				}
 			}
 			character := handler.CharacterVo{
+				RelIDs:  []string{fmt.Sprintf("%s:%d", Name, id)},
 				Name:    c.Get("name").String(),
 				Rlation: model.CharacterRelation(c.Get("relation").String()),
 				Cover: func() string {
@@ -262,7 +266,8 @@ func (b *Bangumi) GetItemCharacters(SubjetID string) ([]handler.CharacterVo, []h
 				}
 				ss := gjson.ParseBytes(data)
 				character.CV = handler.StaffVo{
-					Name: arr[0].Get("name").String(),
+					RelIDs: []string{fmt.Sprintf("%s:%s", Name, arr[0].Get("id").String())},
+					Name:   arr[0].Get("name").String(),
 					Cover: func() string {
 						cover := arr[0].Get("images.large").String()
 						if cover == "" {
@@ -338,6 +343,7 @@ func (b *Bangumi) GetItemStaff(SubjectID string) ([]handler.StaffVo, error) {
 			}
 			lock.Lock()
 			staff = append(staff, handler.StaffVo{
+				RelIDs:   []string{fmt.Sprintf("%s:%d", Name, id)},
 				Name:     nameM[id],
 				Cover:    coverM[id],
 				Relation: relations,

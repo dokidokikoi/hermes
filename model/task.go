@@ -22,7 +22,7 @@ type Task struct {
 	ID          uint      `gorm:"primaryKey;" json:"id"`
 	RequestID   string    `gorm:"type:varchar(64);index:idx_request_id" json:"request_id"`
 	ScraperName string    `gorm:"type:varchar(32)" json:"scraper_name"`
-	Type        int8      `gorm:"type:tinyint"`
+	Type        int8      `gorm:"type:int8"`
 	Param       string    `json:"param"`
 	Result      string    `json:"result"`
 	Status      int8      `json:"status"`

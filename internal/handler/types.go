@@ -132,6 +132,7 @@ type StaffVo struct {
 func Vo2Person(staff StaffVo) model.Person {
 	return model.Person{
 		ID:      staff.ID,
+		RelIDs:  staff.RelIDs,
 		Name:    staff.Name,
 		Alias:   staff.Alias,
 		Cover:   staff.Cover,
@@ -177,6 +178,7 @@ type CharacterVo struct {
 func Vo2Character(character CharacterVo) model.Character {
 	return model.Character{
 		ID:           character.ID,
+		RelIDs:       character.RelIDs,
 		Name:         character.Name,
 		Alias:        character.Alias,
 		Gender:       character.Gender,

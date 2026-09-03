@@ -168,6 +168,9 @@ func (ds *DlSite) GetGameItem(uri string) (*scraper.GameItem, error) {
 			id = id[:len(id)-5]
 		}
 	}
+	if id != "" {
+		item.RelIDs = append(item.RelIDs, fmt.Sprintf("%s:%s", Name, id))
+	}
 
 	item.Name = root.Find("#work_name").Text()
 	item.DlCode = id

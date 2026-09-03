@@ -47,3 +47,17 @@ func (h Handler) AutoScrape(ctx context.Context, input *AutoScrapeReq, op *middl
 	systemtask.AutoScrap(t)
 	return "", nil
 }
+
+// AutoDetectScrape 扫描游戏库中未刮削的目录，自动匹配 vndb 并派发刮削子任务。
+// 入参为空（路径来自系统策略中的游戏库配置）。
+func (h Handler) AutoDetectScrape(ctx context.Context, input *struct{}, op *middleware.PreHandleOptions) (string, error) {
+	t := &model.SystemTask{
+		Type:  model.SystemTaskTypeDetectScrap,
+		State: model.SystemTaskStateRunning,
+	}
+	if err := db.GetStore().SystemTask().Create(ctx, t, nil); err != nil {
+		return "", err
+	}
+	systemtask.AutoDetectScrap(t)
+	return "", nil
+}

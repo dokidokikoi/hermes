@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"izumi/config"
@@ -19,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	db_pkg "github.com/dokidokikoi/go-common/db"
 	comm_errors "github.com/dokidokikoi/go-common/errors"
 	"github.com/dokidokikoi/go-common/gopool"
 	zaplog "github.com/dokidokikoi/go-common/log/zap"
@@ -55,13 +54,14 @@ type game struct {
 }
 
 func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *model.GameInstance, proccess func(step int)) error {
-	err := gsrv.SaveFiles(ctx, gVo, func(total int) {
-		step := 4000 / total
-		proccess(step)
-	})
-	if err != nil {
-		return err
-	}
+	var err error
+	// err := gsrv.SaveFiles(ctx, gVo, func(total int) {
+	// 	step := 4000 / total
+	// 	proccess(step)
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
 	db := gsrv.store
 	if gVo.ID == 0 {
@@ -71,7 +71,7 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 		}
 	}
 
-	g := tools.GetPtr(handler.Vo2Game(*gVo))
+	g := tools.Ptr(handler.Vo2Game(*gVo))
 	// 处理category
 	{
 		if gVo.Category != nil && gVo.Category.Name != "" {
@@ -246,11 +246,11 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 					&meta.WhereNode{Conditions: []*meta.Condition{
 						{
 							Field:    "rel_ids",
-							Operator: meta.PG_OVERLAP,
-							Value:    pq.Array(staff.RelIDs),
+							Operator: "",
+							Value:    gorm.Expr(meta.PG_OVERLAP + " " + db_pkg.PgArray(staff.RelIDs)),
 						},
 					}},
-					&meta.ListOption{GetOption: meta.GetOption{Include: []string{"ID"}}})
+					&meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
 				if err != nil {
 					return err
 				}
@@ -271,7 +271,7 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 							},
 						},
 					},
-					&meta.ListOption{GetOption: meta.GetOption{Include: []string{"ID"}}})
+					&meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
 				if err != nil {
 					return err
 				}
@@ -328,10 +328,10 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 				cs, err := db.Character().ListComplex(ctx, &model.Character{}, &meta.WhereNode{Conditions: []*meta.Condition{
 					{
 						Field:    "rel_ids",
-						Operator: meta.PG_OVERLAP,
-						Value:    pq.Array(char.RelIDs),
+						Operator: "",
+						Value:    gorm.Expr(meta.PG_OVERLAP + " " + db_pkg.PgArray(char.RelIDs)),
 					},
-				}}, &meta.ListOption{GetOption: meta.GetOption{Include: []string{"ID"}}})
+				}}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
 				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 					return err
 				}
@@ -343,13 +343,17 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 			if char.CV.Name != "" {
 				c.PersonID = staffM[char.CV.Name]
 			}
+			omits := []string{clause.Associations}
+			if char.CV.ID == 0 {
+				omits = append(omits, "PersonID")
+			}
 			if char.ID != 0 {
-				err := db.Character().Update(ctx, c, &meta.UpdateOption{Omit: []string{clause.Associations}})
+				err := db.Character().Update(ctx, c, &meta.UpdateOption{Omit: omits})
 				if err != nil {
 					return err
 				}
 			} else {
-				err := db.Character().Create(ctx, c, &meta.CreateOption{Omit: []string{clause.Associations}})
+				err := db.Character().Create(ctx, c, &meta.CreateOption{Omit: omits})
 				if err != nil {
 					return err
 				}
@@ -381,270 +385,193 @@ func (gsrv *game) UpsertFull(ctx context.Context, gVo *handler.GameVo, gIns *mod
 	return nil
 }
 
-func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error {
-	var err error
-	g.Story, err = SaveHtmlImg(ctx, g.Story)
+// runInTx 包装一段事务逻辑：任一步出错即回滚并返回，全部成功则提交。
+// 这样调用方无需在每个 DB 操作后重复 Rollback()+return 样板。
+func (gsrv *game) runInTx(ctx context.Context, fn func(tx db.IStore) error) (err error) {
+	tx := gsrv.store.Transaction().Begin()
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Transaction().Rollback()
+			panic(p)
+		}
+		if err != nil {
+			tx.Transaction().Rollback()
+			return
+		}
+		err = tx.Transaction().Commit()
+	}()
+	return fn(tx)
+}
+
+// firstRealErr 从 UpdateCollection 返回的 []error 中取出第一个非 ErrNoUpdateRows 的错误。
+func firstRealErr(errs []error) error {
+	for _, e := range errs {
+		if !errors.Is(e, comm_errors.ErrNoUpdateRows) {
+			return e
+		}
+	}
+	return nil
+}
+
+// saveGameStory 把 Story 中的外链图片本地化，失败仅记录日志，不中断流程。
+func saveGameStory(ctx context.Context, g *model.Game) {
+	story, err := SaveHtmlImg(ctx, g.Story)
 	if err != nil {
 		zaplog.From(ctx).With(zap.Error(err)).Error("SaveHtmlImg")
+		return
 	}
-	tx := gsrv.store.Transaction().Begin()
-	err = tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Brands", "Category"}})
-	if err != nil {
-		tx.Transaction().Rollback()
+	g.Story = story
+}
+
+// replaceGameBrands 重建游戏与品牌的关联（先删后建）。
+func replaceGameBrands(ctx context.Context, tx db.IStore, g *model.Game) error {
+	if err := tx.GameBrands().Delete(ctx, &model.GameBrands{GameID: g.ID}, nil); err != nil {
 		return err
 	}
-	if gIns != nil {
-		gIns.GameID = g.ID
-		err = tx.GameInstance().Create(ctx, gIns, nil)
-		if err != nil {
-			tx.Transaction().Rollback()
-			return err
-		}
-	}
-
-	var gBrands = []*model.GameBrands{}
+	gBrands := make([]*model.GameBrands, 0, len(g.Brands))
 	for _, b := range g.Brands {
-		gBrands = append(gBrands, &model.GameBrands{
-			GameID:  g.ID,
-			BrandID: b.ID,
-		})
+		gBrands = append(gBrands, &model.GameBrands{GameID: g.ID, BrandID: b.ID})
 	}
-	err = tx.GameBrands().Creates(ctx, gBrands, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
+	return tx.GameBrands().Creates(ctx, gBrands, nil)
+}
 
-	var gSeries = []*model.GameSeries{}
-	for _, s := range g.Series {
-		gSeries = append(gSeries, &model.GameSeries{
-			GameID:   g.ID,
-			SeriesID: s.ID,
-		})
-	}
-	err = tx.GameSeries().Creates(ctx, gSeries, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
+// replaceGameSeries 重建游戏与系列的关联（先删后建）。
+func replaceGameSeries(ctx context.Context, tx db.IStore, g *model.Game) error {
+	if err := tx.GameSeries().Delete(ctx, &model.GameSeries{GameID: g.ID}, nil); err != nil {
 		return err
 	}
-	// character
-	charactersCreate := []*model.Character{}
-	charactersUpdate := []*model.Character{}
+	gSeries := make([]*model.GameSeries, 0, len(g.Series))
+	for _, s := range g.Series {
+		gSeries = append(gSeries, &model.GameSeries{GameID: g.ID, SeriesID: s.ID})
+	}
+	return tx.GameSeries().Creates(ctx, gSeries, nil)
+}
+
+// replaceGameCharacters 重建游戏角色：按 ID 分流 create/update，再重建关联表。
+func replaceGameCharacters(ctx context.Context, tx db.IStore, gameID uint, cs []*model.GameCharacter) error {
+	create, update := []*model.Character{}, []*model.Character{}
 	for _, c := range cs {
 		if c.Character.ID != 0 {
-			charactersUpdate = append(charactersUpdate, c.Character)
+			update = append(update, c.Character)
 		} else {
-			charactersCreate = append(charactersCreate, c.Character)
+			create = append(create, c.Character)
 		}
 	}
-	if len(charactersCreate) > 0 {
-		err = tx.Character().Creates(ctx, charactersCreate, nil)
-		if err != nil {
-			tx.Transaction().Rollback()
+	if len(create) > 0 {
+		if err := tx.Character().Creates(ctx, create, nil); err != nil {
 			return err
 		}
 	}
-	errs := tx.Character().UpdateCollection(ctx, charactersUpdate, nil)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
-				tx.Transaction().Rollback()
-				return err
-			}
-		}
+	if err := firstRealErr(tx.Character().UpdateCollection(ctx, update, nil)); err != nil {
+		return err
 	}
-	err = tx.GameCharacter().Delete(ctx, &model.GameCharacter{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
+	if err := tx.GameCharacter().Delete(ctx, &model.GameCharacter{GameID: gameID}, nil); err != nil {
 		return err
 	}
 	for _, c := range cs {
-		c.GameID = g.ID
+		c.GameID = gameID
 		c.CharacterID = c.Character.ID
 	}
 	if len(cs) > 0 {
-		err = tx.GameCharacter().Creates(ctx, cs, nil)
-		if err != nil {
-			tx.Transaction().Rollback()
-			return err
-		}
+		return tx.GameCharacter().Creates(ctx, cs, nil)
 	}
+	return nil
+}
 
-	// staff
-	staffCreate := []*model.Person{}
-	staffUpdate := []*model.Person{}
+// replaceGameStaff 重建游戏制作人员：按 ID 分流 create/update，再重建关联表。
+func replaceGameStaff(ctx context.Context, tx db.IStore, gameID uint, ss []*model.GameStaff) error {
+	create, update := []*model.Person{}, []*model.Person{}
 	for _, s := range ss {
 		if s.Person.ID == 0 {
-			staffCreate = append(staffCreate, s.Person)
+			create = append(create, s.Person)
 		} else {
-			staffUpdate = append(staffUpdate, s.Person)
+			update = append(update, s.Person)
 		}
 	}
-	if len(staffCreate) > 0 {
-		err = tx.Person().Creates(ctx, staffCreate, nil)
-		if err != nil {
-			tx.Transaction().Rollback()
+	if len(create) > 0 {
+		if err := tx.Person().Creates(ctx, create, nil); err != nil {
 			return err
 		}
 	}
-	errs = tx.Person().UpdateCollection(ctx, staffUpdate, nil)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
-				tx.Transaction().Rollback()
-				return err
-			}
-		}
-	}
-	err = tx.GameStaff().Delete(ctx, &model.GameStaff{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
+	if err := firstRealErr(tx.Person().UpdateCollection(ctx, update, nil)); err != nil {
 		return err
 	}
-
+	if err := tx.GameStaff().Delete(ctx, &model.GameStaff{GameID: gameID}, nil); err != nil {
+		return err
+	}
 	for _, s := range ss {
-		s.GameID = g.ID
+		s.GameID = gameID
 		s.PersonID = s.Person.ID
 	}
 	if len(ss) > 0 {
-		err = tx.GameStaff().Creates(ctx, ss, nil)
-		if err != nil {
-			tx.Transaction().Rollback()
+		return tx.GameStaff().Creates(ctx, ss, nil)
+	}
+	return nil
+}
+
+func (gsrv *game) CreateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff, gIns *model.GameInstance) error {
+	saveGameStory(ctx, g)
+
+	return gsrv.runInTx(ctx, func(tx db.IStore) error {
+		if err := tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{"Series", "Brands", "Category"}}); err != nil {
 			return err
 		}
-	}
+		if gIns != nil {
+			gIns.GameID = g.ID
+			if err := tx.GameInstance().Create(ctx, gIns, nil); err != nil {
+				return err
+			}
+		}
 
-	return tx.Transaction().Commit()
+		// brands / series（新建时无需先删）
+		gBrands := make([]*model.GameBrands, 0, len(g.Brands))
+		for _, b := range g.Brands {
+			gBrands = append(gBrands, &model.GameBrands{GameID: g.ID, BrandID: b.ID})
+		}
+		if err := tx.GameBrands().Creates(ctx, gBrands, nil); err != nil {
+			return err
+		}
+		gSeries := make([]*model.GameSeries, 0, len(g.Series))
+		for _, s := range g.Series {
+			gSeries = append(gSeries, &model.GameSeries{GameID: g.ID, SeriesID: s.ID})
+		}
+		if err := tx.GameSeries().Creates(ctx, gSeries, nil); err != nil {
+			return err
+		}
+
+		if err := replaceGameCharacters(ctx, tx, g.ID, cs); err != nil {
+			return err
+		}
+		return replaceGameStaff(ctx, tx, g.ID, ss)
+	})
 }
 
 func (gsrv *game) UpdateL(ctx context.Context, g *model.Game, cs []*model.GameCharacter, ss []*model.GameStaff) error {
-	var err error
-	g.Story, err = SaveHtmlImg(ctx, g.Story)
-	if err != nil {
-		zaplog.From(ctx).With(zap.Error(err)).Error("SaveHtmlImg")
-	}
-	tx := gsrv.store.Transaction().Begin()
-	err = tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	err = tx.GameSeries().Delete(ctx, &model.GameSeries{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	err = tx.GameBrands().Delete(ctx, &model.GameBrands{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	var gSeries = []*model.GameSeries{}
-	for _, s := range g.Series {
-		gSeries = append(gSeries, &model.GameSeries{
-			GameID:   g.ID,
-			SeriesID: s.ID,
-		})
-	}
-	err = tx.GameSeries().Creates(ctx, gSeries, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	var gBrands = []*model.GameBrands{}
-	for _, b := range g.Brands {
-		gBrands = append(gBrands, &model.GameBrands{
-			GameID:  g.ID,
-			BrandID: b.ID,
-		})
-	}
-	err = tx.GameBrands().Creates(ctx, gBrands, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	err = tx.GameCharacter().Delete(ctx, &model.GameCharacter{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	charactersCreate := []*model.Character{}
-	charactersUpdate := []*model.Character{}
-	for _, c := range cs {
-		if c.Character.ID != 0 {
-			charactersUpdate = append(charactersUpdate, c.Character)
-		} else {
-			charactersCreate = append(charactersCreate, c.Character)
-		}
-	}
-	if len(charactersCreate) > 0 {
-		err = tx.Character().Creates(ctx, charactersCreate, nil)
-		if err != nil {
-			tx.Transaction().Rollback()
+	saveGameStory(ctx, g)
+
+	return gsrv.runInTx(ctx, func(tx db.IStore) error {
+		// 先清空各关联表
+		if err := tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil); err != nil {
 			return err
 		}
-	}
-	errs := tx.Character().UpdateCollection(ctx, charactersUpdate, nil)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
-				tx.Transaction().Rollback()
-				return err
-			}
-		}
-	}
-	for _, c := range cs {
-		c.CharacterID = c.Character.ID
-	}
-	err = tx.GameCharacter().Creates(ctx, cs, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	err = tx.GameStaff().Delete(ctx, &model.GameStaff{GameID: g.ID}, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-	staffCreate := []*model.Person{}
-	staffUpdate := []*model.Person{}
-	for _, s := range ss {
-		if s.Person.ID == 0 {
-			staffCreate = append(staffCreate, s.Person)
-		} else {
-			staffUpdate = append(staffUpdate, s.Person)
-		}
-	}
-	if len(staffCreate) > 0 {
-		err = tx.Person().Creates(ctx, staffCreate, nil)
-		if err != nil {
-			tx.Transaction().Rollback()
+		if err := replaceGameSeries(ctx, tx, g); err != nil {
 			return err
 		}
-	}
-	errs = tx.Person().UpdateCollection(ctx, staffUpdate, nil)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
-				tx.Transaction().Rollback()
-				return err
-			}
+		if err := replaceGameBrands(ctx, tx, g); err != nil {
+			return err
 		}
-	}
-
-	err = tx.GameStaff().Creates(ctx, ss, nil)
-	if err != nil {
-		tx.Transaction().Rollback()
-		return err
-	}
-
-	err = tx.Game().Update(ctx, g, &meta.UpdateOption{Omit: []string{"Series"}})
-	if err != nil && !errors.Is(err, comm_errors.ErrNoUpdateRows) {
-		tx.Transaction().Rollback()
-		return err
-	}
-	tx.Transaction().Commit()
-	return nil
+		if err := replaceGameCharacters(ctx, tx, g.ID, cs); err != nil {
+			return err
+		}
+		if err := replaceGameStaff(ctx, tx, g.ID, ss); err != nil {
+			return err
+		}
+		err := tx.Game().Update(ctx, g, &meta.UpdateOption{Omit: []string{"Series"}})
+		if err != nil && !errors.Is(err, comm_errors.ErrNoUpdateRows) {
+			return err
+		}
+		return nil
+	})
 }
 
 func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, error) {
@@ -685,7 +612,7 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 		&meta.ListOption{
 			Page:      1,
 			PageSize:  100,
-			GetOption: meta.GetOption{Preload: []string{"CV", "Tags"}},
+			GetOption: meta.GetOption{Preload: []string{"CV"}},
 			Order:     "weight desc",
 		})
 	if err != nil {
@@ -739,15 +666,6 @@ func (gsrv *game) GetVOByID(ctx context.Context, id uint) (*handler.GameVo, erro
 	for _, s := range ss {
 		sVos = append(sVos, handler.Person2Vo(*s, prMap[s.ID]))
 	}
-	sort.Slice(g.Tags, func(i, j int) bool {
-		if g.Tags[j].Lang == "zh" {
-			return false
-		} else if g.Tags[j].Lang == "ja" && g.Tags[i].Lang != "zh" {
-			return false
-		} else {
-			return true
-		}
-	})
 	return tools.Ptr(handler.Game2Vo(*g, cVos, sVos)), nil
 }
 
@@ -771,15 +689,6 @@ func (gsrv *game) Search(ctx context.Context, param handler.GameListReq, opt *me
 	}
 	gvos := make([]handler.GameVo, 0, len(gs))
 	for _, g := range gs {
-		sort.Slice(g.Tags, func(i, j int) bool {
-			if g.Tags[j].Lang == "zh" {
-				return false
-			} else if g.Tags[j].Lang == "ja" && g.Tags[i].Lang != "zh" {
-				return false
-			} else {
-				return true
-			}
-		})
 		if len(g.Tags) > 10 {
 			g.Tags = g.Tags[:10]
 		}
@@ -963,19 +872,21 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 			Relation:  character.Rlation,
 		})
 
-		cRsp, err := db.Character().Get(ctx, &model.Character{ID: character.ID}, &meta.GetOption{Select: []string{"ID", "UUID"}})
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				charactersCreate = append(charactersCreate, c)
+		// 按 rel_ids（["platform:id"]）判断角色是否已导入过：命中则更新已有记录，否则新建
+		if len(character.RelIDs) > 0 {
+			list, err := db.Character().ListComplex(ctx, &model.Character{}, &meta.WhereNode{Conditions: []*meta.Condition{
+				{Field: "rel_ids", Operator: "", Value: gorm.Expr(meta.PG_OVERLAP + " " + db_pkg.PgArray(character.RelIDs))},
+			}}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("get character error: %w", err)
+			}
+			if len(list) > 0 {
+				c.ID = list[0].ID
+				charactersUpdate = append(charactersUpdate, c)
 				continue
 			}
-			return fmt.Errorf("get character error: %w", err)
 		}
-		if cRsp.UUID != character.UUID {
-			charactersCreate = append(charactersCreate, c)
-		} else {
-			charactersUpdate = append(charactersUpdate, c)
-		}
+		charactersCreate = append(charactersCreate, c)
 	}
 
 	// staff
@@ -991,19 +902,21 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 		})
 		staffIDM[staff.ID] = s
 
-		sRsp, err := db.Person().Get(ctx, &model.Person{ID: staff.ID}, &meta.GetOption{Select: []string{"ID", "UUID"}})
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				staffCreate = append(staffCreate, s)
+		// 按 rel_ids（["platform:id"]）判断制作人员是否已导入过：命中则更新已有记录，否则新建
+		if len(staff.RelIDs) > 0 {
+			list, err := db.Person().ListComplex(ctx, &model.Person{}, &meta.WhereNode{Conditions: []*meta.Condition{
+				{Field: "rel_ids", Operator: "", Value: gorm.Expr(meta.PG_OVERLAP + " " + db_pkg.PgArray(staff.RelIDs))},
+			}}, &meta.ListOption{GetOption: meta.GetOption{Select: []string{"ID"}}})
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("get person error: %w", err)
+			}
+			if len(list) > 0 {
+				s.ID = list[0].ID
+				staffUpdate = append(staffUpdate, s)
 				continue
 			}
-			return fmt.Errorf("get character error: %w", err)
 		}
-		if sRsp.UUID != staff.UUID {
-			staffCreate = append(staffCreate, s)
-		} else {
-			staffUpdate = append(staffUpdate, s)
-		}
+		staffCreate = append(staffCreate, s)
 	}
 
 	// 启动事务
@@ -1046,39 +959,28 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 	}
 	errs = tx.Character().UpdateCollection(ctx, charactersUpdate, nil)
 	if len(errs) > 0 {
-		return errors.Join(errs...)
+		for _, err := range errs {
+			if !errors.Is(err, comm_errors.ErrNoUpdateRows) {
+				return err
+			}
+		}
 	}
 
 	g := tools.Ptr(handler.Vo2Game(*gVo))
-	gRsp, err := tx.Game().Get(ctx, &model.Game{ID: gVo.ID}, &meta.GetOption{Select: []string{"ID", "UUID"}})
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
+	// 按 rel_ids（["platform:id"]）判断游戏是否已导入过：已存在则走更新，否则新建
+	if gVo.ID == 0 && len(gVo.RelIDs) > 0 {
+		gVo.ID, err = gsrv.SearchExistGame(ctx, gVo.RelIDs)
+		if err != nil {
 			return err
 		}
-	} else {
-		if gRsp.UUID != gVo.UUID {
-			err = tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{clause.Associations}})
-			if err != nil {
-				return err
-			}
-			if gVo.Version != "" {
-				err = tx.GameInstance().Create(ctx, &model.GameInstance{
-					GameID:  g.ID,
-					Version: gVo.Version,
-					Path:    path,
-					Size:    gVo.Size,
-					Comment: gVo.Comment,
-				}, nil)
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			err = tx.Game().Update(ctx, g, &meta.UpdateOption{Omit: []string{clause.Associations}})
-			if err != nil {
-				return err
-			}
-			err = tx.GameInstance().Update(ctx, &model.GameInstance{
+	}
+	if gVo.ID == 0 {
+		err = tx.Game().Create(ctx, g, &meta.CreateOption{Omit: []string{clause.Associations}})
+		if err != nil {
+			return err
+		}
+		if gVo.Version != "" {
+			err = tx.GameInstance().Create(ctx, &model.GameInstance{
 				GameID:  g.ID,
 				Version: gVo.Version,
 				Path:    path,
@@ -1088,26 +990,42 @@ func (gsrv *game) Load(ctx context.Context, gVo *handler.GameVo, path string) (e
 			if err != nil {
 				return err
 			}
-			err = tx.GameCharacter().Delete(ctx, &model.GameCharacter{GameID: g.ID}, nil)
-			if err != nil {
-				return err
-			}
-			err = tx.GameSeries().Delete(ctx, &model.GameSeries{GameID: g.ID}, nil)
-			if err != nil {
-				return err
-			}
-			err = tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil)
-			if err != nil {
-				return err
-			}
-			err = tx.GameStaff().Delete(ctx, &model.GameStaff{GameID: g.ID}, nil)
-			if err != nil {
-				return err
-			}
-			err = tx.GameBrands().Delete(ctx, &model.GameBrands{GameID: g.ID}, nil)
-			if err != nil {
-				return err
-			}
+		}
+	} else {
+		g.ID = gVo.ID
+		err = tx.Game().Update(ctx, g, &meta.UpdateOption{Omit: []string{clause.Associations}})
+		if err != nil {
+			return err
+		}
+		err = tx.GameInstance().Update(ctx, &model.GameInstance{
+			GameID:  g.ID,
+			Version: gVo.Version,
+			Path:    path,
+			Size:    gVo.Size,
+			Comment: gVo.Comment,
+		}, nil)
+		if err != nil {
+			return err
+		}
+		err = tx.GameCharacter().Delete(ctx, &model.GameCharacter{GameID: g.ID}, nil)
+		if err != nil {
+			return err
+		}
+		err = tx.GameSeries().Delete(ctx, &model.GameSeries{GameID: g.ID}, nil)
+		if err != nil {
+			return err
+		}
+		err = tx.GameTag().Delete(ctx, &model.GameTag{GameID: g.ID}, nil)
+		if err != nil {
+			return err
+		}
+		err = tx.GameStaff().Delete(ctx, &model.GameStaff{GameID: g.ID}, nil)
+		if err != nil {
+			return err
+		}
+		err = tx.GameBrands().Delete(ctx, &model.GameBrands{GameID: g.ID}, nil)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -1236,13 +1154,12 @@ func (gsrv *game) SearchExistGame(ctx context.Context, relIds []string) (uint, e
 		return 0, nil
 	}
 
-	jsonPair, _ := json.Marshal(relIds)
 	whereNode := &meta.WhereNode{
 		Conditions: []*meta.Condition{
 			{
 				Field:    "rel_ids",
-				Operator: meta.PG_CONTAIN,
-				Value:    string(jsonPair),
+				Operator: "",
+				Value:    gorm.Expr(meta.PG_OVERLAP + " " + db_pkg.PgArray(relIds)),
 			},
 		},
 	}

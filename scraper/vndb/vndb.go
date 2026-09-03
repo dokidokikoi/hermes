@@ -156,7 +156,7 @@ func (v *VNDB) GetGameItem(uri string) (*scraper.GameItem, error) {
 	res := resp.Result[0]
 	item := &scraper.GameItem{
 		GameVo: handler.GameVo{
-			VNDBID: res.ID,
+			RelIDs: []string{Name + ":" + res.ID},
 			Name: func() string {
 				for _, t := range res.Titles {
 					if t.Official {
@@ -254,7 +254,7 @@ func (v *VNDB) GetGameItem(uri string) (*scraper.GameItem, error) {
 						}
 					}
 					c := handler.CharacterVo{
-						VNDBID: char.ID,
+						RelIDs: []string{Name + ":" + char.ID},
 						Name: func() string {
 							if char.Original != "" {
 								return char.Original

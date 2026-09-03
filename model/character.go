@@ -60,8 +60,8 @@ type Character struct {
 	Summary      string                      `json:"summary"`
 	Cover        string                      `gorm:"type:varchar(512)" json:"cover"`
 	Images       datatypes.JSONSlice[string] `gorm:"type:jsonb" json:"images"`
-	PersonID     uint                        `gorm:"default:0" json:"-"`
-	Weight       int8                        `gorm:"default:0;type:tinyint" json:"weight"`
+	PersonID     uint                        `json:"-"`
+	Weight       int8                        `gorm:"default:0;type:int8" json:"weight"`
 	PersonalInfo PersonalInfo                `gorm:"type:jsonb" json:"personal_info"`
 	CreatedAt    time.Time                   `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt    time.Time                   `gorm:"autoUpdateTime:milli"`

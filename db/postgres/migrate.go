@@ -12,6 +12,8 @@ var migrateTables = []any{
 	// Metadata domain
 	&model.Category{},
 	&model.Tag{},
+	&model.Etag{},
+	&model.DecidedTag{},
 	&model.Series{},
 	&model.Brand{},
 

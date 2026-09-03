@@ -27,7 +27,8 @@ func Parse[T SystemPolicy | PlatformPolicy | LanguagePolicy | ScraperPolicy | Us
 }
 
 type SystemPolicy struct {
-	GameLibrary []string `json:"game_library"`
+	GameLibrary   []string `json:"game_library"`
+	ScrapNameExts []string `json:"scrap_name_exts"` // 用于从游戏目录内文件名提取游戏名的后缀（按优先级），如 [".exe", ".app"]
 }
 
 func (SystemPolicy) Key() string {

@@ -11,6 +11,7 @@ type IStore interface {
 	// Metadata domain
 	Category() IRepo[model.Category]
 	Tag() IRepo[model.Tag]
+	Etag() IRepo[model.Etag]
 	DecidedTag() IRepo[model.DecidedTag]
 	Series() IRepo[model.Series]
 	Brand() IRepo[model.Brand]
@@ -78,6 +79,10 @@ func (s *Store) Category() IRepo[model.Category] {
 
 func (s *Store) Tag() IRepo[model.Tag] {
 	return NewRepo[model.Tag](s.pg.DB)
+}
+
+func (s *Store) Etag() IRepo[model.Etag] {
+	return NewRepo[model.Etag](s.pg.DB)
 }
 
 func (s *Store) DecidedTag() IRepo[model.DecidedTag] {

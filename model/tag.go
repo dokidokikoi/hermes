@@ -1,9 +1,6 @@
 package model
 
 import (
-	"database/sql/driver"
-	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -41,8 +38,6 @@ type Tag struct {
 	Key       string    `gorm:"type:varchar(64);uniqueIndex:uk_tag" json:"key"`
 	Name      string    `gorm:"type:varchar(255);" json:"name"`
 	Intro     string    `grom:"type:varchar(512);" json:"intro"`
-	Lang      string    `gorm:"type:varchar(10);" json:"lang"`
-	Extra     TagExtra  `gorm:"type:json" json:"extra"`
 	CreatedAt time.Time `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime:milli"`
 }
@@ -51,50 +46,12 @@ func (Tag) TableName() string {
 	return "tags"
 }
 
-type TagExtra struct {
-	Plat string `json:"plat"`
-	ID   string `json:"id"`
-}
-
-func (a *TagExtra) scanBytes(src []byte) error {
-	return json.Unmarshal(src, a)
-}
-
-// Scan implements the sql.Scanner interface.
-func (a *TagExtra) Scan(src interface{}) error {
-	switch src := src.(type) {
-	case []byte:
-		return a.scanBytes(src)
-	case string:
-		return a.scanBytes([]byte(src))
-	case nil:
-		*a = TagExtra{}
-		return nil
-	}
-
-	return fmt.Errorf("cannot convert %T to Link", src)
-}
-
-// Value implements the driver.Valuer interface.
-func (a *TagExtra) Value() (driver.Value, error) {
-	if a == nil {
-		return nil, nil
-	}
-
-	data, err := json.Marshal(a)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 type DecidedTag struct {
-	Plat  string `gorm:"type:varchar(32);primaryKey" json:"plat"`
-	RelID string `grom:"type:varchar(128);promaryKey" json:"rel_id"`
+	ID    int64  `gorm:"type:varchar(32);primaryKey" json:"plat"`
+	Tag   string `grom:"type:varchar(128);promaryKey" json:"rel_id"`
 	TagID uint   `json:"tag_id"`
 }
 
-func (TagExtra) TableName() string {
-	return "decided_tag"
+func (DecidedTag) TableName() string {
+	return "decided_tags"
 }

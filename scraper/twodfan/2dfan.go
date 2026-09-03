@@ -149,6 +149,14 @@ func (tdf *TwoDFan) GetGameItem(uri string) (*scraper.GameItem, error) {
 		return nil, err
 	}
 	item := &scraper.GameItem{GameVo: handler.GameVo{Links: []model.Link{{Name: tdf.name, Url: uri, Type: model.LinkTypeInfo}}}, ScraperName: tdf.name}
+	u, err := url.Parse(uri)
+	if err == nil {
+		arr := strings.Split(u.Path, "/")
+		id := arr[len(arr)-1]
+		if id != "" {
+			item.RelIDs = append(item.RelIDs, fmt.Sprintf("%s:%s", Name, id))
+		}
+	}
 	// 获取名称
 	item.Name, item.Alias, err = tdf.GetItemName(root)
 	if err != nil {

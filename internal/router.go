@@ -46,6 +46,7 @@ func Install(r gin.IRouter) {
 		sG.GET("", middleware.PreHandle(sH.Get))
 		sG.POST("/scrape", middleware.PreHandle(sH.Scrape))
 		sG.POST("/auto", middleware.PreHandle(sH.AutoScrape))
+		sG.POST("/auto-detect", middleware.PreHandle(sH.AutoDetectScrape))
 	}
 
 	fH := file.NewHandler()
@@ -62,6 +63,10 @@ func Install(r gin.IRouter) {
 		tG.POST("", middleware.PreHandle(tH.Create))
 		tG.DELETE("", middleware.PreHandle(tH.Del))
 		tG.PATCH("", middleware.PreHandle(tH.Update))
+		tG.GET("/ehtag", middleware.PreHandle(tH.EtagSearch))
+		tG.POST("/ehtag/sync", middleware.PreHandle(tH.EtagSync))
+		tG.GET("/decided", middleware.PreHandle(tH.ListDecided))
+		tG.PATCH("/decided", middleware.PreHandle(tH.Decide))
 	}
 
 	cH := category.NewHandler()

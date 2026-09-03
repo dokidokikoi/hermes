@@ -11,7 +11,7 @@ import (
 )
 
 func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middleware.PreHandleOptions) (any, error) {
-	g := tools.GetPtr(handler.Vo2Game(*input))
+	g := tools.Ptr(handler.Vo2Game(*input))
 	cs := []*model.GameCharacter{}
 	ss := []*model.GameStaff{}
 	for _, c := range input.Characters {
@@ -19,14 +19,14 @@ func (h Handler) Update(ctx context.Context, input *handler.GameVo, op *middlewa
 			GameID:      input.ID,
 			CharacterID: c.ID,
 			Relation:    c.Rlation,
-			Character:   tools.GetPtr(handler.Vo2Character(c)),
+			Character:   tools.Ptr(handler.Vo2Character(c)),
 		})
 	}
 	for _, s := range input.Staff {
 		ss = append(ss, &model.GameStaff{
 			GameID:    g.ID,
 			PersonID:  s.ID,
-			Person:    tools.GetPtr(handler.Vo2Person(s)),
+			Person:    tools.Ptr(handler.Vo2Person(s)),
 			Relations: s.Relation,
 		})
 	}

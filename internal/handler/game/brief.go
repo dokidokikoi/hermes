@@ -30,7 +30,7 @@ func (h Handler) GetBrief(ctx context.Context, req *GetBriefRequest, op *middlew
 	}
 
 	for _, v := range res {
-		resp = append(resp, tools.GetPtr(handler.Game2Vo(*v, nil, nil)))
+		resp = append(resp, tools.Ptr(handler.Game2Vo(*v, nil, nil)))
 	}
 
 	return

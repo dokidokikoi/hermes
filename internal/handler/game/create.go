@@ -26,7 +26,7 @@ type CreateGameRequest struct {
 }
 
 func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middleware.PreHandleOptions) (uint, error) {
-	g := tools.GetPtr(handler.Vo2Game(input.Game))
+	g := tools.Ptr(handler.Vo2Game(input.Game))
 
 	err := h.srv.Game().SaveFiles(ctx, &input.Game)
 	if err != nil {
@@ -39,7 +39,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 			continue
 		}
 		cs = append(cs, &model.GameCharacter{
-			Character: tools.GetPtr(handler.Vo2Character(c)),
+			Character: tools.Ptr(handler.Vo2Character(c)),
 			Relation:  c.Rlation,
 		})
 	}
@@ -51,7 +51,7 @@ func (h Handler) Create(ctx context.Context, input *CreateGameRequest, op *middl
 			continue
 		}
 		ss = append(ss, &model.GameStaff{
-			Person:    tools.GetPtr(handler.Vo2Person(s)),
+			Person:    tools.Ptr(handler.Vo2Person(s)),
 			Relations: s.Relation,
 		})
 	}

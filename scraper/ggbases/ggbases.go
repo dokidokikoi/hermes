@@ -164,6 +164,7 @@ func (gg *GGBases) GetGameItem(uri string) (*scraper.GameItem, error) {
 	if id == "" {
 		return nil, errors.New("uri error")
 	}
+	item.RelIDs = append(item.RelIDs, fmt.Sprintf("%s:%s", Name, id))
 
 	item.Name, err = gg.GetItemName(root)
 	if err != nil {
